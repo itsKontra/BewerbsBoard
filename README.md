@@ -43,8 +43,8 @@ For self-hosting, install Git, Bash, Docker Engine, and Docker Compose v2. The a
 The wizard is the easiest way to explore or deploy the project. It can start the local demo, configure a Docker deployment, provision Cloudflare resources, or guide an OAuth2/Keycloak proxy setup.
 
 ```sh
-git clone https://github.com/itsKontra/web-scoreboard.git
-cd web-scoreboard
+git clone https://github.com/itsKontra/BewerbsBoard.git
+cd BewerbsBoard
 chmod +x scripts/deploy-wizard.sh
 ./scripts/deploy-wizard.sh
 ```
@@ -56,8 +56,8 @@ The wizard writes configuration to `.env`. For a local Docker deployment it also
 Use this path when you want to inspect and control every step yourself.
 
 ```sh
-git clone https://github.com/itsKontra/web-scoreboard.git
-cd web-scoreboard
+git clone https://github.com/itsKontra/BewerbsBoard.git
+cd BewerbsBoard
 cp example.env .env
 ```
 
