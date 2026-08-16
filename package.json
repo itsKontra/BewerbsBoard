@@ -1,0 +1,56 @@
+{
+  "name": "bewerbsboard",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build && tsc -p tsconfig.server.json",
+    "start": "node dist-server/server/index.js",
+    "test": "vitest",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "db:generate": "drizzle-kit generate",
+    "db:generate:self-hosted": "drizzle-kit generate --config drizzle.self-hosted.config.ts",
+    "db:seed:generate": "node scripts/generate-seed-sql.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply bewerbsboard --local",
+    "db:migrate:remote": "wrangler d1 migrations apply bewerbsboard --remote"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.0",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.13.1",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260808.1",
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "drizzle-kit": "^0.31.10",
+    "happy-dom": "^20.11.2",
+    "oxlint": "^1.75.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.123.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@13.0.3": true,
+    "workerd@1.20260811.1": true,
+    "esbuild@0.28.1": true,
+    "esbuild@0.18.20": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}

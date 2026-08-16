@@ -1,0 +1,68 @@
+{
+  "catalog": {
+    "competitionClasses": [
+      { "id": "cc-aktiv", "name": "AKTIV" },
+      { "id": "cc-jugend", "name": "JUGEND" },
+      { "id": "cc-gast", "name": "GAST" }
+    ],
+    "categoryTypes": [
+      { "id": "bronze-aktiv", "name": "Bronze Aktiv", "competitionClassId": "cc-aktiv", "hasRelayRace": true },
+      { "id": "silber-aktiv", "name": "Silber Aktiv", "competitionClassId": "cc-aktiv", "hasRelayRace": true },
+      { "id": "bronze-jugend", "name": "Bronze Jugend", "competitionClassId": "cc-jugend", "hasRelayRace": false },
+      { "id": "bronze-gaeste", "name": "Bronze Gäste", "competitionClassId": "cc-gast", "hasRelayRace": true },
+      { "id": "silber-gaeste", "name": "Silber Gäste", "competitionClassId": "cc-gast", "hasRelayRace": true }
+    ],
+    "evaluationTypes": [
+      { "id": "bronze-aktiv", "name": "Bronze Aktiv", "categoryTypeId1": "bronze-aktiv", "categoryTypeId2": null, "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 12, "order": 1 },
+      { "id": "silber-aktiv", "name": "Silber Aktiv", "categoryTypeId1": "silber-aktiv", "categoryTypeId2": null, "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 12, "order": 2 },
+      { "id": "bronze-jugend", "name": "Bronze Jugend", "categoryTypeId1": "bronze-jugend", "categoryTypeId2": null, "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 10, "order": 3 },
+      { "id": "bronze-gaeste", "name": "Bronze Gäste", "categoryTypeId1": "bronze-gaeste", "categoryTypeId2": null, "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 10, "order": 5 },
+      { "id": "silber-gaeste", "name": "Silber Gäste", "categoryTypeId1": "silber-gaeste", "categoryTypeId2": null, "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 10, "order": 6 },
+      { "id": "gesamt-aktiv", "name": "Gesamtwertung Aktiv", "categoryTypeId1": "bronze-aktiv", "categoryTypeId2": "silber-aktiv", "excludeRelayRace": false, "isBrigadePairing": false, "public": true, "publicTv": true, "displayDurationSeconds": 10, "order": 7 },
+      { "id": "gesamt-feuerwehr", "name": "Gesamtwertung Feuerwehr", "categoryTypeId1": "bronze-aktiv", "categoryTypeId2": "bronze-jugend", "excludeRelayRace": true, "isBrigadePairing": true, "public": true, "publicTv": true, "displayDurationSeconds": 10, "order": 8 }
+    ]
+  },
+  "demo": {
+    "eventTitle": "BFLB FREIWILLIGE FEUERWEHR",
+    "publicUrl": "https://scoreboard.example.com",
+    "rankingPageDurationMs": 8000,
+    "fireBrigades": [
+      { "id": "b-1", "name": "Allerheiligen-Lebing" },
+      { "id": "b-2", "name": "Altaist-Hartl" },
+      { "id": "b-3", "name": "Winden-Windegg" },
+      { "id": "b-4", "name": "Obernstraß" },
+      { "id": "b-5", "name": "Holzleiten im Machland" },
+      { "id": "b-6", "name": "Reitberg" }
+    ],
+    "groups": [
+      { "id": "g-1", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-1" },
+      { "id": "g-2", "name": "2", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-1" },
+      { "id": "g-3", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-2" },
+      { "id": "g-4", "name": "2", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-2" },
+      { "id": "g-5", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-3" },
+      { "id": "g-6", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-4" },
+      { "id": "g-7", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-5" },
+      { "id": "g-8", "name": "1", "competitionClassId": "cc-aktiv", "fireBrigadeId": "b-6" },
+      { "id": "g-9", "name": "1", "competitionClassId": "cc-jugend", "fireBrigadeId": "b-1" },
+      { "id": "g-10", "name": "1", "competitionClassId": "cc-jugend", "fireBrigadeId": "b-2" }
+    ],
+    "categoryEntries": [
+      { "id": "ce-1", "groupId": "g-1", "categoryTypeId": "bronze-aktiv", "runStatus": "VALID", "startOrderPosition": 3, "attackTimeHundredths": 3160, "attackTimeErrors": 0, "relayRaceHundredths": 5210, "relayRaceErrors": 0 },
+      { "id": "ce-2", "groupId": "g-3", "categoryTypeId": "bronze-aktiv", "runStatus": "VALID", "startOrderPosition": 5, "attackTimeHundredths": 3580, "attackTimeErrors": 5, "relayRaceHundredths": 5380, "relayRaceErrors": 0 },
+      { "id": "ce-3", "groupId": "g-5", "categoryTypeId": "bronze-aktiv", "runStatus": "VALID", "startOrderPosition": 2, "attackTimeHundredths": 3780, "attackTimeErrors": 5, "relayRaceHundredths": 5410, "relayRaceErrors": 0 },
+      { "id": "ce-4", "groupId": "g-6", "categoryTypeId": "bronze-aktiv", "runStatus": "VALID", "startOrderPosition": 4, "attackTimeHundredths": 4120, "attackTimeErrors": 0, "relayRaceHundredths": 5540, "relayRaceErrors": 0 },
+      { "id": "ce-5", "groupId": "g-7", "categoryTypeId": "bronze-aktiv", "runStatus": "VALID", "startOrderPosition": 6, "attackTimeHundredths": 4250, "attackTimeErrors": 5, "relayRaceHundredths": 5650, "relayRaceErrors": 0 },
+      { "id": "ce-6", "groupId": "g-8", "categoryTypeId": "bronze-aktiv", "runStatus": "OPEN", "startOrderPosition": 1, "attackTimeHundredths": null, "attackTimeErrors": null, "relayRaceHundredths": null, "relayRaceErrors": null },
+      { "id": "ce-7", "groupId": "g-1", "categoryTypeId": "silber-aktiv", "runStatus": "VALID", "startOrderPosition": 1, "attackTimeHundredths": 3825, "attackTimeErrors": 0, "relayRaceHundredths": 5430, "relayRaceErrors": 0 },
+      { "id": "ce-8", "groupId": "g-3", "categoryTypeId": "silber-aktiv", "runStatus": "VALID", "startOrderPosition": 2, "attackTimeHundredths": 4215, "attackTimeErrors": 0, "relayRaceHundredths": 5610, "relayRaceErrors": 0 },
+      { "id": "ce-9", "groupId": "g-5", "categoryTypeId": "silber-aktiv", "runStatus": "OPEN", "startOrderPosition": 3, "attackTimeHundredths": null, "attackTimeErrors": null, "relayRaceHundredths": null, "relayRaceErrors": null },
+      { "id": "ce-10", "groupId": "g-9", "categoryTypeId": "bronze-jugend", "runStatus": "VALID", "startOrderPosition": 1, "attackTimeHundredths": 4483, "attackTimeErrors": 0, "relayRaceHundredths": null, "relayRaceErrors": null },
+      { "id": "ce-11", "groupId": "g-10", "categoryTypeId": "bronze-jugend", "runStatus": "VALID", "startOrderPosition": 2, "attackTimeHundredths": 4520, "attackTimeErrors": 0, "relayRaceHundredths": null, "relayRaceErrors": null }
+    ],
+    "auditLogs": [
+      { "id": "al-1", "secondsAgo": 120, "user": "dev@localhost", "action": "CONFIG_UPDATE", "details": { "field": "eventTitle", "value": "BFLB BLINDENDORF" } },
+      { "id": "al-2", "secondsAgo": 60, "user": "dev@localhost", "action": "TV_STATE_UPDATE", "details": { "mode": "ROTATION" } },
+      { "id": "al-3", "secondsAgo": 30, "user": "dev@localhost", "action": "RESULT_ENTRY", "details": { "entryId": "ce-1", "attackTimeHundredths": 3160, "errors": 0 } }
+    ]
+  }
+}

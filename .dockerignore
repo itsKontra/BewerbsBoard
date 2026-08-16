@@ -1,0 +1,14 @@
+.git
+.codex
+.scratch
+.wrangler
+node_modules
+dist
+dist-server
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env
+.env.*
+!.env.example
+!example.env
