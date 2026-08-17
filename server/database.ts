@@ -38,10 +38,20 @@ export interface AuditLogPage {
   total: number
 }
 
+export interface ResetScopes {
+  categoryEntries?: boolean
+  groups?: boolean
+  fireBrigades?: boolean
+  evaluationTypes?: boolean
+  categoryTypes?: boolean
+}
+
 export interface ResetSummary {
-  fireBrigadesCount: number
-  groupsCount: number
-  categoryEntriesCount: number
+  fireBrigadesCount?: number
+  groupsCount?: number
+  categoryEntriesCount?: number
+  evaluationTypesCount?: number
+  categoryTypesCount?: number
 }
 
 export interface FireBrigade {
@@ -144,7 +154,7 @@ export interface SelfHostedDatabase {
     listPage(page: number, limit: number, search: string): AuditLogPage
     record(record: AuditRecord): void
   }
-  clearCompetitionAndRuntime(updatedAt: number): ResetSummary
+  clearCompetitionAndRuntime(updatedAt: number, scopes?: ResetScopes): ResetSummary
   readonly scoring: {
     listEntries(): CategoryEntryDetails[]
     findEntry(id: string): CategoryEntry | undefined
@@ -339,15 +349,54 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         )
       },
     },
-    clearCompetitionAndRuntime: (updatedAt) => {
-      const summary = {
-        fireBrigadesCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM fire_brigades').get() as { count: number }).count,
-        groupsCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM groups').get() as { count: number }).count,
-        categoryEntriesCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM category_entries').get() as { count: number }).count,
+    clearCompetitionAndRuntime: (updatedAt, rawScopes) => {
+      const scopes: Required<ResetScopes> = {
+        categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
+        groups: rawScopes?.groups ?? (rawScopes ? false : true),
+        fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+        evaluationTypes: rawScopes?.evaluationTypes ?? false,
+        categoryTypes: rawScopes?.categoryTypes ?? false,
       }
-      sqlite.prepare('DELETE FROM category_entries').run()
-      sqlite.prepare('DELETE FROM groups').run()
-      sqlite.prepare('DELETE FROM fire_brigades').run()
+
+      // Enforce dependency resolution
+      if (scopes.fireBrigades) {
+        scopes.groups = true
+        scopes.categoryEntries = true
+      }
+      if (scopes.groups) {
+        scopes.categoryEntries = true
+      }
+      if (scopes.categoryTypes) {
+        scopes.evaluationTypes = true
+        scopes.categoryEntries = true
+      }
+      if (scopes.evaluationTypes) {
+        scopes.categoryEntries = true
+      }
+
+      const summary: ResetSummary = {}
+
+      if (scopes.categoryEntries) {
+        summary.categoryEntriesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_entries').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM category_entries').run()
+      }
+      if (scopes.evaluationTypes) {
+        summary.evaluationTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM evaluation_types').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM evaluation_types').run()
+      }
+      if (scopes.groups) {
+        summary.groupsCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM groups').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM groups').run()
+      }
+      if (scopes.fireBrigades) {
+        summary.fireBrigadesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM fire_brigades').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM fire_brigades').run()
+      }
+      if (scopes.categoryTypes) {
+        summary.categoryTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_types').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM category_types').run()
+      }
+
       sqlite.prepare(`UPDATE tv_runtime_state SET mode = 'ROTATION', selected_category_id = NULL, updated_at = ? WHERE id = 'default'`).run(updatedAt)
       return summary
     },

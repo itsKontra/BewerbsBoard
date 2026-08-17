@@ -424,11 +424,46 @@ function viteDevAdminMockPlugin(): Plugin {
 
         // ---- /api/admin/reset -------------------------------------------
         if (path === '/api/admin/reset' && method === 'POST') {
-          mockBrigades.length = 0
-          mockGroups.length = 0
-          mockCategoryEntries.length = 0
-          addAuditLog('DATABASE_CLEAR', null)
-          return json(res, 200, { ok: true })
+          const body = (await readBody(req)) as {
+            scopes?: {
+              categoryEntries?: boolean
+              groups?: boolean
+              fireBrigades?: boolean
+              evaluationTypes?: boolean
+              categoryTypes?: boolean
+            }
+          }
+          const rawScopes = body?.scopes
+          const scopes = {
+            categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
+            groups: rawScopes?.groups ?? (rawScopes ? false : true),
+            fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+            evaluationTypes: rawScopes?.evaluationTypes ?? false,
+            categoryTypes: rawScopes?.categoryTypes ?? false,
+          }
+          if (scopes.fireBrigades) {
+            scopes.groups = true
+            scopes.categoryEntries = true
+          }
+          if (scopes.groups) {
+            scopes.categoryEntries = true
+          }
+          if (scopes.categoryTypes) {
+            scopes.evaluationTypes = true
+            scopes.categoryEntries = true
+          }
+          if (scopes.evaluationTypes) {
+            scopes.categoryEntries = true
+          }
+
+          if (scopes.categoryEntries) mockCategoryEntries.length = 0
+          if (scopes.groups) mockGroups.length = 0
+          if (scopes.fireBrigades) mockBrigades.length = 0
+          if (scopes.evaluationTypes) mockEvaluationTypes.length = 0
+          if (scopes.categoryTypes) mockCategoryTypes.length = 0
+
+          addAuditLog('DATABASE_CLEAR', { scopes })
+          return json(res, 200, { ok: true, message: 'Datenbank erfolgreich zurückgesetzt' })
         }
 
         next()
