@@ -9,6 +9,7 @@ import { registerBrigadeAndGroupRoutes } from './brigade-group-routes.js'
 import { registerConfigurationAndTvRoutes } from './config-tv-routes.js'
 import { registerScoringRoutes } from './scoring-routes.js'
 import { registerResetAndAuditRoutes } from './reset-audit-routes.js'
+import { registerDataManagementRoutes } from './data-management-routes.js'
 import type { LocalAuthConfig } from './local-auth.js'
 import { createLocalAuthMiddleware, registerLocalAuthRoutes } from './local-auth.js'
 
@@ -60,6 +61,7 @@ export function createSelfHostedApp(options: SelfHostedAppOptions) {
     registerBrigadeAndGroupRoutes(app, options.database)
     registerScoringRoutes(app, options.database)
     registerResetAndAuditRoutes(app, options.database)
+    registerDataManagementRoutes(app, options.database)
   }
   app.all('/api/*', (context) => context.json({ error: 'Not Found' }, 404))
   app.get('*', async (context, next) => {
