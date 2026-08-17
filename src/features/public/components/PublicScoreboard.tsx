@@ -257,7 +257,7 @@ function ResultsGrid({
                     <div className="min-w-0 landscape:max-lg:contents min-[1025px]:contents">
                       <h4 className="mb-2 landscape:max-lg:mb-0 border-b landscape:max-lg:border-b-0 border-neutral-800/80 pb-1.5 landscape:max-lg:pb-0 landscape:max-lg:self-center font-oswald text-xs font-bold uppercase tracking-wider text-neutral-300 min-[1025px]:hidden">
                         {cat1Name}
-                        {category.isBrigadePairing && (
+                        {Boolean(category.isBrigadePairing) && (
                           <span className="ml-2 font-sans normal-case tracking-normal text-neutral-400">{uiText.publicScoreboard.groupName(item.groupName)}</span>
                         )}
                       </h4>
@@ -274,7 +274,7 @@ function ResultsGrid({
                     <div className="min-w-0 landscape:max-lg:contents border-t landscape:max-lg:border-none border-neutral-800/80 pt-3 landscape:max-lg:pt-0 min-[1025px]:contents min-[1025px]:border-none min-[1025px]:pt-0">
                       <h4 className="mb-2 landscape:max-lg:mb-0 border-b landscape:max-lg:border-b-0 border-neutral-800/80 pb-1.5 landscape:max-lg:pb-0 landscape:max-lg:self-center font-oswald text-xs font-bold uppercase tracking-wider text-neutral-300 min-[1025px]:hidden">
                         {cat2Name}
-                        {category.isBrigadePairing && item.secondaryGroupName && (
+                        {Boolean(category.isBrigadePairing) && item.secondaryGroupName && (
                           <span className="ml-2 font-sans normal-case tracking-normal text-neutral-400">{uiText.publicScoreboard.groupName(item.secondaryGroupName)}</span>
                         )}
                       </h4>
@@ -295,7 +295,7 @@ function ResultsGrid({
                   </div>
                 )}
 
-                {!is4x2 && isCombined && category.isBrigadePairing && (
+                {!is4x2 && isCombined && Boolean(category.isBrigadePairing) && (
                   <div className="col-span-2 landscape:max-lg:col-span-1 grid min-w-0 gap-3 landscape:max-lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] landscape:max-lg:gap-2 bg-[#181818]/80 rounded-xl p-3 landscape:max-lg:p-2 min-[1025px]:contents min-[1025px]:bg-transparent min-[1025px]:p-0">
                     <div className="pb-3 landscape:max-lg:pb-0 min-[1025px]:contents min-[1025px]:pb-0">
                       <div className="min-[1025px]:text-center">
