@@ -201,7 +201,7 @@ _generate_random_secret() {
 
 # Helper: generate the unified app.sh control script
 _generate_control_scripts() {
-  local compose_file="$1"
+  local compose_args="$1"
   step "Generating control script (app.sh)..."
 
   cat <<EOF > app.sh
@@ -209,7 +209,7 @@ _generate_control_scripts() {
 set -euo pipefail
 cd "\$(cd "\$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_NAME="$PROJECT_NAME"
-COMPOSE_FILE="$compose_file"
+COMPOSE_ARGS="$compose_args"
 
 usage() {
   printf 'Usage: ./app.sh <start|stop|delete> [--yes]\n'
@@ -218,11 +218,11 @@ usage() {
 case "\${1:-}" in
   start)
     echo "Starting BewerbsBoard stack (\$PROJECT_NAME)..."
-    docker compose --project-name "\$PROJECT_NAME" -f "\$COMPOSE_FILE" up -d --build --wait
+    docker compose --project-name "\$PROJECT_NAME" \$COMPOSE_ARGS up -d --build --wait
     ;;
   stop)
     echo "Stopping BewerbsBoard stack (\$PROJECT_NAME)..."
-    docker compose --project-name "\$PROJECT_NAME" -f "\$COMPOSE_FILE" stop
+    docker compose --project-name "\$PROJECT_NAME" \$COMPOSE_ARGS stop
     ;;
   delete)
     echo "This will stop and remove containers, networks, and data volumes for BewerbsBoard (\$PROJECT_NAME)."
@@ -232,7 +232,7 @@ case "\${1:-}" in
       read -r -p "Are you sure you want to delete everything including data volumes? [y/N] " reply
     fi
     if [[ "\$reply" =~ ^[Yy] ]]; then
-      docker compose --project-name "\$PROJECT_NAME" -f "\$COMPOSE_FILE" down -v --remove-orphans
+      docker compose --project-name "\$PROJECT_NAME" \$COMPOSE_ARGS down -v --remove-orphans
       echo "Scoreboard stack and data removed."
     else
       echo "Aborted."
