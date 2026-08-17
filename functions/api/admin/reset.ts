@@ -2,10 +2,19 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../../../shared/db/schema';
 import { getDb, jsonResponse, jsonError, type EventContext } from './utils';
 
+export interface ResetScopes {
+  categoryEntries?: boolean;
+  groups?: boolean;
+  fireBrigades?: boolean;
+  evaluationTypes?: boolean;
+  categoryTypes?: boolean;
+}
+
 export async function onRequestPost(context: EventContext) {
   try {
     const body = (await context.request.json().catch(() => ({}))) as {
       confirmationKeyword?: string;
+      scopes?: ResetScopes;
     };
 
     if (body.confirmationKeyword !== 'LÖSCHEN') {
@@ -15,26 +24,65 @@ export async function onRequestPost(context: EventContext) {
     const db = getDb(context.env);
     const user = context.data.adminUser || 'system';
 
-    // 1. Fetch pre-clear counts for audit log snapshot
-    const [brigades, grps, entries] = await Promise.all([
-      db.select().from(schema.fireBrigades),
-      db.select().from(schema.groups),
-      db.select().from(schema.categoryEntries),
-    ]);
-
-    const preClearSnapshot = {
-      summary: {
-        fireBrigadesCount: brigades.length,
-        groupsCount: grps.length,
-        categoryEntriesCount: entries.length,
-      },
-      clearedAt: new Date().toISOString(),
+    const rawScopes = body.scopes;
+    const scopes = {
+      categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
+      groups: rawScopes?.groups ?? (rawScopes ? false : true),
+      fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+      evaluationTypes: rawScopes?.evaluationTypes ?? false,
+      categoryTypes: rawScopes?.categoryTypes ?? false,
     };
 
-    // 2. Prepare operations for atomic batch
-    const deleteEntries = db.delete(schema.categoryEntries);
-    const deleteGroups = db.delete(schema.groups);
-    const deleteBrigades = db.delete(schema.fireBrigades);
+    if (scopes.fireBrigades) {
+      scopes.groups = true;
+      scopes.categoryEntries = true;
+    }
+    if (scopes.groups) {
+      scopes.categoryEntries = true;
+    }
+    if (scopes.categoryTypes) {
+      scopes.evaluationTypes = true;
+      scopes.categoryEntries = true;
+    }
+    if (scopes.evaluationTypes) {
+      scopes.categoryEntries = true;
+    }
+
+    const summary: Record<string, number> = {};
+    const batchOps: any[] = [];
+
+    // 1. Fetch pre-clear counts & schedule delete ops in dependency order
+    if (scopes.categoryEntries) {
+      const entries = await db.select().from(schema.categoryEntries);
+      summary.categoryEntriesCount = entries.length;
+      batchOps.push(db.delete(schema.categoryEntries));
+    }
+    if (scopes.evaluationTypes) {
+      const evals = await db.select().from(schema.evaluationTypes);
+      summary.evaluationTypesCount = evals.length;
+      batchOps.push(db.delete(schema.evaluationTypes));
+    }
+    if (scopes.groups) {
+      const grps = await db.select().from(schema.groups);
+      summary.groupsCount = grps.length;
+      batchOps.push(db.delete(schema.groups));
+    }
+    if (scopes.fireBrigades) {
+      const brigades = await db.select().from(schema.fireBrigades);
+      summary.fireBrigadesCount = brigades.length;
+      batchOps.push(db.delete(schema.fireBrigades));
+    }
+    if (scopes.categoryTypes) {
+      const catTypes = await db.select().from(schema.categoryTypes);
+      summary.categoryTypesCount = catTypes.length;
+      batchOps.push(db.delete(schema.categoryTypes));
+    }
+
+    const preClearSnapshot = {
+      summary,
+      scopes: body.scopes,
+      clearedAt: new Date().toISOString(),
+    };
 
     const tvReset = db
       .update(schema.tvRuntimeState)
@@ -53,12 +101,14 @@ export async function onRequestPost(context: EventContext) {
       details: JSON.stringify(preClearSnapshot),
     });
 
-    // 3. Execute atomic transaction batch
-    await db.batch([deleteEntries, deleteGroups, deleteBrigades, tvReset, auditInsert] as any);
+    batchOps.push(tvReset, auditInsert);
+
+    // 2. Execute atomic transaction batch
+    await db.batch(batchOps as any);
 
     return jsonResponse({
       message: 'Datenbank erfolgreich zurückgesetzt',
-      summary: preClearSnapshot.summary,
+      summary,
     });
   } catch (err: any) {
     return jsonError(err.message, 500);

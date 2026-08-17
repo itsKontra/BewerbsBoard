@@ -333,7 +333,7 @@ export function ResultsTab() {
                     };
                     const isSaving = savingId === entry.id;
                     const catType = categoryTypes.find((t) => t.id === entry.categoryTypeId || t.name === entry.categoryTypeName);
-                    const showRelay = entry.hasRelayRace ?? catType?.hasRelayRace ?? false;
+                    const showRelay = Boolean(entry.hasRelayRace ?? catType?.hasRelayRace ?? false);
 
                     return (
                       <div

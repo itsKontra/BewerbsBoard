@@ -377,4 +377,14 @@ describe('SettingsTab Component', () => {
       expect(body.tvPresentation.adminSplashEnabled).toBe(false);
     });
   });
+
+  it('switches to Datenverwaltung subtab and displays data management controls', async () => {
+    render(<SettingsTab />);
+
+    const dataTabBtn = await screen.findByRole('button', { name: /Datenverwaltung/i });
+    fireEvent.click(dataTabBtn);
+
+    expect(screen.getByText('Daten-Export & Import')).toBeInTheDocument();
+    expect(screen.getByText('Bewerbsdaten exportieren (JSON)')).toBeInTheDocument();
+  });
 });

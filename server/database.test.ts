@@ -194,6 +194,46 @@ describe('self-hosted SQLite database', () => {
     }
   })
 
+  it('selectively resets scopes with cascading dependency enforcement', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-database-selective-'))
+    const databasePath = join(directory, 'scoreboard.sqlite')
+
+    try {
+      const database = createDatabase(databasePath)
+      try {
+        database.administration.createBrigade({ id: 'brigade-1', name: 'FF Beispiel' })
+        database.drizzle.run(sql`INSERT OR IGNORE INTO competition_classes (id, name) VALUES ('cc-aktiv', 'AKTIV')`)
+        database.administration.createGroup({ id: 'group-1', fireBrigadeId: 'brigade-1', name: 'Gruppe 1', competitionClassId: 'cc-aktiv' })
+        database.drizzle.run(sql`INSERT OR IGNORE INTO category_types (id, name, competition_class_id, has_relay_race) VALUES ('ct-bronze', 'bronze-aktiv', 'cc-aktiv', 0)`)
+        database.scoring.createEntry({ id: 'entry-1', groupId: 'group-1', categoryTypeId: 'ct-bronze', runStatus: 'OPEN', startOrderPosition: 1, attackTimeHundredths: null, attackTimeErrors: null, relayRaceHundredths: null, relayRaceErrors: null })
+
+        // 1. Reset only categoryEntries
+        const summary1 = database.clearCompetitionAndRuntime(1_700_000_000_000, { categoryEntries: true })
+        expect(summary1.categoryEntriesCount).toBe(1)
+        expect(summary1.groupsCount).toBeUndefined()
+        expect(database.scoring.listEntries()).toHaveLength(0)
+        expect(database.administration.listGroups()).toHaveLength(1)
+        expect(database.administration.listBrigades()).toHaveLength(1)
+
+        // Re-create entry
+        database.scoring.createEntry({ id: 'entry-2', groupId: 'group-1', categoryTypeId: 'ct-bronze', runStatus: 'OPEN', startOrderPosition: 1, attackTimeHundredths: null, attackTimeErrors: null, relayRaceHundredths: null, relayRaceErrors: null })
+
+        // 2. Reset fireBrigades -> cascades to groups & entries
+        const summary2 = database.clearCompetitionAndRuntime(1_700_000_000_000, { fireBrigades: true })
+        expect(summary2.categoryEntriesCount).toBe(1)
+        expect(summary2.groupsCount).toBe(1)
+        expect(summary2.fireBrigadesCount).toBe(1)
+        expect(database.scoring.listEntries()).toHaveLength(0)
+        expect(database.administration.listGroups()).toHaveLength(0)
+        expect(database.administration.listBrigades()).toHaveLength(0)
+      } finally {
+        database.close()
+      }
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   it('manages competition classes, category types, and evaluation types with referential integrity', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'scoreboard-masterdata-'))
     const databasePath = join(directory, 'scoreboard.sqlite')

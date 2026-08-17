@@ -509,7 +509,7 @@ export function EvaluationTypesSection({
                             </span>
                           </>
                         )}
-                        {evalItem.isBrigadePairing && (
+                        {Boolean(evalItem.isBrigadePairing) && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-950/80 border border-amber-700/60 text-amber-300" title={text.pairingTitle}>
                             {text.pairingBadge}
                           </span>

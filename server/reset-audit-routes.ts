@@ -1,7 +1,7 @@
 import type { Hono } from 'hono'
 
 import type { SelfHostedAppEnvironment } from './app.js'
-import type { SelfHostedDatabase } from './database.js'
+import type { ResetScopes, SelfHostedDatabase } from './database.js'
 
 const RESET_CONFIRMATION = 'LÖSCHEN'
 
@@ -16,20 +16,23 @@ export function registerResetAndAuditRoutes(app: Hono<SelfHostedAppEnvironment>,
   })
 
   app.post('/api/admin/reset', async (context) => {
-    const body = await context.req.json().catch(() => ({})) as { confirmationKeyword?: unknown }
+    const body = await context.req.json().catch(() => ({})) as {
+      confirmationKeyword?: unknown
+      scopes?: ResetScopes
+    }
     if (body.confirmationKeyword !== RESET_CONFIRMATION) {
       return context.json({ error: "Ungültiges Bestätigungswort. Es muss exakt 'LÖSCHEN' eingegeben werden." }, 400)
     }
 
     const timestamp = Date.now()
     const summary = database.transaction(() => {
-      const counts = database.clearCompetitionAndRuntime(timestamp)
+      const counts = database.clearCompetitionAndRuntime(timestamp, body.scopes)
       database.audit.record({
         id: crypto.randomUUID(),
         timestamp,
         user: context.get('adminUser') ?? 'system',
         action: 'DATABASE_CLEAR',
-        details: { summary: counts, clearedAt: new Date(timestamp).toISOString() },
+        details: { summary: counts, scopes: body.scopes, clearedAt: new Date(timestamp).toISOString() },
       })
       return counts
     })

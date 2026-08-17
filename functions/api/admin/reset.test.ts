@@ -97,4 +97,23 @@ describe('Database Reset API Endpoint (/api/admin/reset)', () => {
     const ops = mockBatchCalls[0];
     expect(ops.length).toBeGreaterThanOrEqual(5); // delete entries, groups, brigades, update tv, insert audit
   });
+
+  it('handles selective scopes with dependency cascading', async () => {
+    const ctx = createMockContext({
+      confirmationKeyword: 'LÖSCHEN',
+      scopes: { categoryEntries: true, groups: false, fireBrigades: false },
+    });
+    const res = await onRequestPost(ctx);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.message).toContain('erfolgreich zurückgesetzt');
+    expect(json.summary.categoryEntriesCount).toBeDefined();
+    expect(json.summary.groupsCount).toBeUndefined();
+
+    expect(mockBatchCalls).toHaveLength(1);
+    const ops = mockBatchCalls[0];
+    // 1 delete (categoryEntries) + 1 tvReset + 1 auditInsert = 3 ops
+    expect(ops).toHaveLength(3);
+  });
 });

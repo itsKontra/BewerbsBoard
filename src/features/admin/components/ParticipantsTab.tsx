@@ -485,11 +485,15 @@ export function ParticipantsTab() {
                     <option value="">
                       {availableGroups.length > 0 ? uiText.admin.participants.selectGroup : uiText.admin.participants.noAvailableGroups}
                     </option>
-                    {availableGroups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.fireBrigadeName ? `${g.fireBrigadeName} - ` : ''}{g.name} ({g.competitionClass})
-                      </option>
-                    ))}
+                    {availableGroups.map((g) => {
+                      const brigade = brigades.find((b) => b.id === g.fireBrigadeId);
+                      const brigadeName = brigade?.name || g.fireBrigadeName;
+                      return (
+                        <option key={g.id} value={g.id}>
+                          {brigadeName ? `${brigadeName} - ` : ''}{g.name}
+                        </option>
+                      );
+                    })}
                   </select>
                   <button
                     type="submit"

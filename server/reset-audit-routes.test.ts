@@ -99,4 +99,45 @@ describe('self-hosted reset and audit routes', () => {
       await rm(directory, { recursive: true, force: true })
     }
   })
+
+  it('selectively resets scopes via POST /api/admin/reset API', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-reset-scopes-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+
+    try {
+      const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+      const adminHeaders = { 'Content-Type': 'application/json', 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' }
+
+      const { sql } = await import('drizzle-orm')
+      database.drizzle.run(sql`INSERT OR IGNORE INTO competition_classes (id, name) VALUES ('cc-aktiv', 'AKTIV')`)
+      database.drizzle.run(sql`INSERT OR IGNORE INTO category_types (id, name, competition_class_id, has_relay_race) VALUES ('ct-bronze-aktiv', 'bronze-aktiv', 'cc-aktiv', 0)`)
+      const brigade = await app.request('/api/admin/brigades', { method: 'POST', headers: adminHeaders, body: JSON.stringify({ name: 'FF Beispiel' }) })
+      const { id: brigadeId } = await brigade.json() as { id: string }
+      const group = await app.request('/api/admin/groups', { method: 'POST', headers: adminHeaders, body: JSON.stringify({ fireBrigadeId: brigadeId, name: 'Gruppe 1', competitionClassId: 'cc-aktiv' }) })
+      const { id: groupId } = await group.json() as { id: string }
+      await app.request('/api/admin/category-entries', { method: 'POST', headers: adminHeaders, body: JSON.stringify({ groupId, categoryTypeId: 'ct-bronze-aktiv' }) })
+
+      // Selective reset of only categoryEntries
+      const reset = await app.request('/api/admin/reset', {
+        method: 'POST',
+        headers: adminHeaders,
+        body: JSON.stringify({
+          confirmationKeyword: 'LÖSCHEN',
+          scopes: { categoryEntries: true, groups: false, fireBrigades: false },
+        }),
+      })
+
+      expect(reset.status).toBe(200)
+      await expect(reset.json()).resolves.toEqual({
+        message: 'Datenbank erfolgreich zurückgesetzt',
+        summary: { categoryEntriesCount: 1 },
+      })
+      await expect((await app.request('/api/admin/category-entries', { headers: adminHeaders })).json()).resolves.toEqual([])
+      await expect((await app.request('/api/admin/groups', { headers: adminHeaders })).json()).resolves.toHaveLength(1)
+      await expect((await app.request('/api/admin/brigades', { headers: adminHeaders })).json()).resolves.toHaveLength(1)
+    } finally {
+      database.close()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
 })

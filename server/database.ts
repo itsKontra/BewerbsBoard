@@ -4,6 +4,12 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { resolve } from 'node:path'
 
 import { createConfigurationRepository, type ConfigurationRepository } from './configuration.js'
+import type {
+  DataExportEnvelope,
+  PreflightSummary,
+  EntityImportCount,
+} from '../shared/domain/data-management.js'
+import { validateDataExportEnvelope } from '../shared/domain/data-management.js'
 
 export interface TvRuntimeState {
   id: string
@@ -32,10 +38,20 @@ export interface AuditLogPage {
   total: number
 }
 
+export interface ResetScopes {
+  categoryEntries?: boolean
+  groups?: boolean
+  fireBrigades?: boolean
+  evaluationTypes?: boolean
+  categoryTypes?: boolean
+}
+
 export interface ResetSummary {
-  fireBrigadesCount: number
-  groupsCount: number
-  categoryEntriesCount: number
+  fireBrigadesCount?: number
+  groupsCount?: number
+  categoryEntriesCount?: number
+  evaluationTypesCount?: number
+  categoryTypesCount?: number
 }
 
 export interface FireBrigade {
@@ -138,7 +154,7 @@ export interface SelfHostedDatabase {
     listPage(page: number, limit: number, search: string): AuditLogPage
     record(record: AuditRecord): void
   }
-  clearCompetitionAndRuntime(updatedAt: number): ResetSummary
+  clearCompetitionAndRuntime(updatedAt: number, scopes?: ResetScopes): ResetSummary
   readonly scoring: {
     listEntries(): CategoryEntryDetails[]
     findEntry(id: string): CategoryEntry | undefined
@@ -186,6 +202,11 @@ export interface SelfHostedDatabase {
     }>): EvaluationType | undefined
     deleteEvaluationType(id: string): EvaluationType | undefined
   }
+  readonly dataManagement: {
+    exportAll(): DataExportEnvelope
+    preflightImport(envelope: DataExportEnvelope): PreflightSummary
+    importAll(envelope: DataExportEnvelope, user: string): PreflightSummary
+  }
   getConnectionSettings(): ConnectionSettings
   getTvRuntimeState(): TvRuntimeState | undefined
   setTvRuntimeState(state: Omit<TvRuntimeState, 'id'>): TvRuntimeState
@@ -221,7 +242,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
     order: Number(row.order ?? 1),
   })
 
-  return {
+  const self: SelfHostedDatabase = {
     drizzle: database,
     close: () => sqlite.close(),
     configuration: createConfigurationRepository(sqlite),
@@ -328,15 +349,54 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         )
       },
     },
-    clearCompetitionAndRuntime: (updatedAt) => {
-      const summary = {
-        fireBrigadesCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM fire_brigades').get() as { count: number }).count,
-        groupsCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM groups').get() as { count: number }).count,
-        categoryEntriesCount: (sqlite.prepare('SELECT COUNT(*) AS count FROM category_entries').get() as { count: number }).count,
+    clearCompetitionAndRuntime: (updatedAt, rawScopes) => {
+      const scopes: Required<ResetScopes> = {
+        categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
+        groups: rawScopes?.groups ?? (rawScopes ? false : true),
+        fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+        evaluationTypes: rawScopes?.evaluationTypes ?? false,
+        categoryTypes: rawScopes?.categoryTypes ?? false,
       }
-      sqlite.prepare('DELETE FROM category_entries').run()
-      sqlite.prepare('DELETE FROM groups').run()
-      sqlite.prepare('DELETE FROM fire_brigades').run()
+
+      // Enforce dependency resolution
+      if (scopes.fireBrigades) {
+        scopes.groups = true
+        scopes.categoryEntries = true
+      }
+      if (scopes.groups) {
+        scopes.categoryEntries = true
+      }
+      if (scopes.categoryTypes) {
+        scopes.evaluationTypes = true
+        scopes.categoryEntries = true
+      }
+      if (scopes.evaluationTypes) {
+        scopes.categoryEntries = true
+      }
+
+      const summary: ResetSummary = {}
+
+      if (scopes.categoryEntries) {
+        summary.categoryEntriesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_entries').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM category_entries').run()
+      }
+      if (scopes.evaluationTypes) {
+        summary.evaluationTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM evaluation_types').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM evaluation_types').run()
+      }
+      if (scopes.groups) {
+        summary.groupsCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM groups').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM groups').run()
+      }
+      if (scopes.fireBrigades) {
+        summary.fireBrigadesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM fire_brigades').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM fire_brigades').run()
+      }
+      if (scopes.categoryTypes) {
+        summary.categoryTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_types').get() as { count: number }).count
+        sqlite.prepare('DELETE FROM category_types').run()
+      }
+
       sqlite.prepare(`UPDATE tv_runtime_state SET mode = 'ROTATION', selected_category_id = NULL, updated_at = ? WHERE id = 'default'`).run(updatedAt)
       return summary
     },
@@ -346,8 +406,8 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
           e.run_status AS runStatus, e.start_order_position AS startOrderPosition,
           e.attack_time_hundredths AS attackTimeHundredths,
           e.attack_time_errors AS attackTimeErrors,
-          e.relay_race_hundredths AS relayRaceHundredths,
-          e.relay_race_errors AS relayRaceErrors,
+          relay_race_hundredths AS relayRaceHundredths,
+          relay_race_errors AS relayRaceErrors,
           ct.name AS categoryTypeName,
           ct.has_relay_race AS hasRelayRace,
           g.name AS groupName,
@@ -548,6 +608,262 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         return existing as any
       },
     },
+    dataManagement: {
+      exportAll: (): DataExportEnvelope => {
+        const appConfigRows = sqlite.prepare('SELECT key, value_json AS valueJson, updated_at AS updatedAt FROM app_config ORDER BY key').all() as any[]
+        const compClasses = sqlite.prepare('SELECT id, name FROM competition_classes ORDER BY id').all() as any[]
+        const brigades = sqlite.prepare('SELECT id, name FROM fire_brigades ORDER BY id').all() as any[]
+        const catTypes = sqlite.prepare('SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types ORDER BY id').all().map((r: any) => ({
+          ...r,
+          hasRelayRace: Boolean(r.hasRelayRace),
+        })) as any[]
+        const evalTypes = (sqlite.prepare(`
+          SELECT
+            id, name,
+            category_type_id_1 AS categoryTypeId1,
+            category_type_id_2 AS categoryTypeId2,
+            exclude_relay_race AS excludeRelayRace,
+            is_brigade_pairing AS isBrigadePairing,
+            public,
+            public_tv AS publicTv,
+            COALESCE(display_duration_seconds, 10) AS displayDurationSeconds,
+            COALESCE("order", 1) AS "order"
+          FROM evaluation_types
+          ORDER BY "order", id
+        `).all() as any[]).map((r: any) => ({
+          ...r,
+          excludeRelayRace: Boolean(r.excludeRelayRace),
+          isBrigadePairing: Boolean(r.isBrigadePairing),
+          public: Boolean(r.public),
+          publicTv: Boolean(r.publicTv),
+        })) as any[]
+        const grps = sqlite.prepare('SELECT id, fire_brigade_id AS fireBrigadeId, competition_class_id AS competitionClassId, name FROM groups ORDER BY id').all() as any[]
+        const entries = sqlite.prepare(`
+          SELECT
+            id, group_id AS groupId, category_type_id AS categoryTypeId,
+            run_status AS runStatus, start_order_position AS startOrderPosition,
+            attack_time_hundredths AS attackTimeHundredths,
+            attack_time_errors AS attackTimeErrors,
+            relay_race_hundredths AS relayRaceHundredths,
+            relay_race_errors AS relayRaceErrors
+          FROM category_entries
+          ORDER BY id
+        `).all() as any[]
+
+        return {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          appVersion: '1.0.0',
+          data: {
+            appConfig: appConfigRows,
+            competitionClasses: compClasses,
+            fireBrigades: brigades,
+            categoryTypes: catTypes,
+            evaluationTypes: evalTypes,
+            groups: grps,
+            categoryEntries: entries,
+          },
+        }
+      },
+      preflightImport: (envelope: DataExportEnvelope): PreflightSummary => {
+        const validation = validateDataExportEnvelope(envelope)
+        if (!validation.isValid || !validation.envelope) {
+          return {
+            isValid: false,
+            errors: validation.errors,
+            summary: {
+              appConfig: { total: 0, toInsert: 0, toUpdate: 0 },
+              competitionClasses: { total: 0, toInsert: 0, toUpdate: 0 },
+              fireBrigades: { total: 0, toInsert: 0, toUpdate: 0 },
+              categoryTypes: { total: 0, toInsert: 0, toUpdate: 0 },
+              evaluationTypes: { total: 0, toInsert: 0, toUpdate: 0 },
+              groups: { total: 0, toInsert: 0, toUpdate: 0 },
+              categoryEntries: { total: 0, toInsert: 0, toUpdate: 0 },
+            },
+            totalEntities: 0,
+          }
+        }
+
+        const data = validation.envelope.data
+
+        const countTable = (
+          items: any[],
+          tableName: string,
+          pkCol: string = 'id',
+          itemKey: (item: any) => string = (item) => item.id
+        ): EntityImportCount => {
+          let toUpdate = 0
+          let toInsert = 0
+          for (const item of items) {
+            const keyVal = itemKey(item)
+            const exists = sqlite.prepare(`SELECT 1 FROM ${tableName} WHERE ${pkCol} = ? LIMIT 1`).get(keyVal) !== undefined
+            if (exists) {
+              toUpdate++
+            } else {
+              toInsert++
+            }
+          }
+          return { total: items.length, toInsert, toUpdate }
+        }
+
+        const summary = {
+          appConfig: countTable(data.appConfig, 'app_config', 'key', (item) => item.key),
+          competitionClasses: countTable(data.competitionClasses, 'competition_classes'),
+          fireBrigades: countTable(data.fireBrigades, 'fire_brigades'),
+          categoryTypes: countTable(data.categoryTypes, 'category_types'),
+          evaluationTypes: countTable(data.evaluationTypes, 'evaluation_types'),
+          groups: countTable(data.groups, 'groups'),
+          categoryEntries: countTable(data.categoryEntries, 'category_entries'),
+        }
+
+        const totalEntities = Object.values(summary).reduce((sum, item) => sum + item.total, 0)
+
+        return {
+          isValid: true,
+          errors: [],
+          summary,
+          totalEntities,
+        }
+      },
+      importAll: (envelope: DataExportEnvelope, user: string): PreflightSummary => {
+        const preflight = self.dataManagement.preflightImport(envelope)
+        if (!preflight.isValid || !envelope.data) {
+          throw new Error(`Ungültige Importdaten: ${preflight.errors.join('; ')}`)
+        }
+
+        const data = envelope.data
+
+        sqlite.transaction(() => {
+          // 1. app_config
+          const upsertAppConfig = sqlite.prepare(`
+            INSERT INTO app_config (key, value_json, updated_at)
+            VALUES (?, ?, ?)
+            ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
+          `)
+          for (const item of data.appConfig) {
+            upsertAppConfig.run(item.key, item.valueJson, item.updatedAt ?? Date.now())
+          }
+
+          // 2. competition_classes
+          const upsertCompClass = sqlite.prepare(`
+            INSERT INTO competition_classes (id, name)
+            VALUES (?, ?)
+            ON CONFLICT(id) DO UPDATE SET name = excluded.name
+          `)
+          for (const item of data.competitionClasses) {
+            upsertCompClass.run(item.id, item.name)
+          }
+
+          // 3. fire_brigades
+          const upsertBrigade = sqlite.prepare(`
+            INSERT INTO fire_brigades (id, name)
+            VALUES (?, ?)
+            ON CONFLICT(id) DO UPDATE SET name = excluded.name
+          `)
+          for (const item of data.fireBrigades) {
+            upsertBrigade.run(item.id, item.name)
+          }
+
+          // 4. category_types
+          const upsertCatType = sqlite.prepare(`
+            INSERT INTO category_types (id, name, competition_class_id, has_relay_race)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET name = excluded.name, competition_class_id = excluded.competition_class_id, has_relay_race = excluded.has_relay_race
+          `)
+          for (const item of data.categoryTypes) {
+            upsertCatType.run(item.id, item.name, item.competitionClassId, item.hasRelayRace ? 1 : 0)
+          }
+
+          // 5. evaluation_types
+          const upsertEvalType = sqlite.prepare(`
+            INSERT INTO evaluation_types (id, name, category_type_id_1, category_type_id_2, exclude_relay_race, is_brigade_pairing, public, public_tv, display_duration_seconds, "order")
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              name = excluded.name,
+              category_type_id_1 = excluded.category_type_id_1,
+              category_type_id_2 = excluded.category_type_id_2,
+              exclude_relay_race = excluded.exclude_relay_race,
+              is_brigade_pairing = excluded.is_brigade_pairing,
+              public = excluded.public,
+              public_tv = excluded.public_tv,
+              display_duration_seconds = excluded.display_duration_seconds,
+              "order" = excluded."order"
+          `)
+          for (const item of data.evaluationTypes) {
+            const publicTv = item.publicTv !== undefined ? item.publicTv : item.public_tv
+            upsertEvalType.run(
+              item.id,
+              item.name,
+              item.categoryTypeId1,
+              item.categoryTypeId2 ?? null,
+              item.excludeRelayRace ? 1 : 0,
+              item.isBrigadePairing ? 1 : 0,
+              item.public !== false ? 1 : 0,
+              publicTv !== false ? 1 : 0,
+              item.displayDurationSeconds ?? 10,
+              item.order ?? 1,
+            )
+          }
+
+          // 6. groups
+          const upsertGroup = sqlite.prepare(`
+            INSERT INTO groups (id, fire_brigade_id, competition_class_id, name)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET fire_brigade_id = excluded.fire_brigade_id, competition_class_id = excluded.competition_class_id, name = excluded.name
+          `)
+          for (const item of data.groups) {
+            upsertGroup.run(item.id, item.fireBrigadeId, item.competitionClassId, item.name)
+          }
+
+          // 7. category_entries
+          const upsertEntry = sqlite.prepare(`
+            INSERT INTO category_entries (id, group_id, category_type_id, run_status, start_order_position, attack_time_hundredths, attack_time_errors, relay_race_hundredths, relay_race_errors)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              group_id = excluded.group_id,
+              category_type_id = excluded.category_type_id,
+              run_status = excluded.run_status,
+              start_order_position = excluded.start_order_position,
+              attack_time_hundredths = excluded.attack_time_hundredths,
+              attack_time_errors = excluded.attack_time_errors,
+              relay_race_hundredths = excluded.relay_race_hundredths,
+              relay_race_errors = excluded.relay_race_errors
+          `)
+          for (const item of data.categoryEntries) {
+            upsertEntry.run(
+              item.id,
+              item.groupId,
+              item.categoryTypeId,
+              item.runStatus ?? 'OPEN',
+              item.startOrderPosition ?? null,
+              item.attackTimeHundredths ?? null,
+              item.attackTimeErrors ?? null,
+              item.relayRaceHundredths ?? null,
+              item.relayRaceErrors ?? null,
+            )
+          }
+
+          // Record DATA_IMPORT in audit log
+          const timestamp = Date.now()
+          sqlite.prepare(`
+            INSERT INTO audit_log (id, timestamp, user, action, details)
+            VALUES (?, ?, ?, ?, ?)
+          `).run(
+            crypto.randomUUID(),
+            timestamp,
+            user,
+            'DATA_IMPORT',
+            JSON.stringify({
+              summary: preflight.summary,
+              totalEntities: preflight.totalEntities,
+              importedAt: new Date(timestamp).toISOString(),
+            }),
+          )
+        })()
+
+        return preflight
+      },
+    },
     getConnectionSettings: () => ({
       busyTimeoutMilliseconds: pragmaValue(sqlite, 'busy_timeout'),
       foreignKeys: pragmaValue(sqlite, 'foreign_keys') === 1,
@@ -575,6 +891,8 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
     `).all().map((row) => (row as { name: string }).name),
     transaction: (work) => sqlite.transaction(work)(),
   }
+
+  return self
 }
 
 function pragmaValue(sqlite: Database.Database, name: string): number {

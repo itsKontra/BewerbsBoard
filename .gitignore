@@ -37,3 +37,4 @@ dist-server
 # Agents
 .agents/
 .codex/
+skills-lock.json

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { DEFAULT_TV_PRESENTATION, TV_THEMES, type TvPresentationConfig } from '../../../../shared/domain/tv-presentation';
 import { TV_PRESENTATION_STYLES } from '../../tv/utils/tv-presentation-styles';
 import { uiText } from '../../../ui-text';
+import { DataManagementSection } from './settings/DataManagementSection';
 
 export interface ServerInfoState {
   serverIp: string;
@@ -22,7 +23,7 @@ export interface ConfigState {
   serverInfo?: ServerInfoState;
 }
 
-export type SettingsSubTab = 'general' | 'qr-code';
+export type SettingsSubTab = 'general' | 'qr-code' | 'data-management';
 
 interface SettingsSubTabConfig {
   id: SettingsSubTab;
@@ -33,6 +34,7 @@ interface SettingsSubTabConfig {
 const SETTINGS_SUB_TABS: SettingsSubTabConfig[] = [
   { id: 'general', label: uiText.admin.settings.generalTab, icon: '🏷️' },
   { id: 'qr-code', label: uiText.admin.settings.qrTab, icon: '📱' },
+  { id: 'data-management', label: uiText.admin.settings.dataTab, icon: '💾' },
 ];
 
 const DEFAULT_CONFIG: ConfigState = {
@@ -598,8 +600,15 @@ export function SettingsTab() {
           </section>
         </div>
 
+        {/* ========================================================================= */}
+        {/* 3. SUB-TAB: DATENVERWALTUNG (DATA MANAGEMENT)                            */}
+        {/* ========================================================================= */}
+        <div className={activeSubTab === 'data-management' ? 'block' : 'hidden'}>
+          <DataManagementSection />
+        </div>
+
         {/* Action Buttons */}
-        {isDirty && (
+        {isDirty && activeSubTab !== 'data-management' && (
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-950/90 border-t border-neutral-800 backdrop-blur-md flex items-center justify-end space-x-4 z-40 lg:pl-72 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.5)]">
             <span className="text-sm text-neutral-400 font-medium hidden @sm:inline-block">
               {uiText.admin.settings.unsaved}
