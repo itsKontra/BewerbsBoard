@@ -487,7 +487,7 @@ export function ParticipantsTab() {
                     </option>
                     {availableGroups.map((g) => (
                       <option key={g.id} value={g.id}>
-                        {g.fireBrigadeName ? `${g.fireBrigadeName} - ` : ''}{g.name} ({g.competitionClass})
+                        {g.fireBrigadeName ? `${g.fireBrigadeName} - ` : ''}{g.name}
                       </option>
                     ))}
                   </select>
