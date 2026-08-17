@@ -347,6 +347,7 @@ ask DEPLOY_TARGET "Enter target option [1/2/3] (default: 1):"
 # BRANCH 1: Local Only (Docker Compose with Local Auth)
 # ══════════════════════════════════════════════════════════════════════════
 if [[ "$DEPLOY_TARGET" == "1" ]]; then
+  TOTAL_STAGES=6
   stage "Local Docker — Server Port & Network Preflight"
   say "Configure host bind address and listening port."
   
@@ -388,11 +389,29 @@ if [[ "$DEPLOY_TARGET" == "1" ]]; then
   fi
   write_env LOCAL_AUTH_SECRET "$LOCAL_AUTH_SECRET"
 
+  stage "Local Docker — Host Network Info Collector (Optional)"
+  say "To display host interface names and addresses in the TV admin splash,"
+  say "a systemd collector service can be installed on the Linux Docker host."
+  
+  COMPOSE_ARGS="-f compose.yaml"
+  
+  if confirm "Install the host network info collector? (requires sudo)"; then
+    step "Installing network-info-writer.sh to /usr/local/lib/bewerbsboard..."
+    sudo install -Dm755 deploy/network-info-writer.sh /usr/local/lib/bewerbsboard/network-info-writer.sh
+    step "Installing and enabling systemd service..."
+    sudo install -Dm644 deploy/bewerbsboard-network-info.service /etc/systemd/system/bewerbsboard-network-info.service
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now bewerbsboard-network-info.service
+    
+    COMPOSE_ARGS="-f compose.yaml -f compose.network-info.yaml"
+    say "Added compose.network-info.yaml to the deployment configuration."
+  fi
+
   stage "Local Docker — Compose Deployment"
   say "Building and launching Docker container..."
-  step "Running: docker compose --project-name $PROJECT_NAME -f compose.yaml up -d --build --wait"
+  step "Running: docker compose --project-name $PROJECT_NAME $COMPOSE_ARGS up -d --build --wait"
 
-  docker compose --project-name "$PROJECT_NAME" -f compose.yaml up -d --build --wait
+  docker compose --project-name "$PROJECT_NAME" $COMPOSE_ARGS up -d --build --wait
 
   stage "Healthcheck & Verification"
   say "Verifying application status..."
@@ -408,11 +427,25 @@ if [[ "$DEPLOY_TARGET" == "1" ]]; then
     fi
   fi
 
-  _generate_control_scripts "compose.yaml"
+  _generate_control_scripts "$COMPOSE_ARGS"
 
   finish
-  printf '%s  Admin Login:%s http://%s:%s/admin (User: %s)\n' "$GREEN" "$RESET" "$HEALTHCHECK_HOST" "$APP_PORT" "$LOCAL_AUTH_USER"
-  printf '%s  TV Display:%s  http://%s:%s/tv?theme=1\n\n' "$GREEN" "$RESET" "$HEALTHCHECK_HOST" "$APP_PORT"
+  DISPLAY_HOST="$APP_BIND_ADDRESS"
+  if [[ "$DISPLAY_HOST" == "0.0.0.0" ]]; then
+    if command -v ip >/dev/null 2>&1; then
+      LAN_IP=$(ip -o addr show scope global 2>/dev/null | awk '$3 == "inet" && $2 !~ /^(docker|br-|veth|cni|tun|tap|lo)/ { split($4, a, "/"); print a[1]; exit }')
+      if [[ -n "$LAN_IP" ]]; then
+        DISPLAY_HOST="$LAN_IP"
+      else
+        DISPLAY_HOST="127.0.0.1"
+      fi
+    else
+      DISPLAY_HOST="127.0.0.1"
+    fi
+  fi
+
+  printf '%s  Admin Login:%s http://%s:%s/admin (User: %s)\n' "$GREEN" "$RESET" "$DISPLAY_HOST" "$APP_PORT" "$LOCAL_AUTH_USER"
+  printf '%s  TV Display:%s  http://%s:%s/tv?theme=1\n\n' "$GREEN" "$RESET" "$DISPLAY_HOST" "$APP_PORT"
   say "Quick management commands:"
   say "  • Start:  ./app.sh start"
   say "  • Stop:   ./app.sh stop"
