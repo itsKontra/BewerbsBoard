@@ -78,8 +78,6 @@ The default endpoints are:
 
 Without `.env`, the Compose default accepts connections only from the Docker host. The supplied `example.env` uses `0.0.0.0` for LAN access; prefer a specific LAN address when possible, and expose every interface only when the host firewall or a trusted network provides the required protection.
 
-For an authenticated reverse proxy, use [`deploy/nginx-scoreboard.conf.example`](deploy/nginx-scoreboard.conf.example) as the route and trusted-header contract. TLS, DNS, the identity provider, and proxy configuration remain operator responsibilities.
-
 ### Option 3: Cloudflare Pages with Wrangler
 
 This deployment uses Cloudflare Pages Functions, D1 for relational data, and Workers KV for application/display configuration. It requires Node.js 20 or newer, npm, and a Cloudflare account.
@@ -127,6 +125,7 @@ Copy [`example.env`](example.env) to `.env`. Docker Compose loads the file autom
 | --- | --- | --- | --- |
 | `APP_BIND_ADDRESS` | No | `127.0.0.1` | Address on the Docker host to which the container port is published. `example.env` sets `0.0.0.0` for LAN access; use a specific LAN address when possible because `0.0.0.0` exposes every interface. |
 | `APP_PORT` | No | `3080` | Port exposed on the Docker host. The container itself listens on port `8080`. |
+| `HOST_NETWORK_INFO_DIRECTORY` | No | `/var/lib/bewerbsboard` | Host directory used by the optional `compose.network-info.yaml` overlay. |
 | `LOCAL_AUTH_USER` | For built-in login | — | Administrator username. Local authentication is enabled only when both this and `LOCAL_AUTH_PASSWORD` are present. |
 | `LOCAL_AUTH_PASSWORD` | For built-in login | — | Administrator password. Use a strong, unique value. |
 | `LOCAL_AUTH_SECRET` | Recommended with built-in login | Random per restart | Secret used to sign the eight-hour session cookie. Set a stable random value so restarts do not invalidate every session. Generate one with `openssl rand -hex 32`. |
@@ -271,6 +270,25 @@ An Odroid, Raspberry Pi, or similar Debian device can run Firefox in kiosk mode 
 5. To connect the headless device to an existing wireless network instead, follow [`scripts/setup-debian-wifi.md`](scripts/setup-debian-wifi.md).
 
 The device setup script changes display-manager settings, configures automatic login, replaces Firefox policy/profile data, and installs system packages. Use it only on a dedicated kiosk device after reviewing it.
+
+### Host network addresses in the TV display (Optional)
+
+This feature is designed for standalone setups (such as a Raspberry Pi or set-top box running both Docker and the TV browser in kiosk mode). It displays the host's actual network IP addresses directly on the TV display, allowing administrators to easily discover and access the admin interface when connecting the device to an unfamiliar or DHCP-managed network.
+
+Docker cannot inspect the host's network interfaces. The collector is optional; without it, the application starts normally and reports only addresses visible inside its container. To display host interface names and addresses in the TV admin splash, install the collector on the Linux Docker host:
+
+```sh
+sudo install -Dm755 deploy/network-info-writer.sh /usr/local/lib/bewerbsboard/network-info-writer.sh
+sudo install -Dm644 deploy/bewerbsboard-network-info.service /etc/systemd/system/bewerbsboard-network-info.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now bewerbsboard-network-info.service
+```
+
+The service creates `/var/lib/bewerbsboard`, then refreshes `network_info.txt` there every 10 seconds. Enable the corresponding read-only container mount with the optional Compose overlay:
+
+```sh
+docker compose -f compose.yaml -f compose.network-info.yaml up -d --build
+```
 
 ## License
 

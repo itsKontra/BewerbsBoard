@@ -1,0 +1,15 @@
+[Unit]
+Description=Write host network addresses for bewerbsboard
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+StateDirectory=bewerbsboard
+Environment=NETWORK_INFO_FILE=/var/lib/bewerbsboard/network_info.txt
+ExecStart=/usr/local/lib/bewerbsboard/network-info-writer.sh
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -144,7 +144,7 @@ sudo rm -rf /home/app/.mozilla
 # ---------------------------------------------------------
 echo "Installing Docker and Docker Compose..."
 # Install Docker and standard Compose from Debian repositories
-sudo apt install -y docker.io docker-compose
+sudo apt install -y docker.io docker-compose docker-cli
 
 # Ensure the Docker daemon starts automatically on boot
 sudo systemctl enable docker

@@ -1,0 +1,9 @@
+services:
+  app:
+    environment:
+      NETWORK_INFO_FILE: /app/network-info/network_info.txt
+    volumes:
+      - type: bind
+        source: ${HOST_NETWORK_INFO_DIRECTORY:-/var/lib/bewerbsboard}
+        target: /app/network-info
+        read_only: true

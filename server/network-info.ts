@@ -1,4 +1,6 @@
 import os from 'node:os';
+import { readFileSync } from 'node:fs';
+import { isIPv4 } from 'node:net';
 
 export interface NetworkInterfaceDetail {
   interfaceName: string;
@@ -16,6 +18,8 @@ export interface GetServerNetworkInfoOptions {
   networkInterfacesFn?: () => NodeJS.Dict<os.NetworkInterfaceInfo[]>;
   env?: Record<string, string | undefined>;
   requestHost?: string | null;
+  networkInfoFilePath?: string;
+  readNetworkInfoFile?: (path: string) => string;
 }
 
 export function getServerNetworkInfo(options: GetServerNetworkInfoOptions = {}): ServerNetworkInfo {
@@ -26,6 +30,7 @@ export function getServerNetworkInfo(options: GetServerNetworkInfoOptions = {}):
 
   const interfaces = getInterfaces();
   const availableIps: NetworkInterfaceDetail[] = [];
+  const hostAvailableIps: NetworkInterfaceDetail[] = [];
 
   if (interfaces) {
     for (const [name, infos] of Object.entries(interfaces)) {
@@ -40,6 +45,22 @@ export function getServerNetworkInfo(options: GetServerNetworkInfoOptions = {}):
           });
         }
       }
+    }
+  }
+
+  const networkInfoFilePath = options.networkInfoFilePath ?? env.NETWORK_INFO_FILE;
+  if (networkInfoFilePath) {
+    const readNetworkInfoFile = options.readNetworkInfoFile ?? ((path: string) => readFileSync(path, 'utf8'));
+    try {
+      for (const detail of parseNetworkInfoFile(readNetworkInfoFile(networkInfoFilePath))) {
+        hostAvailableIps.push(detail);
+        if (!availableIps.some((available) => available.interfaceName === detail.interfaceName && available.ip === detail.ip)) {
+          availableIps.push(detail);
+        }
+      }
+    } catch {
+      // The host collector is optional. Continue with container interfaces when
+      // it has not created the bind-mounted file yet.
     }
   }
 
@@ -78,9 +99,12 @@ export function getServerNetworkInfo(options: GetServerNetworkInfoOptions = {}):
 
   // Primary IP selection: prefer physical LAN/WiFi IPs over docker/virtual bridges
   let primaryIp = '127.0.0.1';
-  if (availableIps.length > 0) {
-    // Sort to prioritize eth / wlan / en / Wi-Fi over docker0 / br- / veth
-    const prioritized = [...availableIps].sort((a, b) => {
+  const ipv4Ips = availableIps.filter((detail) => isIPv4(detail.ip));
+  if (ipv4Ips.length > 0) {
+    const hostIpv4Ips = hostAvailableIps.filter((detail) => isIPv4(detail.ip));
+    const primaryCandidates = hostIpv4Ips.length > 0 ? hostIpv4Ips : ipv4Ips;
+    // Within the preferred source, prioritize physical interfaces over virtual ones.
+    const prioritized = [...primaryCandidates].sort((a, b) => {
       const isVirtualA = /^(docker|br-|veth|cni|tun|tap)/i.test(a.interfaceName);
       const isVirtualB = /^(docker|br-|veth|cni|tun|tap)/i.test(b.interfaceName);
       if (isVirtualA && !isVirtualB) return 1;
@@ -99,4 +123,14 @@ export function getServerNetworkInfo(options: GetServerNetworkInfoOptions = {}):
     adminUrl,
     availableIps: availableIps.length > 0 ? availableIps : [{ interfaceName: 'loopback', ip: '127.0.0.1' }],
   };
+}
+
+function parseNetworkInfoFile(content: string): NetworkInterfaceDetail[] {
+  return content.split(/\r?\n/).flatMap((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return [];
+    const [interfaceName, ip] = trimmed.split(/\s+/, 2);
+    if (!interfaceName || !ip) return [];
+    return [{ interfaceName, ip }];
+  });
 }

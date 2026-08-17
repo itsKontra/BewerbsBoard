@@ -108,6 +108,43 @@ describe('getServerNetworkInfo', () => {
     expect(info.adminUrl).toBe('http://scoreboard.local:8080/admin');
   });
 
+  it('includes IPv4 addresses collected on the Docker host', () => {
+    const info = getServerNetworkInfo({
+      networkInterfacesFn: () => ({}),
+      env: { NETWORK_INFO_FILE: '/app/network_info.txt' },
+      readNetworkInfoFile: () => '# generated\nenp3s0\t192.168.1.50\n',
+    });
+
+    expect(info.serverIp).toBe('192.168.1.50');
+    expect(info.availableIps).toEqual([
+      { interfaceName: 'enp3s0', ip: '192.168.1.50' },
+    ]);
+  });
+
+  it('prefers a host IPv4 address over the container eth0 address', () => {
+    const mockInterfaces: Record<string, NetworkInterfaceInfo[]> = {
+      eth0: [
+        {
+          address: '172.18.0.2',
+          netmask: '255.255.0.0',
+          family: 'IPv4',
+          mac: '00:00:00:00:00:00',
+          internal: false,
+          cidr: '172.18.0.2/16',
+        },
+      ],
+    };
+
+    const info = getServerNetworkInfo({
+      networkInterfacesFn: () => mockInterfaces,
+      env: { NETWORK_INFO_FILE: '/app/network_info.txt' },
+      readNetworkInfoFile: () => 'enp3s0\t192.168.1.50\n',
+    });
+
+    expect(info.serverIp).toBe('192.168.1.50');
+    expect(info.adminUrl).toBe('http://192.168.1.50:3080/admin');
+  });
+
   it('falls back to 127.0.0.1 if no non-internal interfaces exist', () => {
     const info = getServerNetworkInfo({
       networkInterfacesFn: () => ({}),
