@@ -43,7 +43,11 @@ export async function onRequestPost(context: EventContext) {
         .where(eq(schema.categoryEntries.id, id));
     });
 
-    const auditInsert = buildAuditLog(db, user, 'REORDER_CATEGORY_ENTRIES', { categoryTypeId, count: orderedIds.length });
+    const auditInsert = buildAuditLog(db, user, 'REORDER_CATEGORY_ENTRIES', {
+      operation: 'REORDER',
+      previous_value: null,
+      new_value: { categoryTypeId, count: orderedIds.length, orderedIds }
+    });
 
     await db.batch([...updates, auditInsert] as any);
 

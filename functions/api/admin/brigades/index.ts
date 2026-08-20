@@ -27,6 +27,7 @@ export async function onRequestPost(context: EventContext) {
     await db.insert(fireBrigades).values(newBrigade);
     await logAudit(db, context.data.adminUser as string, 'CREATE_BRIGADE', {
       operation: 'CREATE',
+      previous_value: null,
       new_value: newBrigade,
     });
 

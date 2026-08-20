@@ -255,7 +255,11 @@ export async function onRequestDelete(context: EventContext) {
     const compactionUpdates = await getCompactionUpdatesForRemoval(db, categoryTypeId, entryId);
 
     const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
-    const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', { entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName });
+    const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', {
+      operation: 'DELETE',
+      previous_value: { entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName },
+      new_value: null
+    });
 
     await db.batch([deleteOp, ...compactionUpdates, auditInsert]);
 

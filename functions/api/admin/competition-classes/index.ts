@@ -21,6 +21,7 @@ export async function onRequestPost(context: EventContext) {
     await db.insert(competitionClasses).values(newClass);
     await logAudit(db, context.data.adminUser as string, 'CREATE_COMPETITION_CLASS', {
       operation: 'CREATE',
+      previous_value: null,
       new_value: newClass,
     });
 

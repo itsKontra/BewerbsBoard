@@ -30,10 +30,8 @@ export async function onRequestGet(context: EventContext) {
 
     await logAudit(db, user, 'DATA_EXPORT', {
       operation: 'EXPORT',
-      new_value: {
-        totalEntities,
-        exportedAt,
-      },
+      previous_value: null,
+      new_value: { format: 'json', exportedAt, totalEntities },
     });
 
     const envelope: DataExportEnvelope = {

@@ -124,6 +124,7 @@ export async function onRequestDelete(context: EventContext) {
         categoryTypeName1,
         categoryTypeName2,
       },
+      new_value: null,
     });
 
     return jsonResponse({ success: true, deletedId: id }, 200);

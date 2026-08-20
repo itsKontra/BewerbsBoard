@@ -124,7 +124,11 @@ export async function onRequestPost(context: EventContext) {
 
     const { groupName, categoryName } = await fetchAuditNames(db, groupId, resolvedCatType.id);
 
-    const auditInsert = buildAuditLog(db, user, 'CREATE_CATEGORY_ENTRY', { entryId: newEntryId, groupId, groupName, categoryTypeId: resolvedCatType.id, categoryName });
+    const auditInsert = buildAuditLog(db, user, 'CREATE_CATEGORY_ENTRY', {
+      operation: 'CREATE',
+      previous_value: null,
+      new_value: { entryId: newEntryId, groupId, groupName, categoryTypeId: resolvedCatType.id, categoryName }
+    });
 
     await db.batch([entryInsert, auditInsert]);
 

@@ -186,10 +186,10 @@ export async function onRequestPost(context: EventContext) {
       data.groups.length +
       data.categoryEntries.length;
 
-    // Audit log operation
     const auditOperation = buildAuditLog(db, user, 'DATA_IMPORT', {
-      totalEntities,
-      importedAt: new Date().toISOString(),
+      operation: 'IMPORT',
+      previous_value: null,
+      new_value: { totalEntities, importedAt: new Date().toISOString() },
     });
     operations.push(auditOperation);
 

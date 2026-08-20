@@ -70,6 +70,7 @@ export async function onRequestPost(context: EventContext) {
 
     await logAudit(db, context.data.adminUser as string, 'CREATE_GROUP', {
       operation: 'CREATE',
+      previous_value: null,
       new_value: {
         ...newGroup,
         competitionClassName: competitionClass[0].name,

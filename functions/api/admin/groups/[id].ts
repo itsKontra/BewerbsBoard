@@ -107,7 +107,8 @@ export async function onRequestDelete(context: EventContext) {
         ...deleted[0],
         fireBrigadeName,
         competitionClassName,
-      }
+      },
+      new_value: null,
     });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
