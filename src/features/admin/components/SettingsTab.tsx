@@ -236,29 +236,32 @@ export function SettingsTab() {
               <span>{uiText.admin.settings.livePreview}</span>
             </div>
             
-            <div className={`rounded-2xl border p-5 flex items-center justify-between shadow-sm ${selectedThemeStyle.identityRail} ${selectedThemeStyle.textColor}`}>
-              <div className="flex items-center space-x-4 truncate">
-                <img
-                  alt={uiText.admin.settings.logoPreviewAlt}
-                  className="max-h-9 @sm:max-h-10 w-auto max-w-28 shrink-0 object-contain object-left"
-                  src={config.tvPresentation.logoOverride || '/logo.png'}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = '/logo.png';
-                  }}
-                />
-                <div className="truncate">
-                  <div className={`text-[10px] font-bold uppercase tracking-[0.25em] ${selectedThemeStyle.headerSublabel}`}>
-                    {config.tvPresentation.headerLabel || DEFAULT_TV_PRESENTATION.headerLabel}
+            {/* TV Screen Preview Frame */}
+            <div className={`rounded-2xl overflow-hidden border border-slate-200 shadow-md bg-gradient-to-br ${selectedThemeStyle.frameGradient}`}>
+              <div className={`p-5 flex items-center justify-between border-b ${selectedThemeStyle.identityRail} ${selectedThemeStyle.textColor}`}>
+                <div className="flex items-center space-x-4 truncate">
+                  <img
+                    alt={uiText.admin.settings.logoPreviewAlt}
+                    className="max-h-10 w-auto max-w-28 shrink-0 object-contain object-left"
+                    src={config.tvPresentation.logoOverride || '/logo.png'}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = '/logo.png';
+                    }}
+                  />
+                  <div className="truncate">
+                    <div className={`text-[10px] font-bold uppercase tracking-[0.25em] ${selectedThemeStyle.headerSublabel}`}>
+                      {config.tvPresentation.headerLabel || DEFAULT_TV_PRESENTATION.headerLabel}
+                    </div>
+                    <h4 className="text-base @sm:text-xl font-black uppercase tracking-wide truncate font-oswald">
+                      {config.eventTitle || uiText.admin.settings.eventTitlePreviewPlaceholder}
+                    </h4>
                   </div>
-                  <h4 className="text-base @sm:text-xl font-black uppercase tracking-wide truncate">
-                    {config.eventTitle || uiText.admin.settings.eventTitlePreviewPlaceholder}
-                  </h4>
                 </div>
-              </div>
-              <div className="hidden @sm:flex items-center space-x-2 text-xs font-mono opacity-80 bg-black/20 border border-white/10 px-3 py-1.5 rounded-xl flex-shrink-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{uiText.admin.settings.themePrefix} {selectedThemeStyle.label}</span>
+                <div className="hidden @sm:flex items-center space-x-2 text-xs font-mono opacity-90 bg-black/30 border border-white/15 px-3 py-1.5 rounded-xl flex-shrink-0">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{uiText.admin.settings.themePrefix} {selectedThemeStyle.label}</span>
+                </div>
               </div>
             </div>
           </div>
