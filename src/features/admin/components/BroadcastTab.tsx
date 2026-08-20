@@ -268,7 +268,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
             type="button"
             onClick={handleDisableAdminSplash}
             disabled={updating}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-xs transition-colors whitespace-nowrap shadow-sm cursor-pointer shrink-0"
+            className="px-4 py-2 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-bold border border-amber-500/40 rounded-xl text-xs transition-all whitespace-nowrap shadow-sm cursor-pointer shrink-0 disabled:opacity-50"
           >
             {uiText.admin.broadcast.disableSplashButton}
           </button>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { CategoryType, CompetitionClass } from '../SetupTab';
 import { uiText } from '../../../../ui-text';
 import { AdminCard } from '../AdminCard';
-import { Plus, Edit2, Check, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit2, Check, X, AlertTriangle, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 
 const text = uiText.admin.setup.categoryTypes;
 
@@ -352,11 +352,11 @@ export function CategoryTypesSection({
                     </td>
                     <td className="py-3.5 px-4 text-center">
                       {cat.hasRelayRace ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 border border-emerald-100 text-emerald-700">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-900">
                           {text.withRelay}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700">
                           {text.withoutRelay}
                         </span>
                       )}
@@ -366,10 +366,11 @@ export function CategoryTypesSection({
                         type="button"
                         onClick={() => handleDeleteCategoryType(cat.id, cat.name)}
                         disabled={deletingId === cat.id}
-                        className="p-1.5 px-3 rounded-lg bg-white hover:bg-red-50 text-red-500 hover:text-red-700 text-xs border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 cursor-pointer font-semibold shadow-xs"
+                        className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
                         title={text.delete(cat.name)}
+                        aria-label={text.delete(cat.name)}
                       >
-                        {deletingId === cat.id ? text.deleting : text.deleteButton}
+                        {deletingId === cat.id ? <Loader2 size={16} className="animate-spin text-slate-400" /> : <Trash2 size={16} />}
                       </button>
                     </td>
                   </tr>

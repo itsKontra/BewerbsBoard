@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import type { CategoryType, EvaluationType } from '../SetupTab';
 import { uiText } from '../../../../ui-text';
 import { AdminCard } from '../AdminCard';
-import { Edit2, Check, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Edit2, Check, X, AlertTriangle, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 
 const text = uiText.admin.setup.evaluationTypes;
 
@@ -511,16 +511,16 @@ export function EvaluationTypesSection({
                           </>
                         )}
                         {Boolean(evalItem.isBrigadePairing) && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-200 text-amber-800" title={text.pairingTitle}>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-300 text-amber-900" title={text.pairingTitle}>
                             {text.pairingBadge}
                           </span>
                         )}
                         {evalItem.excludeRelayRace ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 border border-slate-200 text-slate-600">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 border border-slate-200 text-slate-700">
                             {text.withoutRelay}
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 border border-emerald-100 text-emerald-700">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 border border-emerald-200 text-emerald-900">
                             {text.withRelay}
                           </span>
                         )}
@@ -569,10 +569,11 @@ export function EvaluationTypesSection({
                         type="button"
                         onClick={() => handleDeleteEvaluationType(evalItem.id, evalItem.name)}
                         disabled={deletingId === evalItem.id}
-                        className="p-1.5 px-3 rounded-lg bg-white hover:bg-red-50 text-red-500 hover:text-red-700 text-xs border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 cursor-pointer font-semibold shadow-xs"
+                        className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
                         title={text.delete(evalItem.name)}
+                        aria-label={text.delete(evalItem.name)}
                       >
-                        {deletingId === evalItem.id ? text.deleting : text.deleteButton}
+                        {deletingId === evalItem.id ? <Loader2 size={16} className="animate-spin text-slate-400" /> : <Trash2 size={16} />}
                       </button>
                     </td>
                   </tr>

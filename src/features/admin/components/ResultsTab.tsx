@@ -271,13 +271,13 @@ export function ResultsTab() {
 
           {/* Quick Counters */}
           <div className="flex items-center space-x-3 text-xs shrink-0">
-            <span className="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 font-mono font-medium">
+            <span className="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 font-mono font-semibold">
               {uiText.admin.results.openCount(openEntries.length)}
             </span>
-            <span className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 font-mono font-medium">
+            <span className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 font-mono font-semibold">
               {uiText.admin.results.validCount(validEntriesGrouped.length)}
             </span>
-            <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-700 font-mono font-medium">
+            <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-900 font-mono font-semibold">
               {uiText.admin.results.dnfCount(dnfEntries.length)}
             </span>
           </div>
@@ -341,6 +341,20 @@ export function ResultsTab() {
                     const isSaving = savingId === entry.id;
                     const catType = categoryTypes.find((t) => t.id === entry.categoryTypeId || t.name === entry.categoryTypeName);
                     const showRelay = Boolean(entry.hasRelayRace ?? catType?.hasRelayRace ?? false);
+
+                    const initialAttackTime = formatHundredthsToGerman(entry.attackTimeHundredths);
+                    const errorsVal = entry.attackTimeErrors !== null && entry.attackTimeErrors !== undefined
+                      ? entry.attackTimeErrors
+                      : entry.errors;
+                    const initialErrorsStr = errorsVal !== null && errorsVal !== undefined ? String(errorsVal) : '';
+                    const initialRelayTime = formatHundredthsToGerman(entry.relayRaceHundredths);
+                    const initialRelayErrorsStr = entry.relayRaceErrors !== null && entry.relayRaceErrors !== undefined ? String(entry.relayRaceErrors) : '';
+
+                    const isDirty =
+                      (form.attackTimeStr ?? '') !== initialAttackTime ||
+                      (form.errorsStr ?? '') !== initialErrorsStr ||
+                      (form.relayRaceTimeStr ?? '') !== initialRelayTime ||
+                      (form.relayRaceErrorsStr ?? '') !== initialRelayErrorsStr;
 
                     return (
                       <div
@@ -456,7 +470,7 @@ export function ResultsTab() {
                               id={`dnf-btn-${entry.id}`}
                               onClick={() => handleStatusChange(entry.id, 'DNF')}
                               disabled={isSaving}
-                              className="px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-semibold text-xs rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                              className="px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                             >
                               {uiText.admin.results.dnf}
                             </button>
@@ -464,7 +478,11 @@ export function ResultsTab() {
                               id={`save-btn-${entry.id}`}
                               onClick={() => handleSaveResult(entry.id)}
                               disabled={isSaving}
-                              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-sm shadow-emerald-200 transition-colors cursor-pointer"
+                              className={`px-5 py-2.5 disabled:opacity-50 font-semibold text-xs rounded-xl transition-all cursor-pointer ${
+                                isDirty
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200 border border-emerald-600'
+                                  : 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-600'
+                              }`}
                             >
                               {isSaving ? uiText.admin.results.saving : uiText.admin.results.save}
                             </button>

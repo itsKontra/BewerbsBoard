@@ -3,7 +3,7 @@ import { CategoryTypesSection } from './settings/CategoryTypesSection';
 import { EvaluationTypesSection } from './settings/EvaluationTypesSection';
 import { uiText } from '../../../ui-text';
 import { AdminCard } from './AdminCard';
-import { Layers, Award, Plus, Loader2, X, AlertTriangle } from 'lucide-react';
+import { Layers, Award, Plus, Loader2, X, AlertTriangle, Trash2 } from 'lucide-react';
 
 // ---- Domain types --------------------------------------------------------
 
@@ -290,9 +290,11 @@ export function SetupTab() {
                     <td className="px-4 py-3.5 text-right">
                       <button
                         onClick={() => handleDeleteCompetitionClass(cc.id, cc.name)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold"
+                        className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer"
+                        title={uiText.admin.setup.deleteClassConfirm(cc.name)}
+                        aria-label={uiText.admin.setup.deleteClassConfirm(cc.name)}
                       >
-                        {uiText.admin.setup.delete}
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>

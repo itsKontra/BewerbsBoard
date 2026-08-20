@@ -450,13 +450,13 @@ export function ParticipantsTab() {
                       <span>{cat.name}</span>
                       {cat.hasRelayRace ? (
                         <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
-                          isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
                         }`}>
                           {uiText.admin.participants.relay}
                         </span>
                       ) : (
                         <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
-                          isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-600'
+                          isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}>
                           {uiText.admin.participants.withoutRelay}
                         </span>
@@ -474,11 +474,11 @@ export function ParticipantsTab() {
                   <div className="flex items-center space-x-2 text-xs">
                     <span className="text-slate-500">{uiText.admin.participants.relayRace}</span>
                     {currentCategory.hasRelayRace ? (
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 font-semibold">
+                      <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold">
                         {uiText.admin.participants.available}
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 font-semibold">
+                      <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-semibold">
                         {uiText.admin.participants.noRelayRace}
                       </span>
                     )}
@@ -574,8 +574,9 @@ export function ParticipantsTab() {
                                 <button
                                   onClick={() => handleRemove(entry.id)}
                                   disabled={removingId === entry.id}
-                                  className="ml-2 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg disabled:opacity-30 transition-colors"
+                                  className="ml-2 p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg disabled:opacity-30 transition-colors cursor-pointer"
                                   title={uiText.admin.participants.removeEntry}
+                                  aria-label={uiText.admin.participants.removeEntry}
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -656,9 +657,11 @@ export function ParticipantsTab() {
                       <td className="px-4 py-3.5 text-right">
                         <button
                           onClick={() => handleDeleteBrigade(b.id, b.name)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold"
+                          className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer"
+                          title={uiText.admin.participants.deleteBrigadeConfirm(b.name)}
+                          aria-label={uiText.admin.participants.deleteBrigadeConfirm(b.name)}
                         >
-                          {uiText.admin.participants.delete}
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -758,9 +761,11 @@ export function ParticipantsTab() {
                       <td className="px-4 py-3.5 text-right">
                         <button
                           onClick={() => handleDeleteGroup(g.id, g.name)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-xs font-semibold"
+                          className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer"
+                          title={uiText.admin.participants.deleteGroupConfirm(g.name)}
+                          aria-label={uiText.admin.participants.deleteGroupConfirm(g.name)}
                         >
-                          {uiText.admin.participants.delete}
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
