@@ -1,4 +1,4 @@
-import { getDb, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, logAudit, getCompetitionClassName, type EventContext } from '../utils';
 import { categoryTypes, categoryEntries, competitionClasses, evaluationTypes } from '../../../../shared/db/schema';
 import { eq, or } from 'drizzle-orm';
 
@@ -45,7 +45,14 @@ export async function onRequestPut(context: EventContext) {
       return jsonError('Category type not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'UPDATE_CATEGORY_TYPE', { id, ...updateValues });
+    const prevCompetitionClassName = await getCompetitionClassName(db, existing[0].competitionClassId);
+    const newCompetitionClassName = await getCompetitionClassName(db, updated[0].competitionClassId);
+
+    await logAudit(db, context.data.adminUser as string, 'UPDATE_CATEGORY_TYPE', {
+      operation: 'UPDATE',
+      previous_value: { ...existing[0], competitionClassName: prevCompetitionClassName },
+      new_value: { ...updated[0], competitionClassName: newCompetitionClassName },
+    });
 
     return jsonResponse(updated[0], 200);
   } catch (error: any) {
@@ -86,7 +93,12 @@ export async function onRequestDelete(context: EventContext) {
       return jsonError('Category type not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'DELETE_CATEGORY_TYPE', { id, name: deleted[0].name });
+    const competitionClassName = await getCompetitionClassName(db, deleted[0].competitionClassId);
+
+    await logAudit(db, context.data.adminUser as string, 'DELETE_CATEGORY_TYPE', {
+      operation: 'DELETE',
+      previous_value: { ...deleted[0], competitionClassName },
+    });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
   } catch (error: any) {

@@ -119,6 +119,25 @@ export async function onRequestPut(context: EventContext) {
     const tvAnnouncement = normalizeTvAnnouncement(body.tvAnnouncement ?? body['tv:announcement']);
     const tvPresentation = normalizeTvPresentation(body.tvPresentation ?? body['tv:presentation']);
 
+    let prevEventTitle = 'Feuerwehr Leistungsbewerb';
+    let prevPublicUrl = 'https://bewerb.feuerwehr.at';
+    let prevRankingPageDurationMs = DEFAULT_RANKING_PAGE_DURATION_MS;
+    let prevTvAnnouncement = { headline: '', message: '' };
+    let prevTvPresentation = { ...DEFAULT_TV_PRESENTATION };
+
+    if (kv && typeof kv.get === 'function') {
+      const storedTitle = await kv.get('event:name');
+      if (storedTitle) prevEventTitle = storedTitle;
+      const storedUrl = await kv.get('public:url');
+      if (storedUrl) prevPublicUrl = storedUrl;
+      const storedRankingPageDuration = await kv.get('tv:ranking-page-duration-ms');
+      if (storedRankingPageDuration) prevRankingPageDurationMs = normalizeRankingPageDurationMs(storedRankingPageDuration);
+      const storedAnnouncement = await kv.get('tv:announcement');
+      if (storedAnnouncement) prevTvAnnouncement = normalizeTvAnnouncement(storedAnnouncement);
+      const storedPresentation = await kv.get('tv:presentation');
+      if (storedPresentation) prevTvPresentation = normalizeTvPresentation(storedPresentation);
+    }
+
     if (kv && typeof kv.put === 'function') {
       await kv.put('event:name', eventTitle);
       await kv.put('public:url', publicUrl);
@@ -129,9 +148,22 @@ export async function onRequestPut(context: EventContext) {
 
     const db = getDb(context.env);
     const adminUser = context.data.adminUser || 'system';
-    await logAudit(db, adminUser, 'UPDATE', {
-      entity: 'CONFIG',
-      details: { eventTitle, publicUrl, rankingPageDurationMs, tvAnnouncement, tvPresentation },
+    await logAudit(db, adminUser, 'UPDATE_CONFIG', {
+      operation: 'UPDATE',
+      previous_value: {
+        eventTitle: prevEventTitle,
+        publicUrl: prevPublicUrl,
+        rankingPageDurationMs: prevRankingPageDurationMs,
+        tvAnnouncement: prevTvAnnouncement,
+        tvPresentation: prevTvPresentation,
+      },
+      new_value: {
+        eventTitle,
+        publicUrl,
+        rankingPageDurationMs,
+        tvAnnouncement,
+        tvPresentation,
+      },
     });
 
     let serverInfo = {

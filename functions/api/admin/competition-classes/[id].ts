@@ -22,7 +22,10 @@ export async function onRequestDelete(context: EventContext) {
       return jsonError('Competition class not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'DELETE_COMPETITION_CLASS', { id, name: deleted[0].name });
+    await logAudit(db, context.data.adminUser as string, 'DELETE_COMPETITION_CLASS', {
+      operation: 'DELETE',
+      previous_value: deleted[0],
+    });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
   } catch (error: any) {

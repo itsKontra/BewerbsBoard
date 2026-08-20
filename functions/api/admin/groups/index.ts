@@ -1,4 +1,4 @@
-import { getDb, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, logAudit, getFireBrigadeName, type EventContext } from '../utils';
 import { groups, competitionClasses } from '../../../../shared/db/schema';
 import { and, eq } from 'drizzle-orm';
 
@@ -66,7 +66,16 @@ export async function onRequestPost(context: EventContext) {
     };
 
     await db.insert(groups).values(newGroup);
-    await logAudit(db, context.data.adminUser as string, 'CREATE_GROUP', { ...newGroup, competitionClass: competitionClass[0].name });
+    const fireBrigadeName = await getFireBrigadeName(db, data.fireBrigadeId);
+
+    await logAudit(db, context.data.adminUser as string, 'CREATE_GROUP', {
+      operation: 'CREATE',
+      new_value: {
+        ...newGroup,
+        competitionClassName: competitionClass[0].name,
+        fireBrigadeName,
+      },
+    });
 
     return jsonResponse({ id, fireBrigadeId: data.fireBrigadeId, name: data.name, competitionClassId, competitionClass: competitionClass[0].name }, 201);
   } catch (error: any) {
