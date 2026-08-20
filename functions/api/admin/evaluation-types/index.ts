@@ -90,6 +90,7 @@ export async function onRequestPost(context: EventContext) {
     await db.insert(evaluationTypes).values(newEval);
     await logAudit(db, context.data.adminUser as string, 'CREATE_EVALUATION_TYPE', {
       operation: 'CREATE',
+      previous_value: null,
       new_value: {
         ...newEval,
         categoryTypeName1: cat1[0].name,

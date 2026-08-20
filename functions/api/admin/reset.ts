@@ -93,7 +93,7 @@ export async function onRequestPost(context: EventContext) {
       })
       .where(eq(schema.tvRuntimeState.id, 'default'));
 
-    const auditInsert = buildAuditLog(db, user, 'DATABASE_CLEAR', preClearSnapshot);
+    const auditInsert = buildAuditLog(db, user, 'DATABASE_CLEAR', { operation: 'CLEAR', previous_value: preClearSnapshot, new_value: null });
 
     batchOps.push(tvReset, auditInsert);
 

@@ -35,6 +35,7 @@ export async function onRequestPost(context: EventContext) {
     const competitionClassName = await getCompetitionClassName(db, competitionClassId);
     await logAudit(db, context.data.adminUser as string, 'CREATE_CATEGORY_TYPE', {
       operation: 'CREATE',
+      previous_value: null,
       new_value: { ...newType, competitionClassName },
     });
 

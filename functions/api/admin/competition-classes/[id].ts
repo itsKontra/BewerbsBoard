@@ -25,6 +25,7 @@ export async function onRequestDelete(context: EventContext) {
     await logAudit(db, context.data.adminUser as string, 'DELETE_COMPETITION_CLASS', {
       operation: 'DELETE',
       previous_value: deleted[0],
+      new_value: null,
     });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
