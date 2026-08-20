@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { SystemHealthHeader } from './logs/SystemHealthHeader';
 import { DatabaseResetModal } from './logs/DatabaseResetModal';
 import { uiText } from '../../../ui-text';
+import { AdminCard } from './AdminCard';
+import { Search, RotateCw, FileText, X, AlertTriangle, Loader2 } from 'lucide-react';
 
 export interface AuditRecord {
   id: string;
@@ -48,6 +50,7 @@ export function LogsTab() {
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
+
   const parseDetails = (detailsStr: string | null) => {
     if (!detailsStr) return null;
     try {
@@ -61,33 +64,33 @@ export function LogsTab() {
     switch (action) {
       case 'DATABASE_CLEAR':
         return (
-          <span className="px-2.5 py-1 text-xs font-extrabold bg-red-950 text-red-400 border border-red-800/80 rounded-md tracking-wide">
+          <span className="px-2.5 py-1 text-xs font-bold bg-red-50 text-red-700 border border-red-200 rounded-lg tracking-wide">
             DATABASE_CLEAR
           </span>
         );
       case 'CREATE_CATEGORY_ENTRY':
       case 'CREATE':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded-md tracking-wide">
+          <span className="px-2.5 py-1 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg tracking-wide">
             {action}
           </span>
         );
       case 'DELETE_CATEGORY_ENTRY':
       case 'DELETE':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold bg-amber-950 text-amber-400 border border-amber-800/60 rounded-md tracking-wide">
+          <span className="px-2.5 py-1 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg tracking-wide">
             {action}
           </span>
         );
       case 'UPDATE':
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold bg-blue-950 text-blue-400 border border-blue-800/60 rounded-md tracking-wide">
+          <span className="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg tracking-wide">
             UPDATE
           </span>
         );
       default:
         return (
-          <span className="px-2.5 py-1 text-xs font-semibold bg-neutral-800 text-neutral-300 border border-neutral-700 rounded-md tracking-wide">
+          <span className="px-2.5 py-1 text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200 rounded-lg tracking-wide">
             {action}
           </span>
         );
@@ -105,7 +108,6 @@ export function LogsTab() {
     });
   };
 
-
   return (
     <div className="space-y-6 @container">
       <SystemHealthHeader
@@ -113,78 +115,83 @@ export function LogsTab() {
         resetSuccessMessage={resetSuccess}
         onClearSuccessMessage={() => setResetSuccess(null)}
       />
+
       {/* Header & Search Bar */}
-      <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-5 shadow-xl flex flex-col @md:flex-row items-stretch @md:items-center justify-between gap-4">
-        <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-500">
-            🔍
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder={uiText.admin.logs.searchPlaceholder}
-            className="w-full bg-neutral-950 border border-neutral-800 focus:border-red-600 rounded-lg pl-10 pr-10 py-2.5 text-sm text-white focus:outline-none transition-colors shadow-inner"
-          />
-          {search && (
-            <button
-              onClick={() => {
-                setSearch('');
+      <AdminCard>
+        <div className="flex flex-col @md:flex-row items-stretch @md:items-center justify-between gap-4">
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <Search size={16} />
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
                 setPage(1);
               }}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-500 hover:text-white"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+              placeholder={uiText.admin.logs.searchPlaceholder}
+              className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-800 focus:outline-none transition-all shadow-sm"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch('');
+                  setPage(1);
+                }}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
 
-        <div className="flex items-center justify-between @md:justify-end space-x-4">
-          <span className="text-xs font-mono text-neutral-400">
-            {uiText.admin.logs.foundCount(total)}
-          </span>
-          <button
-            onClick={fetchLogs}
-            disabled={loading}
-            className="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold uppercase tracking-wider font-oswald border border-neutral-700 transition-colors flex items-center space-x-1.5 shadow-sm"
-          >
-            <span>🔄</span>
-            <span className="hidden @sm:inline">{uiText.admin.logs.refresh}</span>
-          </button>
+          <div className="flex items-center justify-between @md:justify-end space-x-4">
+            <span className="text-xs font-mono text-slate-500">
+              {uiText.admin.logs.foundCount(total)}
+            </span>
+            <button
+              onClick={fetchLogs}
+              disabled={loading}
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
+            >
+              <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden @sm:inline">{uiText.admin.logs.refresh}</span>
+            </button>
+          </div>
         </div>
-      </div>
+      </AdminCard>
 
       {/* Error Alert */}
       {error && (
-        <div className="bg-red-950/70 border border-red-800 text-red-200 px-4 py-3 rounded-xl flex items-center justify-between">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-2 text-sm font-semibold">
-            <span>⚠️</span>
+            <AlertTriangle size={18} />
             <span>{error}</span>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-white text-xs font-mono"
+            className="text-red-400 hover:text-red-700"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
 
       {/* Audit Log Table */}
-      <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl overflow-hidden shadow-xl">
+      <AdminCard className="!p-0 overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-neutral-400">
-            <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4" />
-            <p className="font-oswald uppercase tracking-wider text-sm">{uiText.admin.logs.loading}</p>
+          <div className="flex flex-col items-center justify-center py-20 text-slate-400 font-medium">
+            <Loader2 className="animate-spin mb-3 text-indigo-500" size={32} />
+            <p className="text-sm">{uiText.admin.logs.loading}</p>
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-neutral-400 space-y-2">
-            <div className="text-3xl mb-2">📜</div>
-            <p className="font-bold text-neutral-200">{uiText.admin.logs.empty}</p>
-            <p className="text-xs text-neutral-500">
+          <div className="p-12 text-center text-slate-400 space-y-2">
+            <div className="p-3 bg-slate-50 rounded-2xl w-12 h-12 flex items-center justify-center mx-auto text-slate-400 mb-2">
+              <FileText size={24} />
+            </div>
+            <p className="font-bold text-slate-700">{uiText.admin.logs.empty}</p>
+            <p className="text-xs text-slate-400">
               {search ? uiText.admin.logs.differentSearch : uiText.admin.logs.noChanges}
             </p>
           </div>
@@ -192,24 +199,24 @@ export function LogsTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="bg-neutral-950 text-neutral-400 font-oswald text-xs uppercase tracking-wider border-b border-neutral-800">
-                  <th className="py-3 px-4">{uiText.admin.logs.timestamp}</th>
-                  <th className="py-3 px-4">{uiText.admin.logs.user}</th>
-                  <th className="py-3 px-4">{uiText.admin.logs.action}</th>
-                  <th className="py-3 px-4">{uiText.admin.logs.detailsPreview}</th>
-                  <th className="py-3 px-4 text-right">{uiText.admin.logs.action}</th>
+                <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-100">
+                  <th className="py-3.5 px-4">{uiText.admin.logs.timestamp}</th>
+                  <th className="py-3.5 px-4">{uiText.admin.logs.user}</th>
+                  <th className="py-3.5 px-4">{uiText.admin.logs.action}</th>
+                  <th className="py-3.5 px-4">{uiText.admin.logs.detailsPreview}</th>
+                  <th className="py-3.5 px-4 text-right">{uiText.admin.logs.action}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-800/80">
+              <tbody className="divide-y divide-slate-100">
                 {logs.map((log) => {
                   const detailsObj = parseDetails(log.details);
                   return (
-                    <tr key={log.id} className="hover:bg-neutral-800/40 transition-colors font-sans">
-                      <td className="py-3.5 px-4 font-mono text-xs text-neutral-300 whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors font-sans">
+                      <td className="py-3.5 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">
                         {formatDate(log.timestamp)}
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-xs font-semibold text-neutral-200 whitespace-nowrap">
+                      <td className="py-3.5 px-4 font-mono text-xs font-semibold text-slate-800 whitespace-nowrap">
                         {log.user}
                       </td>
 
@@ -217,7 +224,7 @@ export function LogsTab() {
                         {renderActionBadge(log.action)}
                       </td>
 
-                      <td className="py-3.5 px-4 text-xs font-mono text-neutral-400 max-w-xs truncate">
+                      <td className="py-3.5 px-4 text-xs font-mono text-slate-500 max-w-xs truncate">
                         {typeof detailsObj === 'object' && detailsObj !== null
                           ? JSON.stringify(detailsObj)
                           : log.details || '—'}
@@ -226,7 +233,7 @@ export function LogsTab() {
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedLog(log)}
-                          className="px-3 py-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors shadow-sm"
+                          className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-xs cursor-pointer"
                         >
                           {uiText.admin.logs.details}
                         </button>
@@ -241,68 +248,70 @@ export function LogsTab() {
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
-          <div className="bg-neutral-950 px-4 py-3 border-t border-neutral-800 flex items-center justify-between text-xs">
+          <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || loading}
-              className="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 border border-neutral-800 text-neutral-300 font-semibold transition-colors"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-semibold transition-colors shadow-xs"
             >
               {uiText.admin.logs.previousPage}
             </button>
 
-            <span className="text-neutral-400 font-mono">
+            <span className="text-slate-500 font-mono">
               {uiText.admin.logs.page(page, totalPages)}
             </span>
 
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || loading}
-              className="px-3 py-1.5 rounded bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 border border-neutral-800 text-neutral-300 font-semibold transition-colors"
+              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-semibold transition-colors shadow-xs"
             >
               {uiText.admin.logs.nextPage}
             </button>
           </div>
         )}
-      </div>
+      </AdminCard>
 
       {/* JSON Diff Inspection Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="bg-neutral-950 px-6 py-4 border-b border-neutral-800 flex items-center justify-between">
+            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <span className="text-xl">📜</span>
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                  <FileText size={20} />
+                </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-oswald text-lg font-bold text-white uppercase tracking-wider">
+                    <h3 className="text-base font-bold text-slate-800">
                       {uiText.admin.logs.inspector}
                     </h3>
                     {renderActionBadge(selectedLog.action)}
                   </div>
-                  <p className="text-xs text-neutral-400 font-mono mt-0.5">
+                  <p className="text-xs text-slate-500 font-mono mt-0.5">
                     ID: {selectedLog.id} | {formatDate(selectedLog.timestamp)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-neutral-400 hover:text-white p-1 font-mono text-sm"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-white transition-colors"
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
             {/* Modal Content */}
             <div className="p-6 overflow-y-auto space-y-4 text-xs font-mono">
-              <div className="grid grid-cols-2 gap-4 bg-neutral-950 p-3 rounded-lg border border-neutral-800 shadow-inner">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div>
-                  <span className="text-neutral-500 uppercase font-bold text-[10px]">{uiText.admin.logs.userLabel}</span>
-                  <div className="text-neutral-200 font-semibold">{selectedLog.user}</div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">{uiText.admin.logs.userLabel}</span>
+                  <div className="text-slate-800 font-semibold mt-0.5">{selectedLog.user}</div>
                 </div>
                 <div>
-                  <span className="text-neutral-500 uppercase font-bold text-[10px]">{uiText.admin.logs.timestampLabel}</span>
-                  <div className="text-neutral-200 font-semibold">{formatDate(selectedLog.timestamp)}</div>
+                  <span className="text-slate-400 uppercase font-bold text-[10px]">{uiText.admin.logs.timestampLabel}</span>
+                  <div className="text-slate-800 font-semibold mt-0.5">{formatDate(selectedLog.timestamp)}</div>
                 </div>
               </div>
 
@@ -318,26 +327,26 @@ export function LogsTab() {
                   const next = parsed.new_value ?? parsed.newValue;
                   return (
                     <div className="space-y-3">
-                      <h4 className="font-oswald text-sm font-bold text-neutral-300 uppercase tracking-wider">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                         {uiText.admin.logs.diffTitle}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Previous Value */}
-                        <div className="bg-red-950/20 border border-red-900/40 rounded-lg p-3 space-y-1">
-                          <div className="text-red-400 font-bold text-[11px] border-b border-red-900/40 pb-1 mb-2">
+                        <div className="bg-red-50/60 border border-red-200 rounded-2xl p-4 space-y-1">
+                          <div className="text-red-700 font-bold text-xs border-b border-red-200 pb-2 mb-2">
                             {uiText.admin.logs.previous}
                           </div>
-                          <pre className="text-red-200/90 whitespace-pre-wrap overflow-x-auto">
+                          <pre className="text-red-900 whitespace-pre-wrap overflow-x-auto">
                             {JSON.stringify(prev, null, 2)}
                           </pre>
                         </div>
 
                         {/* New Value */}
-                        <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-lg p-3 space-y-1">
-                          <div className="text-emerald-400 font-bold text-[11px] border-b border-emerald-900/40 pb-1 mb-2">
+                        <div className="bg-emerald-50/60 border border-emerald-200 rounded-2xl p-4 space-y-1">
+                          <div className="text-emerald-700 font-bold text-xs border-b border-emerald-200 pb-2 mb-2">
                             {uiText.admin.logs.next}
                           </div>
-                          <pre className="text-emerald-200/90 whitespace-pre-wrap overflow-x-auto">
+                          <pre className="text-emerald-900 whitespace-pre-wrap overflow-x-auto">
                             {JSON.stringify(next, null, 2)}
                           </pre>
                         </div>
@@ -348,11 +357,11 @@ export function LogsTab() {
 
                 return (
                   <div className="space-y-2">
-                    <h4 className="font-oswald text-sm font-bold text-neutral-300 uppercase tracking-wider">
+                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                       {uiText.admin.logs.snapshot}
                     </h4>
-                    <div className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 shadow-inner">
-                      <pre className="text-neutral-300 whitespace-pre-wrap overflow-x-auto">
+                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                      <pre className="text-slate-700 whitespace-pre-wrap overflow-x-auto">
                         {typeof parsed === 'object' && parsed !== null
                           ? JSON.stringify(parsed, null, 2)
                           : String(selectedLog.details)}
@@ -364,10 +373,10 @@ export function LogsTab() {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-neutral-950 px-6 py-3 border-t border-neutral-800 flex justify-end">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold border border-neutral-700 transition-colors shadow-sm"
+                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-xs"
               >
                 {uiText.admin.logs.close}
               </button>

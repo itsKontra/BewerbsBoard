@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { CategoryType, EvaluationType } from '../SetupTab';
 import { uiText } from '../../../../ui-text';
+import { AdminCard } from '../AdminCard';
+import { Edit2, Check, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 const text = uiText.admin.setup.evaluationTypes;
 
@@ -184,13 +186,13 @@ export function EvaluationTypesSection({
   const formCrossClass = !!(formCat1 && formCat2 && formCat1.competitionClassId !== formCat2.competitionClassId);
 
   return (
-    <section className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-6 shadow-xl space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-3">
+    <AdminCard className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
-          <h3 className="font-oswald text-lg font-bold text-white uppercase tracking-wider">
+          <h3 className="text-lg font-bold text-slate-800">
             {text.title}
           </h3>
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-slate-500 mt-1">
             {text.description}
           </p>
         </div>
@@ -201,7 +203,7 @@ export function EvaluationTypesSection({
             onClick={() => {
               evaluationTypes.forEach((e) => onUpdateEvaluationType(e.id, { public: true }));
             }}
-            className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 border border-neutral-700 transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer"
           >
             {text.enableAllWeb}
           </button>
@@ -210,7 +212,7 @@ export function EvaluationTypesSection({
             onClick={() => {
               evaluationTypes.forEach((e) => onUpdateEvaluationType(e.id, { publicTv: true }));
             }}
-            className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold text-neutral-300 border border-neutral-700 transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer"
           >
             {text.enableAllTv}
           </button>
@@ -219,47 +221,46 @@ export function EvaluationTypesSection({
 
       {/* Evaluation Action Alerts */}
       {actionError && (
-        <div className="bg-red-950/80 border border-red-800 text-red-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs shadow-md">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center justify-between text-sm font-medium shadow-sm">
           <div className="flex items-center space-x-2">
-            <span>⚠️</span>
-            <span className="font-semibold">{actionError}</span>
+            <AlertTriangle size={18} />
+            <span>{actionError}</span>
           </div>
           <button
             type="button"
             onClick={() => setActionError(null)}
-            className="text-red-400 hover:text-white font-mono text-xs ml-3"
+            className="text-red-400 hover:text-red-700 p-1"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
 
       {actionSuccess && (
-        <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs shadow-md">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-2xl flex items-center justify-between text-sm font-medium shadow-sm">
           <div className="flex items-center space-x-2">
-            <span>✅</span>
-            <span className="font-semibold">{actionSuccess}</span>
+            <CheckCircle2 size={18} />
+            <span>{actionSuccess}</span>
           </div>
           <button
             type="button"
             onClick={() => setActionSuccess(null)}
-            className="text-emerald-400 hover:text-white font-mono text-xs ml-3"
+            className="text-emerald-400 hover:text-emerald-700 p-1"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
 
       {/* Evaluation Creation Form */}
-      <div className="bg-neutral-950/80 border border-neutral-800/80 rounded-lg p-4 space-y-4 shadow-inner">
-        <div className="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center space-x-2">
-          <span>➕</span>
-          <span>{text.createTitle}</span>
+      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
+        <div className="text-xs font-bold uppercase tracking-wider text-slate-700">
+          {text.createTitle}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
           <div className="sm:col-span-6">
-            <label htmlFor="newEvaluationName" className="block text-[11px] font-bold uppercase text-neutral-400 mb-1">
+            <label htmlFor="newEvaluationName" className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
               {text.evaluationName}
             </label>
             <input
@@ -274,19 +275,19 @@ export function EvaluationTypesSection({
                 }
               }}
               placeholder={text.namePlaceholder}
-              className="w-full bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
             />
           </div>
 
           <div className="sm:col-span-3">
-            <label htmlFor="newEvaluationCat1" className="block text-[11px] font-bold uppercase text-neutral-400 mb-1">
+            <label htmlFor="newEvaluationCat1" className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
               {text.category1}
             </label>
             <select
               id="newEvaluationCat1"
               value={formData.categoryTypeId1 || (categoryTypes[0]?.id ?? '')}
               onChange={(e) => setFormData((prev) => ({ ...prev, categoryTypeId1: e.target.value }))}
-              className="w-full bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
             >
               {categoryTypes.length === 0 ? (
                 <option value="">{text.noCategories}</option>
@@ -301,7 +302,7 @@ export function EvaluationTypesSection({
           </div>
 
           <div className="sm:col-span-3">
-            <label htmlFor="newEvaluationCat2" className="block text-[11px] font-bold uppercase text-neutral-400 mb-1">
+            <label htmlFor="newEvaluationCat2" className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
               {text.category2}
             </label>
             <select
@@ -315,7 +316,7 @@ export function EvaluationTypesSection({
                   isBrigadePairing: cat2Val.trim() ? prev.isBrigadePairing : false,
                 }));
               }}
-              className="w-full bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-2.5 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
             >
               <option value="">{text.noSecondCategory}</option>
               {categoryTypes.map((c) => (
@@ -328,7 +329,7 @@ export function EvaluationTypesSection({
         </div>
 
         {/* Checkboxes and Action Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-1 border-t border-neutral-800/60">
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
           <div className="flex flex-wrap items-center gap-5">
             <label className="flex items-center space-x-2 cursor-pointer select-none">
               <input
@@ -336,9 +337,9 @@ export function EvaluationTypesSection({
                 type="checkbox"
                 checked={formData.excludeRelayRace}
                 onChange={(e) => setFormData((prev) => ({ ...prev, excludeRelayRace: e.target.checked }))}
-                className="w-4 h-4 accent-red-600 rounded bg-neutral-900 border-neutral-700 cursor-pointer"
+                className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 cursor-pointer"
               />
-              <span className="text-xs font-semibold text-neutral-300">
+              <span className="text-xs font-semibold text-slate-700">
                 {text.excludeRelay}
               </span>
             </label>
@@ -358,11 +359,11 @@ export function EvaluationTypesSection({
                     setFormData((prev) => ({ ...prev, isBrigadePairing: e.target.checked }));
                   }
                 }}
-                className="w-4 h-4 accent-amber-500 rounded bg-neutral-900 border-neutral-700 cursor-pointer disabled:cursor-not-allowed"
+                className="w-4 h-4 accent-amber-500 rounded bg-white border-slate-300 cursor-pointer disabled:cursor-not-allowed"
               />
               <span
                 className={`text-xs font-semibold ${
-                  formData.categoryTypeId2.trim() ? 'text-amber-300' : 'text-neutral-500'
+                  formData.categoryTypeId2.trim() ? 'text-amber-800' : 'text-slate-400'
                 }`}
                 title={
                   formCrossClass
@@ -375,14 +376,14 @@ export function EvaluationTypesSection({
                 {text.pairing}
               </span>
               {formCrossClass && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-700/60 text-amber-300 whitespace-nowrap">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-amber-800 whitespace-nowrap">
                   {text.pairingRequired}
                 </span>
               )}
             </label>
 
             <div className="flex items-center space-x-2">
-              <label htmlFor="newEvaluationDuration" className="text-xs font-semibold text-neutral-400">
+              <label htmlFor="newEvaluationDuration" className="text-xs font-semibold text-slate-600">
                 {text.tvDuration}
               </label>
               <input
@@ -392,9 +393,9 @@ export function EvaluationTypesSection({
                 max={300}
                 value={formData.displayDurationSeconds}
                 onChange={(e) => setFormData((prev) => ({ ...prev, displayDurationSeconds: Math.max(1, parseInt(e.target.value, 10) || 10) }))}
-                className="w-16 bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-2 py-1 text-center font-mono text-xs text-white focus:outline-none"
+                className="w-16 bg-white border border-slate-200 focus:border-indigo-400 rounded-lg px-2 py-1 text-center font-mono text-xs text-slate-800 focus:outline-none shadow-sm"
               />
-              <span className="text-xs text-neutral-500 font-mono">{text.seconds}</span>
+              <span className="text-xs text-slate-400 font-mono">{text.seconds}</span>
             </div>
           </div>
 
@@ -402,7 +403,7 @@ export function EvaluationTypesSection({
             type="button"
             onClick={handleCreateEvaluationType}
             disabled={isCreating || !formData.name.trim() || categoryTypes.length === 0}
-            className="h-9 px-4 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider font-oswald rounded-lg transition-colors flex items-center justify-center space-x-1.5 cursor-pointer shadow-md"
+            className="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-indigo-200 flex items-center justify-center space-x-1.5 cursor-pointer"
           >
             {isCreating ? (
               <span>{text.creating}</span>
@@ -417,22 +418,22 @@ export function EvaluationTypesSection({
       </div>
 
       {/* List of Evaluation Types */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl border border-slate-100">
         <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="bg-neutral-950 text-neutral-400 font-oswald text-xs uppercase tracking-wider border-b border-neutral-800">
-              <th className="py-3.5 px-4 rounded-l-lg">{text.name}</th>
+            <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-100">
+              <th className="py-3.5 px-4">{text.name}</th>
               <th className="py-3.5 px-4">{text.composition}</th>
               <th className="py-3.5 px-4 text-center">{text.web}</th>
               <th className="py-3.5 px-4 text-center">{text.tv}</th>
               <th className="py-3.5 px-4 text-center">{text.duration}</th>
-              <th className="py-3.5 px-4 text-right rounded-r-lg">{text.action}</th>
+              <th className="py-3.5 px-4 text-right">{text.action}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-800/80">
+          <tbody className="divide-y divide-slate-100">
             {evaluationTypes.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-6 text-center text-xs text-neutral-500 italic">
+                <td colSpan={6} className="py-8 text-center text-xs text-slate-400 italic">
                   {text.empty}
                 </td>
               </tr>
@@ -441,7 +442,7 @@ export function EvaluationTypesSection({
                 const isEditing = editingId === evalItem.id;
 
                 return (
-                  <tr key={evalItem.id} className="hover:bg-neutral-800/30 transition-colors">
+                  <tr key={evalItem.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="py-3.5 px-4">
                       {isEditing ? (
                         <div className="flex items-center space-x-2">
@@ -459,38 +460,38 @@ export function EvaluationTypesSection({
                               }
                             }}
                             autoFocus
-                            className="bg-neutral-950 border border-red-600 rounded px-2 py-1 text-xs text-white focus:outline-none min-w-[160px]"
+                            className="bg-white border border-indigo-400 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none min-w-[160px] shadow-sm"
                           />
                           <button
                             type="button"
                             onClick={() => handleSaveEdit(evalItem.id)}
                             disabled={isSavingEdit || !editingName.trim()}
-                            className="p-1 px-2 rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold transition-colors cursor-pointer"
+                            className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-colors cursor-pointer"
                             title={text.save}
                           >
-                            ✓
+                            <Check size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={handleCancelEdit}
                             disabled={isSavingEdit}
-                            className="p-1 px-2 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs transition-colors cursor-pointer"
+                            className="p-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition-colors cursor-pointer"
                             title={text.cancel}
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center space-x-2 group">
-                          <span className="font-semibold text-white">{evalItem.name}</span>
+                          <span className="font-semibold text-slate-800">{evalItem.name}</span>
                           <button
                             type="button"
                             onClick={() => handleStartEdit(evalItem)}
-                            className="text-neutral-500 hover:text-amber-400 text-xs transition-colors p-1 rounded hover:bg-neutral-800 cursor-pointer"
+                            className="text-slate-400 hover:text-indigo-600 text-xs transition-colors p-1 rounded hover:bg-slate-100 cursor-pointer"
                             title={text.edit(evalItem.name)}
                             aria-label={text.edit(evalItem.name)}
                           >
-                            ✏️
+                            <Edit2 size={13} />
                           </button>
                         </div>
                       )}
@@ -498,28 +499,28 @@ export function EvaluationTypesSection({
 
                     <td className="py-3.5 px-4">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-neutral-800 text-neutral-300 border border-neutral-700">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                           {evalItem.categoryTypeName1 || evalItem.categoryTypeId1}
                         </span>
                         {evalItem.categoryTypeId2 && (
                           <>
-                            <span className="text-neutral-500 text-xs">+</span>
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-neutral-800 text-neutral-300 border border-neutral-700">
+                            <span className="text-slate-400 text-xs">+</span>
+                            <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                               {evalItem.categoryTypeName2 || evalItem.categoryTypeId2}
                             </span>
                           </>
                         )}
                         {Boolean(evalItem.isBrigadePairing) && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-950/80 border border-amber-700/60 text-amber-300" title={text.pairingTitle}>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-200 text-amber-800" title={text.pairingTitle}>
                             {text.pairingBadge}
                           </span>
                         )}
                         {evalItem.excludeRelayRace ? (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-neutral-900 border border-neutral-700 text-neutral-400">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 border border-slate-200 text-slate-600">
                             {text.withoutRelay}
                           </span>
                         ) : (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-950/80 border border-emerald-800/60 text-emerald-300">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 border border-emerald-100 text-emerald-700">
                             {text.withRelay}
                           </span>
                         )}
@@ -532,7 +533,7 @@ export function EvaluationTypesSection({
                         aria-label={text.webVisibility(evalItem.name)}
                         checked={evalItem.public}
                         onChange={(e) => onUpdateEvaluationType(evalItem.id, { public: e.target.checked })}
-                        className="w-4 h-4 accent-red-600 rounded bg-neutral-950 border-neutral-700 focus:ring-0 cursor-pointer"
+                        className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 focus:ring-0 cursor-pointer"
                         title={text.webVisibilityTitle}
                       />
                     </td>
@@ -543,7 +544,7 @@ export function EvaluationTypesSection({
                         aria-label={text.tvVisibility(evalItem.name)}
                         checked={evalItem.publicTv}
                         onChange={(e) => onUpdateEvaluationType(evalItem.id, { publicTv: e.target.checked })}
-                        className="w-4 h-4 accent-red-600 rounded bg-neutral-950 border-neutral-700 focus:ring-0 cursor-pointer"
+                        className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 focus:ring-0 cursor-pointer"
                         title={text.tvVisibilityTitle}
                       />
                     </td>
@@ -559,7 +560,7 @@ export function EvaluationTypesSection({
                           const val = Math.max(1, parseInt(e.target.value, 10) || 10);
                           onUpdateEvaluationType(evalItem.id, { displayDurationSeconds: val });
                         }}
-                        className="w-16 bg-neutral-950 border border-neutral-800 focus:border-red-600 rounded-md px-2 py-1 text-center font-mono text-xs text-white focus:outline-none transition-colors mx-auto"
+                        className="w-16 bg-white border border-slate-200 focus:border-indigo-400 rounded-lg px-2 py-1 text-center font-mono text-xs text-slate-800 focus:outline-none transition-colors mx-auto shadow-sm"
                       />
                     </td>
 
@@ -568,7 +569,7 @@ export function EvaluationTypesSection({
                         type="button"
                         onClick={() => handleDeleteEvaluationType(evalItem.id, evalItem.name)}
                         disabled={deletingId === evalItem.id}
-                        className="p-1.5 px-2.5 rounded bg-neutral-800 hover:bg-red-950/60 hover:text-red-300 hover:border-red-800 text-neutral-400 text-xs border border-neutral-700 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="p-1.5 px-3 rounded-lg bg-white hover:bg-red-50 text-red-500 hover:text-red-700 text-xs border border-slate-200 hover:border-red-200 transition-colors disabled:opacity-50 cursor-pointer font-semibold shadow-xs"
                         title={text.delete(evalItem.name)}
                       >
                         {deletingId === evalItem.id ? text.deleting : text.deleteButton}
@@ -581,6 +582,6 @@ export function EvaluationTypesSection({
           </tbody>
         </table>
       </div>
-    </section>
+    </AdminCard>
   );
 }

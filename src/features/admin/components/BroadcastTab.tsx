@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import type { ConfigState } from './SettingsTab';
 import type { TvPresentationConfig } from '../../../../shared/domain/tv-presentation';
 import { uiText } from '../../../ui-text';
+import { AdminCard } from './AdminCard';
+import { Tv, RotateCw, Pin, Trophy, Megaphone, Settings, CheckCircle2, AlertTriangle, X, Loader2 } from 'lucide-react';
+import type { AdminTabId } from './AdminLayout';
 
 interface CategorySetting {
   name: string;
@@ -16,8 +19,6 @@ interface TvState {
   selectedCategoryId: string | null;
   updatedAt?: number;
 }
-
-import type { AdminTabId } from './AdminLayout';
 
 export interface BroadcastTabProps {
   onNavigate?: (tab: AdminTabId) => void;
@@ -47,7 +48,6 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
     setLoading(true);
     setError(null);
     try {
-      // Fetch TV state, display config, and the canonical evaluation types.
       const [tvRes, configRes, evalRes] = await Promise.all([
         fetch('/api/admin/tv-state'),
         fetch('/api/admin/config'),
@@ -128,7 +128,6 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
     setUpdating(true);
     setError(null);
 
-    // If changing to FIXED or WINNERS without a category, try to pick the first one
     let targetCategoryId = categoryId !== undefined ? categoryId : tvState.selectedCategoryId;
     if ((mode === 'FIXED' || mode === 'WINNERS') && !targetCategoryId) {
       const firstCat = Object.keys(categories)[0];
@@ -160,42 +159,28 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
     setSavingAnnouncement(true);
     setError(null);
     setAnnouncementSuccess(null);
-
     try {
-      // 1. Get current config to preserve other settings
       const cfgRes = await fetch('/api/admin/config');
-      const currentCfg = cfgRes.ok ? await cfgRes.json() : {};
-
-      // 2. Put updated config
-      const updatedCfg = {
-        ...currentCfg,
-        tvAnnouncement: {
-          headline: editAnnouncement.headline,
-          message: editAnnouncement.message,
-        },
-      };
-
+      if (!cfgRes.ok) throw new Error(uiText.admin.broadcast.configLoadError);
+      const currentCfg = await cfgRes.json();
       const putRes = await fetch('/api/admin/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedCfg),
+        body: JSON.stringify({
+          ...currentCfg,
+          tvAnnouncement: editAnnouncement,
+        }),
       });
-
-      if (!putRes.ok) {
-        throw new Error(uiText.admin.broadcast.announcementSaveError);
-      }
-
+      if (!putRes.ok) throw new Error(uiText.admin.broadcast.announcementSaveError);
       setAnnouncement(editAnnouncement);
       setIsEditingAnnouncement(false);
-      setAnnouncementSuccess(uiText.admin.broadcast.announcementSaved);
-      setTimeout(() => setAnnouncementSuccess(null), 3000);
 
-      // 3. Activate MESSAGE mode if requested
       if (activateMessageMode) {
         await handleModeChange('MESSAGE');
       }
+      setAnnouncementSuccess(uiText.admin.broadcast.announcementSaved);
     } catch (err: any) {
-      setError(err.message || uiText.admin.broadcast.announcementFallback);
+      setError(err.message || uiText.admin.broadcast.announcementSaveError);
     } finally {
       setSavingAnnouncement(false);
     }
@@ -237,9 +222,9 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-neutral-400">
-        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-oswald uppercase tracking-wider text-sm">{uiText.admin.broadcast.loading}</p>
+      <div className="flex flex-col items-center justify-center py-16 text-slate-400 font-medium">
+        <Loader2 className="animate-spin mb-3 text-indigo-500" size={32} />
+        <p className="text-sm">{uiText.admin.broadcast.loading}</p>
       </div>
     );
   }
@@ -252,10 +237,10 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
   return (
     <div className="space-y-6 @container">
       {updating && (
-        <div className="absolute inset-0 bg-neutral-950/40 z-10 flex items-center justify-center rounded-2xl backdrop-blur-[1px]">
-          <div className="bg-neutral-900 border border-neutral-700 px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3">
-            <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-            <span className="font-oswald uppercase tracking-widest text-sm text-neutral-200">{uiText.admin.broadcast.updating}</span>
+        <div className="fixed inset-0 bg-slate-900/20 z-50 flex items-center justify-center backdrop-blur-xs">
+          <div className="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center space-x-3 border border-slate-100">
+            <Loader2 className="animate-spin text-indigo-600" size={20} />
+            <span className="text-sm font-semibold text-slate-700">{uiText.admin.broadcast.updating}</span>
           </div>
         </div>
       )}
@@ -263,16 +248,18 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
       {/* Admin Splash Active Notice Banner */}
       {tvPresentation?.adminSplashEnabled && (
         <div
-          className="bg-amber-950/80 border border-amber-800/80 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-200 shadow-xl"
+          className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-amber-800 shadow-sm"
           data-testid="admin-splash-active-banner"
         >
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">📺</span>
+            <div className="p-2 bg-amber-100 rounded-xl text-amber-700">
+              <Tv size={20} />
+            </div>
             <div>
-              <strong className="block text-sm text-amber-100 font-bold">
+              <strong className="block text-sm font-bold text-amber-900">
                 {uiText.admin.broadcast.adminSplashActiveBanner}
               </strong>
-              <p className="text-xs text-amber-300/80 mt-0.5">
+              <p className="text-xs text-amber-700 mt-0.5">
                 {uiText.admin.settings.adminSplashHelp}
               </p>
             </div>
@@ -281,7 +268,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
             type="button"
             onClick={handleDisableAdminSplash}
             disabled={updating}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-xl text-xs uppercase tracking-wider transition-colors whitespace-nowrap shadow-md cursor-pointer shrink-0"
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-xs transition-colors whitespace-nowrap shadow-sm cursor-pointer shrink-0"
           >
             {uiText.admin.broadcast.disableSplashButton}
           </button>
@@ -289,81 +276,83 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
       )}
 
       {error && (
-        <div className="bg-red-950/80 border border-red-800 text-red-200 px-4 py-3.5 rounded-xl flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-2 text-sm font-semibold">
-            <span>⚠️</span>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+          <div className="flex items-center space-x-2 font-medium">
+            <AlertTriangle size={18} />
             <span>{error}</span>
           </div>
-          <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs font-mono">
-            ✕
+          <button type="button" onClick={() => setError(null)} className="text-red-400 hover:text-red-700 p-1">
+            <X size={16} />
           </button>
         </div>
       )}
 
       {announcementSuccess && (
-        <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3.5 rounded-xl flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-2 text-sm font-semibold">
-            <span>✅</span>
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+          <div className="flex items-center space-x-2 font-medium">
+            <CheckCircle2 size={18} />
             <span>{announcementSuccess}</span>
           </div>
-          <button type="button" onClick={() => setAnnouncementSuccess(null)} className="text-emerald-400 hover:text-white text-xs font-mono">
-            ✕
+          <button type="button" onClick={() => setAnnouncementSuccess(null)} className="text-emerald-400 hover:text-emerald-700 p-1">
+            <X size={16} />
           </button>
         </div>
       )}
 
       {rankingPageDurationSuccess && (
-        <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3.5 rounded-xl flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-2 text-sm font-semibold">
-            <span>✅</span>
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+          <div className="flex items-center space-x-2 font-medium">
+            <CheckCircle2 size={18} />
             <span>{rankingPageDurationSuccess}</span>
           </div>
-          <button type="button" onClick={() => setRankingPageDurationSuccess(null)} className="text-emerald-400 hover:text-white text-xs font-mono">
-            ✕
+          <button type="button" onClick={() => setRankingPageDurationSuccess(null)} className="text-emerald-400 hover:text-emerald-700 p-1">
+            <X size={16} />
           </button>
         </div>
       )}
 
       {/* Header and Current State */}
-      <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-oswald text-xl font-bold text-white uppercase tracking-wider mb-1">
-            {uiText.admin.broadcast.title}
-          </h3>
-          <p className="text-xs text-neutral-400">
-            {uiText.admin.broadcast.subtitle}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
-          <button
-            type="button"
-            onClick={navigateToSettingsTab}
-            className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold border border-neutral-700 transition-colors flex items-center space-x-1.5"
-            title={uiText.admin.broadcast.settingsTitle}
-          >
-            <span>⚙️</span>
-            <span>{uiText.admin.broadcast.settings}</span>
-          </button>
+      <AdminCard>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">
+              {uiText.admin.broadcast.title}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {uiText.admin.broadcast.subtitle}
+            </p>
+          </div>
+          <div className="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end">
+            <button
+              type="button"
+              onClick={navigateToSettingsTab}
+              className="px-4 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors flex items-center space-x-2 shadow-sm"
+              title={uiText.admin.broadcast.settingsTitle}
+            >
+              <Settings size={16} className="text-slate-500" />
+              <span>{uiText.admin.broadcast.settings}</span>
+            </button>
 
-          <div className="text-right">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-1">
-              {uiText.admin.broadcast.activeMode}
-            </div>
-            <div className="inline-flex items-center space-x-2 bg-neutral-950 border border-neutral-700 px-4 py-2 rounded-xl shadow-inner">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-              <span className="font-oswald font-bold text-white tracking-widest">{activeMode}</span>
+            <div className="text-right">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                {uiText.admin.broadcast.activeMode}
+              </div>
+              <div className="inline-flex items-center space-x-2 bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 rounded-xl shadow-xs">
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
+                <span className="font-bold text-indigo-700 text-sm tracking-wide">{activeMode}</span>
+              </div>
             </div>
           </div>
         </div>
-      </section>
+      </AdminCard>
 
-      <section className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 shadow-xl">
+      <AdminCard>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div className="flex-1">
-            <label htmlFor="ranking-page-duration" className="block font-oswald text-base font-bold text-white uppercase tracking-wider mb-2">
+            <label htmlFor="ranking-page-duration" className="block text-sm font-bold text-slate-800 mb-1">
               {uiText.admin.broadcast.pageDuration}
             </label>
-            <p className="text-xs text-neutral-400 mb-3">
+            <p className="text-xs text-slate-500 mb-3">
               {uiText.admin.broadcast.pageDurationHelp}
             </p>
             <input
@@ -374,19 +363,19 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
               step={1}
               value={rankingPageDurationSeconds}
               onChange={(event) => setRankingPageDurationSeconds(Number(event.target.value))}
-              className="w-full sm:w-40 bg-neutral-950 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-red-500 shadow-inner"
+              className="w-full sm:w-48 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:bg-white focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all"
             />
           </div>
           <button
             type="button"
             onClick={handleSaveRankingPageDuration}
             disabled={savingRankingPageDuration}
-            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 disabled:opacity-60 text-white text-sm font-bold transition-colors"
+            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold shadow-sm shadow-indigo-200 transition-all cursor-pointer"
           >
             {savingRankingPageDuration ? uiText.admin.broadcast.saving : uiText.admin.broadcast.saveDuration}
           </button>
         </div>
-      </section>
+      </AdminCard>
 
       {/* Mode Selection Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -394,60 +383,64 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
         {/* 1. ROTATION MODE */}
         <button
           onClick={() => handleModeChange('ROTATION')}
-          className={`text-left p-6 rounded-2xl border-2 transition-all ${
+          className={`text-left p-6 rounded-2xl border-2 transition-all cursor-pointer ${
             activeMode === 'ROTATION'
-              ? 'bg-red-950/30 border-red-600 shadow-[0_0_25px_rgba(220,38,38,0.2)] ring-1 ring-red-500/50'
-              : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900/60'
+              ? 'bg-indigo-50/50 border-indigo-600 shadow-lg shadow-indigo-100 ring-2 ring-indigo-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 shadow-sm'
           }`}
         >
           <div className="flex items-start justify-between">
-            <div className="text-3xl mb-3">🔄</div>
+            <div className={`p-3 rounded-2xl mb-4 ${activeMode === 'ROTATION' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'bg-slate-100 text-slate-600'}`}>
+              <RotateCw size={24} />
+            </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              activeMode === 'ROTATION' ? 'border-red-500' : 'border-neutral-600'
+              activeMode === 'ROTATION' ? 'border-indigo-600' : 'border-slate-300'
             }`}>
-              {activeMode === 'ROTATION' && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+              {activeMode === 'ROTATION' && <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />}
             </div>
           </div>
-          <h4 className="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-1">{uiText.admin.broadcast.rotation}</h4>
-          <p className="text-sm text-neutral-400 leading-relaxed">
+          <h4 className="text-base font-bold text-slate-800 mb-1">{uiText.admin.broadcast.rotation}</h4>
+          <p className="text-sm text-slate-500 leading-relaxed">
             {uiText.admin.broadcast.rotationHelp}
           </p>
         </button>
 
         {/* 2. FIXED MODE */}
         <div
-          className={`p-6 rounded-2xl border-2 transition-all ${
+          className={`p-6 rounded-2xl border-2 transition-all flex flex-col ${
             activeMode === 'FIXED'
-              ? 'bg-blue-950/20 border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.2)] ring-1 ring-blue-500/50'
-              : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700'
+              ? 'bg-blue-50/50 border-blue-600 shadow-lg shadow-blue-100 ring-2 ring-blue-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
           }`}
         >
           <div 
             className="flex items-start justify-between cursor-pointer"
             onClick={() => handleModeChange('FIXED')}
           >
-            <div className="text-3xl mb-3">📌</div>
+            <div className={`p-3 rounded-2xl mb-4 ${activeMode === 'FIXED' ? 'bg-blue-600 text-white shadow-md shadow-blue-200' : 'bg-slate-100 text-slate-600'}`}>
+              <Pin size={24} />
+            </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              activeMode === 'FIXED' ? 'border-blue-500' : 'border-neutral-600'
+              activeMode === 'FIXED' ? 'border-blue-600' : 'border-slate-300'
             }`}>
-              {activeMode === 'FIXED' && <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />}
+              {activeMode === 'FIXED' && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
             </div>
           </div>
           <div className="cursor-pointer" onClick={() => handleModeChange('FIXED')}>
-            <h4 className="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-1">{uiText.admin.broadcast.fixed}</h4>
-            <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+            <h4 className="text-base font-bold text-slate-800 mb-1">{uiText.admin.broadcast.fixed}</h4>
+            <p className="text-sm text-slate-500 leading-relaxed mb-4">
               {uiText.admin.broadcast.fixedHelp}
             </p>
           </div>
           
-          <div className={`transition-opacity ${activeMode === 'FIXED' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+          <div className={`mt-auto pt-2 transition-opacity ${activeMode === 'FIXED' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
               {uiText.admin.broadcast.selectCategory}
             </label>
             <select
               value={tvState?.selectedCategoryId || ''}
               onChange={(e) => handleModeChange('FIXED', e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 shadow-inner"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:bg-white focus:outline-none focus:border-blue-500 shadow-sm transition-all"
             >
               <option value="" disabled>{uiText.admin.broadcast.pleaseSelect}</option>
               {categoryKeys.map(k => (
@@ -459,38 +452,40 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
 
         {/* 3. WINNERS MODE */}
         <div
-          className={`p-6 rounded-2xl border-2 transition-all ${
+          className={`p-6 rounded-2xl border-2 transition-all flex flex-col ${
             activeMode === 'WINNERS'
-              ? 'bg-amber-950/20 border-amber-500 shadow-[0_0_25px_rgba(245,158,11,0.2)] ring-1 ring-amber-500/50'
-              : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700'
+              ? 'bg-amber-50/50 border-amber-500 shadow-lg shadow-amber-100 ring-2 ring-amber-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
           }`}
         >
           <div 
             className="flex items-start justify-between cursor-pointer"
             onClick={() => handleModeChange('WINNERS')}
           >
-            <div className="text-3xl mb-3">🏆</div>
+            <div className={`p-3 rounded-2xl mb-4 ${activeMode === 'WINNERS' ? 'bg-amber-500 text-white shadow-md shadow-amber-200' : 'bg-slate-100 text-slate-600'}`}>
+              <Trophy size={24} />
+            </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              activeMode === 'WINNERS' ? 'border-amber-500' : 'border-neutral-600'
+              activeMode === 'WINNERS' ? 'border-amber-500' : 'border-slate-300'
             }`}>
               {activeMode === 'WINNERS' && <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />}
             </div>
           </div>
           <div className="cursor-pointer" onClick={() => handleModeChange('WINNERS')}>
-            <h4 className="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-1">{uiText.admin.broadcast.winners}</h4>
-            <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+            <h4 className="text-base font-bold text-slate-800 mb-1">{uiText.admin.broadcast.winners}</h4>
+            <p className="text-sm text-slate-500 leading-relaxed mb-4">
               {uiText.admin.broadcast.winnersHelp}
             </p>
           </div>
 
-          <div className={`transition-opacity ${activeMode === 'WINNERS' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+          <div className={`mt-auto pt-2 transition-opacity ${activeMode === 'WINNERS' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
               {uiText.admin.broadcast.selectWinnerCategory}
             </label>
             <select
               value={tvState?.selectedCategoryId || ''}
               onChange={(e) => handleModeChange('WINNERS', e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 shadow-inner"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:bg-white focus:outline-none focus:border-amber-500 shadow-sm transition-all"
             >
               <option value="" disabled>{uiText.admin.broadcast.pleaseSelect}</option>
               {categoryKeys.map(k => (
@@ -504,46 +499,48 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
         <div
           className={`p-6 rounded-2xl border-2 transition-all flex flex-col ${
             activeMode === 'MESSAGE'
-              ? 'bg-purple-950/20 border-purple-500 shadow-[0_0_25px_rgba(168,85,247,0.2)] ring-1 ring-purple-500/50'
-              : 'bg-neutral-900/40 border-neutral-800 hover:border-neutral-700'
+              ? 'bg-purple-50/50 border-purple-600 shadow-lg shadow-purple-100 ring-2 ring-purple-500/20'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'
           }`}
         >
           <div 
             className="flex items-start justify-between cursor-pointer"
             onClick={() => handleModeChange('MESSAGE')}
           >
-            <div className="text-3xl mb-3">📢</div>
+            <div className={`p-3 rounded-2xl mb-4 ${activeMode === 'MESSAGE' ? 'bg-purple-600 text-white shadow-md shadow-purple-200' : 'bg-slate-100 text-slate-600'}`}>
+              <Megaphone size={24} />
+            </div>
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-              activeMode === 'MESSAGE' ? 'border-purple-500' : 'border-neutral-600'
+              activeMode === 'MESSAGE' ? 'border-purple-600' : 'border-slate-300'
             }`}>
-              {activeMode === 'MESSAGE' && <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />}
+              {activeMode === 'MESSAGE' && <div className="w-2.5 h-2.5 rounded-full bg-purple-600" />}
             </div>
           </div>
           <div className="cursor-pointer mb-4" onClick={() => handleModeChange('MESSAGE')}>
-            <h4 className="font-oswald text-lg font-bold text-white uppercase tracking-wider mb-1">{uiText.admin.broadcast.announcement}</h4>
-            <p className="text-sm text-neutral-400 leading-relaxed">
+            <h4 className="text-base font-bold text-slate-800 mb-1">{uiText.admin.broadcast.announcement}</h4>
+            <p className="text-sm text-slate-500 leading-relaxed">
               {uiText.admin.broadcast.announcementHelp}
             </p>
           </div>
 
-          <div className="mt-auto pt-4 border-t border-neutral-800/80 space-y-3">
+          <div className="mt-auto pt-4 border-t border-slate-100 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                 {isEditingAnnouncement ? uiText.admin.broadcast.editAnnouncement : uiText.admin.broadcast.currentAnnouncement}
               </span>
               <button
                 type="button"
                 onClick={() => setIsEditingAnnouncement(!isEditingAnnouncement)}
-                className="text-xs text-purple-400 hover:text-purple-300 font-semibold underline cursor-pointer"
+                className="text-xs text-purple-600 hover:text-purple-800 font-semibold underline cursor-pointer"
               >
                 {isEditingAnnouncement ? uiText.admin.broadcast.preview : uiText.admin.broadcast.editText}
               </button>
             </div>
 
             {isEditingAnnouncement ? (
-              <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800 space-y-3 shadow-inner">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3 shadow-xs">
                 <div>
-                  <label htmlFor="quick-announcement-headline" className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label htmlFor="quick-announcement-headline" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                     {uiText.admin.broadcast.headline}
                   </label>
                   <input
@@ -552,11 +549,11 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
                     value={editAnnouncement.headline}
                     onChange={(e) => setEditAnnouncement({ ...editAnnouncement, headline: e.target.value })}
                     placeholder={uiText.admin.broadcast.headlinePlaceholder}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-purple-500 shadow-sm"
                   />
                 </div>
                 <div>
-                  <label htmlFor="quick-announcement-message" className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1">
+                  <label htmlFor="quick-announcement-message" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
                     {uiText.admin.broadcast.message}
                   </label>
                   <textarea
@@ -565,7 +562,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
                     value={editAnnouncement.message}
                     onChange={(e) => setEditAnnouncement({ ...editAnnouncement, message: e.target.value })}
                     placeholder={uiText.admin.broadcast.messagePlaceholder}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 resize-none"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-purple-500 resize-none shadow-sm"
                   />
                 </div>
                 <div className="flex items-center justify-end space-x-2 pt-1">
@@ -576,7 +573,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
                       setIsEditingAnnouncement(false);
                     }}
                     disabled={savingAnnouncement}
-                    className="px-3 py-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs rounded-lg font-semibold transition-colors"
+                    className="px-3.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs rounded-xl font-semibold transition-colors"
                   >
                     {uiText.admin.broadcast.cancel}
                   </button>
@@ -584,21 +581,21 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
                     type="button"
                     onClick={() => handleSaveAndBroadcastAnnouncement(true)}
                     disabled={savingAnnouncement}
-                    className="px-3.5 py-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center space-x-1.5 shadow-md cursor-pointer"
+                    className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-purple-200 flex items-center space-x-1.5 cursor-pointer"
                   >
                     {savingAnnouncement ? uiText.admin.broadcast.saving : uiText.admin.broadcast.saveAndShow}
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="bg-neutral-950 p-3.5 rounded-xl border border-neutral-800 shadow-inner">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 {announcement.headline || announcement.message ? (
                   <>
-                    {announcement.headline && <div className="font-bold text-white text-sm mb-1">{announcement.headline}</div>}
-                    {announcement.message && <div className="text-xs text-neutral-300 break-words">{announcement.message}</div>}
+                    {announcement.headline && <div className="font-bold text-slate-800 text-sm mb-1">{announcement.headline}</div>}
+                    {announcement.message && <div className="text-xs text-slate-600 break-words">{announcement.message}</div>}
                   </>
                 ) : (
-                  <span className="text-xs text-neutral-600 italic">{uiText.admin.broadcast.noAnnouncement}</span>
+                  <span className="text-xs text-slate-400 italic">{uiText.admin.broadcast.noAnnouncement}</span>
                 )}
               </div>
             )}

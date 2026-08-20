@@ -4,6 +4,8 @@ import { type CategoryEntry as ScoringCategoryEntry } from '../../../../shared/d
 import { DEFAULT_CATALOG_SEED } from '../../../../shared/seed/seed-data';
 import { parseGermanTimeToHundredths, formatHundredthsToGerman } from '../../../../shared/utils/time-parser';
 import { uiText } from '../../../ui-text';
+import { AdminCard } from './AdminCard';
+import { Timer, Trophy, XCircle, Loader2 } from 'lucide-react';
 
 export interface CategoryType {
   id: string;
@@ -248,43 +250,46 @@ export function ResultsTab() {
   return (
     <div className="space-y-6 @container" data-testid="results-tab">
       {/* Header & Category Selection */}
-      <div className="flex flex-col @md:flex-row justify-between items-start @md:items-center gap-4 bg-neutral-900/80 border border-neutral-800 p-4 rounded-xl backdrop-blur">
-        <div className="flex items-center space-x-2 overflow-x-auto max-w-full py-1">
-          {categoryFilterOptions.map((cat) => (
-            <button
-              key={cat.id}
-              id={`cat-filter-${cat.id}`}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${selectedCategory === cat.id
-                  ? 'bg-red-600 text-white shadow-md shadow-red-950/40 border border-red-500/40'
-                  : 'text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent'
+      <AdminCard className="!p-4">
+        <div className="flex flex-col @md:flex-row justify-between items-start @md:items-center gap-4">
+          <div className="flex items-center space-x-2 overflow-x-auto max-w-full py-1 hide-scrollbar">
+            {categoryFilterOptions.map((cat) => (
+              <button
+                key={cat.id}
+                id={`cat-filter-${cat.id}`}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+                  selectedCategory === cat.id
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 border border-indigo-500'
+                    : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
 
-        {/* Quick Counters */}
-        <div className="flex items-center space-x-3 text-xs">
-          <span className="px-2.5 py-1 rounded-md bg-blue-950/60 border border-blue-800/50 text-blue-300 font-mono">
-            {uiText.admin.results.openCount(openEntries.length)}
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-emerald-950/60 border border-emerald-800/50 text-emerald-300 font-mono">
-            {uiText.admin.results.validCount(validEntriesGrouped.length)}
-          </span>
-          <span className="px-2.5 py-1 rounded-md bg-red-950/60 border border-red-800/50 text-red-300 font-mono">
-            {uiText.admin.results.dnfCount(dnfEntries.length)}
-          </span>
+          {/* Quick Counters */}
+          <div className="flex items-center space-x-3 text-xs shrink-0">
+            <span className="px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-100 text-blue-700 font-mono font-medium">
+              {uiText.admin.results.openCount(openEntries.length)}
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-700 font-mono font-medium">
+              {uiText.admin.results.validCount(validEntriesGrouped.length)}
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-100 text-red-700 font-mono font-medium">
+              {uiText.admin.results.dnfCount(dnfEntries.length)}
+            </span>
+          </div>
         </div>
-      </div>
+      </AdminCard>
 
       {error && (
-        <div className="bg-red-950/80 border border-red-600 text-red-200 p-3.5 rounded-xl text-sm flex items-center justify-between shadow-lg">
-          <span>{error}</span>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+          <span className="font-medium">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-white font-bold ml-4"
+            className="text-red-400 hover:text-red-700 font-bold ml-4 p-1"
           >
             ✕
           </button>
@@ -292,38 +297,40 @@ export function ResultsTab() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-neutral-400 font-medium">
-          <div className="inline-block animate-spin text-2xl mb-2">⏱️</div>
+        <div className="flex flex-col items-center justify-center py-16 text-slate-400 font-medium">
+          <Loader2 className="animate-spin mb-3 text-indigo-500" size={32} />
           <div>{uiText.admin.results.loading}</div>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* SECTION 1: OPEN START ORDER (Zeiterfassung) */}
-          <section className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
-            <div className="bg-neutral-800/60 px-5 py-4 border-b border-neutral-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">⏱️</span>
-                <h3 className="font-bold text-white tracking-wide">
+          <AdminCard>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="bg-indigo-50 text-indigo-500 p-2 rounded-lg">
+                  <Timer size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800 tracking-wide text-lg">
                   {uiText.admin.results.openRunsTitle}
                 </h3>
-                <span className="text-xs text-blue-400 font-mono bg-blue-950/50 border border-blue-800/40 px-2 py-0.5 rounded-md">
+                <span className="text-xs text-indigo-600 font-mono bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-semibold">
                   {openEntries.length}
                 </span>
               </div>
-              <p className="text-xs text-neutral-400 hidden md:block">
+              <p className="text-xs text-slate-500 hidden md:block">
                 {uiText.admin.results.autoValidBefore}{' '}
-                <strong className="text-emerald-400 font-semibold">{uiText.admin.results.validStatus}</strong>{' '}
+                <strong className="text-emerald-600 font-semibold">{uiText.admin.results.validStatus}</strong>{' '}
                 {uiText.admin.results.autoValidAfter}
               </p>
             </div>
 
-            <div className="p-5">
+            <div>
               {openEntries.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500 text-sm">
+                <div className="text-center py-8 text-slate-400 text-sm">
                   {uiText.admin.results.noOpenRuns}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {openEntries.map((entry) => {
                     const form = inputForms[entry.id] || {
                       attackTimeStr: '',
@@ -339,30 +346,30 @@ export function ResultsTab() {
                       <div
                         key={entry.id}
                         data-testid={`open-entry-row-${entry.id}`}
-                        className="bg-neutral-950/70 border border-neutral-800/90 rounded-xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:border-neutral-700 transition-colors"
+                        className="bg-slate-50 border border-slate-100 rounded-2xl p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-6 hover:shadow-sm transition-all"
                       >
                         {/* Entry info */}
                         <div className="flex items-center space-x-4 min-w-[240px]">
-                          <div className="w-9 h-9 rounded-lg bg-blue-950 text-blue-300 border border-blue-800/60 flex items-center justify-center font-mono font-bold text-sm shadow-inner shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-white text-slate-700 border border-slate-200 flex items-center justify-center font-mono font-bold shadow-sm shrink-0">
                             #{entry.startOrderPosition}
                           </div>
                           <div>
-                            <div className="font-bold text-white text-base">
+                            <div className="font-bold text-slate-800 text-base">
                               {entry.fireBrigadeName ? `${entry.fireBrigadeName} — ` : ''}{entry.groupName}
                             </div>
-                            <div className="text-xs text-neutral-400 font-mono uppercase mt-0.5">
+                            <div className="text-xs text-slate-500 font-medium uppercase mt-1">
                               {entry.categoryTypeName || catType?.name || '—'} ({entry.competitionClass})
                             </div>
                           </div>
                         </div>
 
                         {/* Input controls */}
-                        <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-4 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
                           {/* Attack Time Input */}
                           <div className="flex flex-col">
                             <label
                               htmlFor={`time-input-${entry.id}`}
-                              className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1"
+                              className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1"
                             >
                               {uiText.admin.results.attackTime}
                             </label>
@@ -374,7 +381,7 @@ export function ResultsTab() {
                               onChange={(e) =>
                                 handleInputChange(entry.id, 'attackTimeStr', e.target.value)
                               }
-                              className="w-28 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white text-center focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+                              className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-800 text-center focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                             />
                           </div>
 
@@ -382,7 +389,7 @@ export function ResultsTab() {
                           <div className="flex flex-col">
                             <label
                               htmlFor={`errors-input-${entry.id}`}
-                              className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1"
+                              className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1"
                             >
                               {uiText.admin.results.errors}
                             </label>
@@ -395,17 +402,17 @@ export function ResultsTab() {
                               onChange={(e) =>
                                 handleInputChange(entry.id, 'errorsStr', e.target.value)
                               }
-                              className="w-20 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white text-center focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+                              className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-800 text-center focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                             />
                           </div>
 
                           {/* Relay Race Inputs (if category has relay race) */}
                           {showRelay && (
                             <>
-                              <div className="flex flex-col">
+                              <div className="flex flex-col border-l border-slate-100 pl-4 ml-1">
                                 <label
                                   htmlFor={`relay-time-input-${entry.id}`}
-                                  className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1"
+                                  className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1"
                                 >
                                   {uiText.admin.results.relayTime}
                                 </label>
@@ -417,14 +424,14 @@ export function ResultsTab() {
                                   onChange={(e) =>
                                     handleInputChange(entry.id, 'relayRaceTimeStr', e.target.value)
                                   }
-                                  className="w-28 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white text-center focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+                                  className="w-28 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-800 text-center focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                                 />
                               </div>
 
                               <div className="flex flex-col">
                                 <label
                                   htmlFor={`relay-errors-input-${entry.id}`}
-                                  className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-1"
+                                  className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1"
                                 >
                                   {uiText.admin.results.relayErrors}
                                 </label>
@@ -437,19 +444,19 @@ export function ResultsTab() {
                                   onChange={(e) =>
                                     handleInputChange(entry.id, 'relayRaceErrorsStr', e.target.value)
                                   }
-                                  className="w-20 bg-neutral-900 border border-neutral-700 rounded-lg px-3 py-1.5 text-sm font-mono text-white text-center focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none"
+                                  className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-800 text-center focus:bg-white focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all"
                                 />
                               </div>
                             </>
                           )}
 
                           {/* Actions: DNF then Speichern */}
-                          <div className="flex items-center space-x-2 pt-4 lg:pt-0">
+                          <div className="flex items-center space-x-2 pt-5 ml-2 lg:pt-0">
                             <button
                               id={`dnf-btn-${entry.id}`}
                               onClick={() => handleStatusChange(entry.id, 'DNF')}
                               disabled={isSaving}
-                              className="px-3.5 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-semibold text-xs rounded-lg transition-colors cursor-pointer"
+                              className="px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 font-semibold text-xs rounded-xl transition-colors cursor-pointer disabled:opacity-50"
                             >
                               {uiText.admin.results.dnf}
                             </button>
@@ -457,7 +464,7 @@ export function ResultsTab() {
                               id={`save-btn-${entry.id}`}
                               onClick={() => handleSaveResult(entry.id)}
                               disabled={isSaving}
-                              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold text-xs rounded-lg shadow-md shadow-emerald-950/40 transition-colors cursor-pointer"
+                              className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-sm shadow-emerald-200 transition-colors cursor-pointer"
                             >
                               {isSaving ? uiText.admin.results.saving : uiText.admin.results.save}
                             </button>
@@ -469,29 +476,31 @@ export function ResultsTab() {
                 </div>
               )}
             </div>
-          </section>
+          </AdminCard>
 
           {/* SECTION 2: VALID EVALUATED RESULTS */}
-          <section className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
-            <div className="bg-neutral-800/60 px-5 py-4 border-b border-neutral-800 flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="text-lg">🏆</span>
-                <h3 className="font-bold text-white tracking-wide">
+          <AdminCard>
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-3">
+                <div className="bg-emerald-50 text-emerald-500 p-2 rounded-lg">
+                  <Trophy size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800 tracking-wide text-lg">
                   {uiText.admin.results.validRankingsTitle}
                 </h3>
-                <span className="text-xs text-emerald-400 font-mono bg-emerald-950/50 border border-emerald-800/40 px-2 py-0.5 rounded-md">
+                <span className="text-xs text-emerald-600 font-mono bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md font-semibold">
                   {validEntriesGrouped.length}
                 </span>
               </div>
             </div>
 
-            <div className="p-5">
+            <div>
               {validEntriesGrouped.length === 0 ? (
-                <div className="text-center py-8 text-neutral-500 text-sm">
+                <div className="text-center py-8 text-slate-400 text-sm">
                   {uiText.admin.results.noValidRuns}
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {validEntriesGrouped.map((entry) => {
                     const isSaving = savingId === entry.id;
                     const formattedAttack = formatHundredthsToGerman(entry.attackTimeHundredths);
@@ -504,57 +513,58 @@ export function ResultsTab() {
                       <div
                         key={entry.id}
                         data-testid={`valid-entry-row-${entry.id}`}
-                        className="bg-neutral-950/70 border border-emerald-900/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                        className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
                       >
                         <div className="flex items-center space-x-4">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-sm shadow-inner font-mono shrink-0 ${entry.rank === 1
-                                ? 'bg-amber-950/80 text-amber-300 border border-amber-500/80 ring-1 ring-amber-500/30'
+                            className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm font-mono shrink-0 ${
+                              entry.rank === 1
+                                ? 'bg-amber-100 text-amber-700 border border-amber-200'
                                 : entry.rank === 2
-                                  ? 'bg-slate-800 text-slate-200 border border-slate-400/80 ring-1 ring-slate-400/30'
+                                  ? 'bg-slate-100 text-slate-700 border border-slate-200'
                                   : entry.rank === 3
-                                    ? 'bg-amber-950/40 text-amber-500 border border-amber-700/80 ring-1 ring-amber-700/30'
-                                    : 'bg-emerald-950 text-emerald-300 border border-emerald-800/60'
-                              }`}
+                                    ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                            }`}
                           >
                             {entry.rank}.
                           </div>
                           <div>
-                            <div className="font-bold text-white text-base">
+                            <div className="font-bold text-slate-800 text-base">
                               {entry.fireBrigadeName ? `${entry.fireBrigadeName} — ` : ''}{entry.groupName}
                             </div>
-                            <div className="text-xs text-neutral-400 font-mono uppercase mt-0.5">
+                            <div className="text-xs text-slate-500 font-medium uppercase mt-1">
                               {entry.categoryTypeName || '—'}
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-6">
+                        <div className="flex items-center space-x-6 bg-slate-50 rounded-xl p-2 px-4 border border-slate-100">
                           <div className="text-right">
-                            <div className="text-xs text-neutral-400">{uiText.admin.results.attackAndRelay}</div>
-                            <div className="text-sm font-mono text-neutral-300">
-                              {formattedAttack}s (+{attackErrors}F)
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{uiText.admin.results.attackAndRelay}</div>
+                            <div className="text-sm font-mono text-slate-700 font-medium">
+                              {formattedAttack}s <span className="text-red-500 text-xs">(+{attackErrors}F)</span>
                               {hasRelay && (
-                                <span className="text-neutral-400 text-xs ml-1">
-                                  | {formattedRelay}s (+{entry.relayRaceErrors ?? 0}F)
+                                <span className="text-slate-400 text-xs ml-2">
+                                  | {formattedRelay}s <span className="text-red-500">(+{entry.relayRaceErrors ?? 0}F)</span>
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <div className="text-right pr-2">
-                            <div className="text-xs text-neutral-400">{uiText.admin.results.totalTime}</div>
-                            <div className="text-lg font-bold font-mono text-emerald-400">
+                          <div className="text-right pl-4 border-l border-slate-200">
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{uiText.admin.results.totalTime}</div>
+                            <div className="text-lg font-bold font-mono text-emerald-600">
                               {formattedScore}s
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-2">
+                          <div className="pl-4">
                             <button
                               id={`revert-btn-${entry.id}`}
                               onClick={() => handleStatusChange(entry.id, 'OPEN')}
                               disabled={isSaving}
-                              className="px-3.5 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold text-xs rounded-lg border border-neutral-700 transition-colors cursor-pointer"
+                              className="px-4 py-2 bg-white hover:bg-slate-100 text-slate-600 font-semibold text-xs rounded-lg border border-slate-200 shadow-sm transition-colors cursor-pointer"
                               title={uiText.admin.results.resetToOpenTitle}
                             >
                               {uiText.admin.results.resetToOpen}
@@ -567,24 +577,26 @@ export function ResultsTab() {
                 </div>
               )}
             </div>
-          </section>
+          </AdminCard>
 
           {/* SECTION 3: DNF / DISQUALIFIED */}
           {dnfEntries.length > 0 && (
-            <section className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden shadow-xl">
-              <div className="bg-neutral-800/60 px-5 py-4 border-b border-neutral-800 flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <span className="text-lg">❌</span>
-                  <h3 className="font-bold text-white tracking-wide">
+            <AdminCard>
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-red-50 text-red-500 p-2 rounded-lg">
+                    <XCircle size={20} />
+                  </div>
+                  <h3 className="font-bold text-slate-800 tracking-wide text-lg">
                     {uiText.admin.results.disqualifiedTitle}
                   </h3>
-                  <span className="text-xs text-red-400 font-mono bg-red-950/50 border border-red-800/40 px-2 py-0.5 rounded-md">
+                  <span className="text-xs text-red-600 font-mono bg-red-50 border border-red-100 px-2 py-0.5 rounded-md font-semibold">
                     {dnfEntries.length}
                   </span>
                 </div>
               </div>
 
-              <div className="p-5 space-y-3">
+              <div className="space-y-4">
                 {dnfEntries.map((entry) => {
                   const isSaving = savingId === entry.id;
 
@@ -592,28 +604,28 @@ export function ResultsTab() {
                     <div
                       key={entry.id}
                       data-testid={`dnf-entry-row-${entry.id}`}
-                      className="bg-neutral-950/70 border border-red-900/40 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      className="bg-red-50/50 border border-red-100 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm"
                     >
                       <div className="flex items-center space-x-4">
-                        <div className="w-9 h-9 rounded-lg bg-red-950 text-red-300 border border-red-800/60 flex items-center justify-center font-bold text-xs font-mono">
+                        <div className="w-12 h-12 rounded-xl bg-red-100 text-red-600 border border-red-200 flex items-center justify-center font-bold text-sm font-mono shrink-0">
                           {uiText.admin.results.dnf}
                         </div>
                         <div>
-                          <div className="font-bold text-white text-base">
+                          <div className="font-bold text-slate-800 text-base">
                             {entry.fireBrigadeName ? `${entry.fireBrigadeName} — ` : ''}{entry.groupName}
                           </div>
-                          <div className="text-xs text-neutral-400 font-mono uppercase mt-0.5">
+                          <div className="text-xs text-slate-500 font-medium uppercase mt-1">
                             {entry.categoryTypeName || '—'}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center">
                         <button
                           id={`revert-dnf-btn-${entry.id}`}
                           onClick={() => handleStatusChange(entry.id, 'OPEN')}
                           disabled={isSaving}
-                          className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold text-xs rounded-lg border border-neutral-700 transition-colors"
+                          className="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl border border-slate-200 shadow-sm transition-colors"
                         >
                           {uiText.admin.results.resetToOpen}
                         </button>
@@ -622,7 +634,7 @@ export function ResultsTab() {
                   );
                 })}
               </div>
-            </section>
+            </AdminCard>
           )}
         </div>
       )}
