@@ -54,7 +54,8 @@ export async function fetchAuditNames(db: any, groupId: string, categoryTypeId: 
       .limit(1);
 
     if (groupRows.length > 0) {
-      groupName = `${groupRows[0].brigadeName} - ${groupRows[0].groupName}`;
+      const { brigadeName, groupName: gName } = groupRows[0];
+      groupName = brigadeName ? `${brigadeName} - ${gName}` : gName;
     }
 
     const categoryRows = await db
