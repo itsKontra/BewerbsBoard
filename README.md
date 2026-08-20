@@ -273,7 +273,7 @@ The device setup script changes display-manager settings, configures automatic l
 
 ### Host network addresses in the TV display (Optional)
 
-This feature is designed for standalone setups (such as a Raspberry Pi or set-top box running both Docker and the TV browser in kiosk mode). It displays the host's actual network IP addresses directly on the TV display, allowing administrators to easily discover and access the admin interface when connecting the device to an unfamiliar or DHCP-managed network.
+This feature is designed for standalone setups (such as a Raspberry Pi or set-top box running both Docker and the TV browser in kiosk mode). It displays the host's actual network IP addresses directly on the TV display, allowing administrators to discover and access the admin interface when connecting the device to an unfamiliar or DHCP-managed network.
 
 Docker cannot inspect the host's network interfaces. The collector is optional; without it, the application starts normally and reports only addresses visible inside its container. To display host interface names and addresses in the TV admin splash, install the collector on the Linux Docker host:
 
