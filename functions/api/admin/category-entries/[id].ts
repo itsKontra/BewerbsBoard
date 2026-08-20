@@ -1,6 +1,6 @@
 import { and, asc, eq, max, ne } from 'drizzle-orm';
 import * as schema from '../../../../shared/db/schema';
-import { getDb, jsonResponse, jsonError, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, fetchAuditNames, type EventContext } from '../utils';
 import { parseGermanTimeToHundredths } from '../../../../shared/utils/time-parser';
 import { computeEntryScore } from '../../../../shared/domain/scoring';
 
@@ -175,6 +175,8 @@ export async function onRequestPut(context: EventContext) {
       ? computeEntryScore(updatedEntryObj, { hasRelayRace, excludeRelayRace: false })
       : null;
 
+    const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
+
     const auditInsert = db.insert(schema.auditLog).values({
       id: crypto.randomUUID(),
       timestamp: Date.now(),
@@ -182,6 +184,8 @@ export async function onRequestPut(context: EventContext) {
       action: 'UPDATE',
       details: JSON.stringify({
         operation: 'UPDATE',
+        groupName,
+        categoryName,
         previous_value: previousEntry,
         new_value: updatedEntryObj,
       }),
@@ -260,12 +264,14 @@ export async function onRequestDelete(context: EventContext) {
         .where(eq(schema.categoryEntries.id, e.id))
     );
 
+    const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
+
     const auditInsert = db.insert(schema.auditLog).values({
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       user,
       action: 'DELETE_CATEGORY_ENTRY',
-      details: JSON.stringify({ entryId, categoryTypeId, groupId: entry.groupId }),
+      details: JSON.stringify({ entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName }),
     });
 
     await db.batch([deleteOp, ...compactionUpdates, auditInsert]);
