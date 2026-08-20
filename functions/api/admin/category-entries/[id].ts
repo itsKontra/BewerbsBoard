@@ -202,7 +202,6 @@ export async function onRequestPut(context: EventContext) {
       .where(eq(schema.categoryEntries.id, entryId));
 
     const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
-    
     const { groupId: _gP, categoryTypeId: _cP, ...prevRest } = previousEntry as any;
     const { groupId: _gN, categoryTypeId: _cN, ...newRest } = updatedEntryObj as any;
 
