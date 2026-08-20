@@ -73,7 +73,7 @@ describe('SetupTab Component', () => {
 
     await waitFor(() => {
       // CategoryTypesSection heading
-      expect(screen.getByText('Bewerbskategorien (Category Types)')).toBeInTheDocument();
+      expect(screen.getByText('Bewerbskategorien')).toBeInTheDocument();
     });
   });
 

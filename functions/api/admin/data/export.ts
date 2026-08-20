@@ -29,8 +29,11 @@ export async function onRequestGet(context: EventContext) {
     const exportedAt = new Date().toISOString();
 
     await logAudit(db, user, 'DATA_EXPORT', {
-      totalEntities,
-      exportedAt,
+      operation: 'EXPORT',
+      new_value: {
+        totalEntities,
+        exportedAt,
+      },
     });
 
     const envelope: DataExportEnvelope = {

@@ -62,11 +62,10 @@ export async function onRequestPut(context: EventContext) {
     const newState = { id: 'default', mode, selectedCategoryId, updatedAt };
 
     const adminUser = context.data.adminUser || 'system';
-    await logAudit(db, adminUser, 'UPDATE', {
-      entity: 'TV_RUNTIME_STATE',
-      entityId: 'default',
-      previousValue: previousState,
-      newValue: newState,
+    await logAudit(db, adminUser, 'UPDATE_TV_STATE', {
+      operation: 'UPDATE',
+      previous_value: previousState,
+      new_value: newState,
     });
 
     return jsonResponse(newState);

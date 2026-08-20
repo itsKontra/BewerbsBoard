@@ -255,10 +255,10 @@ describe('Config API Endpoints & Helpers (/api/admin/config)', () => {
     expect(utils.logAudit).toHaveBeenCalledWith(
       expect.anything(),
       'admin@feuerwehr.at',
-      'UPDATE',
+      'UPDATE_CONFIG',
       expect.objectContaining({
-        entity: 'CONFIG',
-        details: expect.objectContaining({
+        operation: 'UPDATE',
+        new_value: expect.objectContaining({
           tvPresentation: {
             theme: 'ceremony',
             logoOverride: 'https://assets.example.at/logo.svg',

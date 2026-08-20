@@ -103,8 +103,12 @@ describe('Groups API Endpoints', () => {
 
   it('PUT /groups/[id] updates a group', async () => {
     mockDb.limit.mockResolvedValueOnce([{ id: 'cc-jugend', name: 'JUGEND' }]); // resolved class
+    mockDb.limit.mockResolvedValueOnce([{ id: '1', fireBrigadeId: 'b1', competitionClassId: 'cc-jugend' }]); // currentGroup
     mockDb.limit.mockResolvedValueOnce([]); // no conflict
-    mockDb.returning.mockResolvedValue([{ id: '1', name: 'Updated' }]);
+    mockDb.limit.mockResolvedValueOnce([{ name: 'Brigade 1' }]); // prevFireBrigadeName
+    mockDb.limit.mockResolvedValueOnce([{ name: 'JUGEND' }]); // prevCompetitionClassName
+    mockDb.limit.mockResolvedValueOnce([{ name: 'Brigade 1' }]); // newFireBrigadeName
+    mockDb.returning.mockResolvedValue([{ id: '1', fireBrigadeId: 'b1', competitionClassId: 'cc-jugend', name: 'Updated' }]);
     const ctx = createMockContext('PUT', { fireBrigadeId: 'b1', name: 'Updated', competitionClassId: 'cc-jugend' }, { id: '1' });
     
     const res = await onRequestPut(ctx);
@@ -114,6 +118,7 @@ describe('Groups API Endpoints', () => {
 
   it('PUT /groups/[id] fails on duplicate name update', async () => {
     mockDb.limit.mockResolvedValueOnce([{ id: 'cc-jugend', name: 'JUGEND' }]); // resolved class
+    mockDb.limit.mockResolvedValueOnce([{ id: '1', fireBrigadeId: 'b1', competitionClassId: 'cc-jugend' }]); // currentGroup
     mockDb.limit.mockResolvedValueOnce([{ id: 'conflict' }]); // conflict exists
     const ctx = createMockContext('PUT', { fireBrigadeId: 'b1', name: 'ConflictName', competitionClassId: 'cc-jugend' }, { id: '1' });
     
@@ -123,7 +128,9 @@ describe('Groups API Endpoints', () => {
   });
 
   it('DELETE /groups/[id] deletes a group', async () => {
-    mockDb.returning.mockResolvedValue([{ id: '1', name: 'Gruppe 1' }]);
+    mockDb.returning.mockResolvedValue([{ id: '1', name: 'Gruppe 1', fireBrigadeId: 'b1', competitionClassId: 'c1' }]);
+    mockDb.limit.mockResolvedValueOnce([{ name: 'Brigade 1' }]); // fireBrigadeName
+    mockDb.limit.mockResolvedValueOnce([{ name: 'Class 1' }]); // competitionClassName
     const ctx = createMockContext('DELETE', null, { id: '1' });
     
     const res = await onRequestDelete(ctx);
