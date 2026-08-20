@@ -98,7 +98,7 @@ describe('Brigades API Endpoints', () => {
   });
 
   it('PUT /brigades/[id] updates a brigade', async () => {
-    mockDb.all.mockResolvedValueOnce([]);
+    mockDb.all.mockResolvedValueOnce([{ id: '1', name: 'Original' }]);
     mockDb.returning.mockResolvedValue([{ id: '1', name: 'Updated' }]);
     const ctx = createMockContext('PUT', { name: 'Updated' }, { id: '1' });
     
@@ -124,7 +124,7 @@ describe('Brigades API Endpoints', () => {
   });
 
   it('PUT /brigades/[id] maps a concurrent unique-constraint conflict to the duplicate response', async () => {
-    mockDb.all.mockResolvedValueOnce([]);
+    mockDb.all.mockResolvedValueOnce([{ id: '1', name: 'Original' }]);
     mockDb.returning.mockRejectedValueOnce(new Error('UNIQUE constraint failed: fire_brigades.name'));
     const ctx = createMockContext('PUT', { name: 'FF Neustadt' }, { id: '1' });
 

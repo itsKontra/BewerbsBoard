@@ -28,14 +28,18 @@ export function jsonError(message: string, status: number) {
   });
 }
 
-export async function logAudit(db: any, user: string, action: string, details: any) {
-  await db.insert(schema.auditLog).values({
+export function buildAuditLog(db: any, user: string, action: string, details: any) {
+  return db.insert(schema.auditLog).values({
     id: crypto.randomUUID(),
     timestamp: Date.now(),
     user,
     action,
     details: details ? JSON.stringify(details) : null,
   });
+}
+
+export async function logAudit(db: any, user: string, action: string, details: any) {
+  await buildAuditLog(db, user, action, details);
 }
 
 export async function fetchAuditNames(db: any, groupId: string, categoryTypeId: string) {
@@ -67,9 +71,27 @@ export async function fetchAuditNames(db: any, groupId: string, categoryTypeId: 
     if (categoryRows.length > 0) {
       categoryName = categoryRows[0].name;
     }
-  } catch (err) {
-    console.error('Error fetching audit names:', err);
+  } catch (e) {
+    console.error('Error fetching audit names:', e);
   }
 
   return { groupName, categoryName };
+}
+
+export async function getCompetitionClassName(db: any, id: string): Promise<string> {
+  if (!id) return id;
+  const res = await db.select({ name: schema.competitionClasses.name }).from(schema.competitionClasses).where(eq(schema.competitionClasses.id, id)).limit(1);
+  return res.length > 0 ? res[0].name : id;
+}
+
+export async function getCategoryTypeName(db: any, id: string): Promise<string> {
+  if (!id) return id;
+  const res = await db.select({ name: schema.categoryTypes.name }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).limit(1);
+  return res.length > 0 ? res[0].name : id;
+}
+
+export async function getFireBrigadeName(db: any, id: string): Promise<string> {
+  if (!id) return id;
+  const res = await db.select({ name: schema.fireBrigades.name }).from(schema.fireBrigades).where(eq(schema.fireBrigades.id, id)).limit(1);
+  return res.length > 0 ? res[0].name : id;
 }

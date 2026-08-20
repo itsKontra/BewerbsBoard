@@ -87,10 +87,9 @@ describe('TV State API Endpoints (/api/admin/tv-state)', () => {
     expect(utils.logAudit).toHaveBeenCalledWith(
       expect.anything(),
       'admin@feuerwehr.at',
-      'UPDATE',
+      'UPDATE_TV_STATE',
       expect.objectContaining({
-        entity: 'TV_RUNTIME_STATE',
-        entityId: 'default',
+        operation: 'UPDATE',
       })
     );
   });

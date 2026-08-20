@@ -19,7 +19,10 @@ export async function onRequestPost(context: EventContext) {
     const newClass = { id, name: data.name.trim() };
 
     await db.insert(competitionClasses).values(newClass);
-    await logAudit(db, context.data.adminUser as string, 'CREATE_COMPETITION_CLASS', newClass);
+    await logAudit(db, context.data.adminUser as string, 'CREATE_COMPETITION_CLASS', {
+      operation: 'CREATE',
+      new_value: newClass,
+    });
 
     return jsonResponse(newClass, 201);
   } catch (error: any) {

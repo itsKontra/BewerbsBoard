@@ -1,4 +1,4 @@
-import { getDb, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, logAudit, getCompetitionClassName, type EventContext } from '../utils';
 import { categoryTypes, competitionClasses } from '../../../../shared/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -32,7 +32,11 @@ export async function onRequestPost(context: EventContext) {
     const newType = { id, name: data.name.trim(), competitionClassId, hasRelayRace };
 
     await db.insert(categoryTypes).values(newType);
-    await logAudit(db, context.data.adminUser as string, 'CREATE_CATEGORY_TYPE', newType);
+    const competitionClassName = await getCompetitionClassName(db, competitionClassId);
+    await logAudit(db, context.data.adminUser as string, 'CREATE_CATEGORY_TYPE', {
+      operation: 'CREATE',
+      new_value: { ...newType, competitionClassName },
+    });
 
     return jsonResponse(newType, 201);
   } catch (error: any) {

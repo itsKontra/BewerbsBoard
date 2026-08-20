@@ -1,6 +1,6 @@
 import { and, eq, max } from 'drizzle-orm';
 import * as schema from '../../../../shared/db/schema';
-import { getDb, jsonResponse, jsonError, fetchAuditNames, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, fetchAuditNames, buildAuditLog, type EventContext } from '../utils';
 
 export async function onRequestGet(context: EventContext) {
   try {
@@ -124,13 +124,7 @@ export async function onRequestPost(context: EventContext) {
 
     const { groupName, categoryName } = await fetchAuditNames(db, groupId, resolvedCatType.id);
 
-    const auditInsert = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user: user,
-      action: 'CREATE_CATEGORY_ENTRY',
-      details: JSON.stringify({ entryId: newEntryId, groupId, groupName, categoryTypeId: resolvedCatType.id, categoryName }),
-    });
+    const auditInsert = buildAuditLog(db, user, 'CREATE_CATEGORY_ENTRY', { entryId: newEntryId, groupId, groupName, categoryTypeId: resolvedCatType.id, categoryName });
 
     await db.batch([entryInsert, auditInsert]);
 

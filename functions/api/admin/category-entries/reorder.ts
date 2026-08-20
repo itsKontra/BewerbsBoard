@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import * as schema from '../../../../shared/db/schema';
-import { getDb, jsonResponse, jsonError, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, buildAuditLog, type EventContext } from '../utils';
 
 export async function onRequestPost(context: EventContext) {
   try {
@@ -43,13 +43,7 @@ export async function onRequestPost(context: EventContext) {
         .where(eq(schema.categoryEntries.id, id));
     });
 
-    const auditInsert = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user: user,
-      action: 'REORDER_CATEGORY_ENTRIES',
-      details: JSON.stringify({ categoryTypeId, count: orderedIds.length }),
-    });
+    const auditInsert = buildAuditLog(db, user, 'REORDER_CATEGORY_ENTRIES', { categoryTypeId, count: orderedIds.length });
 
     await db.batch([...updates, auditInsert] as any);
 

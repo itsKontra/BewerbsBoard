@@ -1,4 +1,4 @@
-import { getDb, jsonResponse, jsonError, type EventContext } from '../../utils';
+import { getDb, jsonResponse, jsonError, buildAuditLog, type EventContext } from '../../utils';
 import * as schema from '../../../../../shared/db/schema';
 import { validateDataExportEnvelope } from '../../../../../shared/domain/data-management';
 
@@ -187,15 +187,9 @@ export async function onRequestPost(context: EventContext) {
       data.categoryEntries.length;
 
     // Audit log operation
-    const auditOperation = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user,
-      action: 'DATA_IMPORT',
-      details: JSON.stringify({
-        totalEntities,
-        importedAt: new Date().toISOString(),
-      }),
+    const auditOperation = buildAuditLog(db, user, 'DATA_IMPORT', {
+      totalEntities,
+      importedAt: new Date().toISOString(),
     });
     operations.push(auditOperation);
 

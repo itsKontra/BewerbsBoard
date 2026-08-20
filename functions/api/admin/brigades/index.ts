@@ -25,7 +25,10 @@ export async function onRequestPost(context: EventContext) {
     const newBrigade = { id, name };
 
     await db.insert(fireBrigades).values(newBrigade);
-    await logAudit(db, context.data.adminUser as string, 'CREATE_BRIGADE', newBrigade);
+    await logAudit(db, context.data.adminUser as string, 'CREATE_BRIGADE', {
+      operation: 'CREATE',
+      new_value: newBrigade,
+    });
 
     return jsonResponse(newBrigade, 201);
   } catch (error: any) {

@@ -18,6 +18,11 @@ export async function onRequestPut(context: EventContext) {
     if (brigades.some((brigade) => brigade.id !== id && brigade.name.trim().toLocaleLowerCase('de-AT') === normalizedName)) {
       return jsonError('Eine Feuerwehr mit diesem Namen ist bereits vorhanden.', 409);
     }
+    const existing = brigades.find((b) => b.id === id);
+    if (!existing) {
+      return jsonError('Fire brigade not found', 404);
+    }
+
     const updated = await db
       .update(fireBrigades)
       .set({ name })
@@ -28,7 +33,11 @@ export async function onRequestPut(context: EventContext) {
       return jsonError('Fire brigade not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'UPDATE_BRIGADE', { id, name });
+    await logAudit(db, context.data.adminUser as string, 'UPDATE_BRIGADE', {
+      operation: 'UPDATE',
+      previous_value: existing,
+      new_value: updated[0],
+    });
 
     return jsonResponse(updated[0], 200);
   } catch (error: any) {
@@ -59,7 +68,10 @@ export async function onRequestDelete(context: EventContext) {
       return jsonError('Fire brigade not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'DELETE_BRIGADE', { id, name: deleted[0].name });
+    await logAudit(db, context.data.adminUser as string, 'DELETE_BRIGADE', {
+      operation: 'DELETE',
+      previous_value: deleted[0],
+    });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
   } catch (error: any) {

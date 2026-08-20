@@ -1,4 +1,4 @@
-import { getDb, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, logAudit, getCategoryTypeName, type EventContext } from '../utils';
 import { evaluationTypes, categoryTypes } from '../../../../shared/db/schema';
 import { eq } from 'drizzle-orm';
 
@@ -74,7 +74,22 @@ export async function onRequestPut(context: EventContext) {
       order: et.order,
     };
 
-    await logAudit(db, context.data.adminUser as string, 'UPDATE_EVALUATION_TYPE', { id, ...updateValues });
+    const prevCat1 = catMap.get(existing[0].categoryTypeId1);
+    const prevCat2 = existing[0].categoryTypeId2 ? catMap.get(existing[0].categoryTypeId2) : undefined;
+
+    await logAudit(db, context.data.adminUser as string, 'UPDATE_EVALUATION_TYPE', {
+      operation: 'UPDATE',
+      previous_value: {
+        ...existing[0],
+        categoryTypeName1: prevCat1?.name || '',
+        categoryTypeName2: prevCat2?.name || null,
+      },
+      new_value: {
+        ...et,
+        categoryTypeName1: cat1?.name || '',
+        categoryTypeName2: cat2?.name || null,
+      },
+    });
 
     return jsonResponse(responseItem, 200);
   } catch (error: any) {
@@ -99,7 +114,17 @@ export async function onRequestDelete(context: EventContext) {
       return jsonError('Evaluation type not found', 404);
     }
 
-    await logAudit(db, context.data.adminUser as string, 'DELETE_EVALUATION_TYPE', { id, name: deleted[0].name });
+    const categoryTypeName1 = await getCategoryTypeName(db, deleted[0].categoryTypeId1);
+    const categoryTypeName2 = deleted[0].categoryTypeId2 ? await getCategoryTypeName(db, deleted[0].categoryTypeId2) : null;
+
+    await logAudit(db, context.data.adminUser as string, 'DELETE_EVALUATION_TYPE', {
+      operation: 'DELETE',
+      previous_value: {
+        ...deleted[0],
+        categoryTypeName1,
+        categoryTypeName2,
+      },
+    });
 
     return jsonResponse({ success: true, deletedId: id }, 200);
   } catch (error: any) {
