@@ -69,11 +69,11 @@ function TimeWithPenalty({
     : 0;
 
   return (
-    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-extrabold">
+    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.1rem,1.6vw,1.9rem)] font-extrabold">
       <span className={themeStyles.score.time}>
         {formatHundredthsToDisplayTime(hasAttackTime ? attackTimeHundredths : scoreHundredths)}
       </span>
-      <span className="w-[6ch] text-left">
+      <span className="w-[5.5ch] text-left">
         {penaltyHundredths > 0 && (
           <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
@@ -99,7 +99,7 @@ export function OverallRankingRow({
   isUpcoming = false,
   startsUpcomingSection = false,
   theme,
-  gridColumns = 'grid-cols-[6%_minmax(0,1fr)_18%_18%_22%]',
+  gridColumns = 'grid-cols-[6%_minmax(0,1fr)_20%_20%_22%]',
   identityClass = 'text-[clamp(1.15rem,2vw,2.25rem)]',
   rankClass = 'text-[clamp(1.25rem,2.1vw,2.4rem)]',
   scoreClass = 'text-[clamp(1.4rem,2.5vw,2.75rem)]',

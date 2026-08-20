@@ -68,7 +68,7 @@ export function resolveCategoryShape(category?: CategoryResultData | null): Cate
     // 2x2 layout with total: Cat1 + Cat2 + Gesamt
     return {
       kind: 'combined',
-      gridColumns: 'grid-cols-[6%_minmax(0,1fr)_18%_18%_22%]',
+      gridColumns: 'grid-cols-[6%_minmax(0,1fr)_20%_20%_22%]',
       colSpan: 5,
       isCombinedCategory: true,
       headers: [
