@@ -202,10 +202,14 @@ export async function onRequestPut(context: EventContext) {
       .where(eq(schema.categoryEntries.id, entryId));
 
     const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
+    
+    const { groupId: _gP, categoryTypeId: _cP, ...prevRest } = previousEntry as any;
+    const { groupId: _gN, categoryTypeId: _cN, ...newRest } = updatedEntryObj as any;
+
     const auditInsert = buildAuditLog(db, user, 'UPDATE', {
       operation: 'UPDATE',
-      previous_value: { ...previousEntry, groupName, categoryName },
-      new_value: { ...updatedEntryObj, groupName, categoryName },
+      previous_value: { group: groupName, category: categoryName, ...prevRest },
+      new_value: { group: groupName, category: categoryName, ...newRest },
     });
 
     await db.batch([updateQuery, ...compactionUpdates, auditInsert]);
@@ -257,7 +261,7 @@ export async function onRequestDelete(context: EventContext) {
     const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
     const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', {
       operation: 'DELETE',
-      previous_value: { entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName },
+      previous_value: { entryId, group: groupName, category: categoryName },
       new_value: null
     });
 

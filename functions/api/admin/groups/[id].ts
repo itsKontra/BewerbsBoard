@@ -61,17 +61,20 @@ export async function onRequestPut(context: EventContext) {
     const prevCompetitionClassName = await getCompetitionClassName(db, currentGroup[0].competitionClassId);
     const newFireBrigadeName = await getFireBrigadeName(db, updated[0].fireBrigadeId);
 
+    const { fireBrigadeId: _fbP, competitionClassId: _ccP, ...prevRest } = currentGroup[0] as any;
+    const { fireBrigadeId: _fbN, competitionClassId: _ccN, ...newRest } = updated[0] as any;
+
     await logAudit(db, context.data.adminUser as string, 'UPDATE_GROUP', {
       operation: 'UPDATE',
       previous_value: {
-        ...currentGroup[0],
-        fireBrigadeName: prevFireBrigadeName,
-        competitionClassName: prevCompetitionClassName,
+        fireBrigade: prevFireBrigadeName,
+        competitionClass: prevCompetitionClassName,
+        ...prevRest,
       },
       new_value: {
-        ...updated[0],
-        fireBrigadeName: newFireBrigadeName,
-        competitionClassName: competitionClass[0].name,
+        fireBrigade: newFireBrigadeName,
+        competitionClass: competitionClass[0].name,
+        ...newRest,
       }
     });
 
@@ -101,12 +104,14 @@ export async function onRequestDelete(context: EventContext) {
     const fireBrigadeName = await getFireBrigadeName(db, deleted[0].fireBrigadeId);
     const competitionClassName = await getCompetitionClassName(db, deleted[0].competitionClassId);
 
+    const { fireBrigadeId: _fbD, competitionClassId: _ccD, ...delRest } = deleted[0] as any;
+
     await logAudit(db, context.data.adminUser as string, 'DELETE_GROUP', {
       operation: 'DELETE',
       previous_value: {
-        ...deleted[0],
-        fireBrigadeName,
-        competitionClassName,
+        fireBrigade: fireBrigadeName,
+        competitionClass: competitionClassName,
+        ...delRest,
       },
       new_value: null,
     });
