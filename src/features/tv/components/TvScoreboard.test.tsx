@@ -775,7 +775,7 @@ describe('TvScoreboard Component', () => {
       name: '1 Combined Brigade 1 Combined Group 1 40,00 s 50,00 s 90,00 s',
     });
     expect(firstPlace).toHaveClass('border-l-4', 'border-l-amber-400');
-    expect(firstPlace).toHaveClass('grid', 'grid-cols-[6%_minmax(0,1fr)_18%_18%_22%]');
+    expect(firstPlace).toHaveClass('grid', 'grid-cols-[6%_minmax(0,1fr)_20%_20%_22%]');
     const combinedIdentity = screen.getByText('Combined Brigade 1 Combined Group 1');
     expect(combinedIdentity).toHaveClass('truncate', 'whitespace-nowrap');
     expect(combinedIdentity).toHaveAttribute('title', 'Combined Brigade 1 Combined Group 1');

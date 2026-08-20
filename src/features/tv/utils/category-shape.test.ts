@@ -100,7 +100,7 @@ describe('resolveCategoryShape', () => {
     };
     const shape = resolveCategoryShape(category);
     expect(shape.kind).toBe('combined');
-    expect(shape.gridColumns).toBe('grid-cols-[6%_minmax(0,1fr)_18%_18%_22%]');
+    expect(shape.gridColumns).toBe('grid-cols-[6%_minmax(0,1fr)_20%_20%_22%]');
     expect(shape.colSpan).toBe(5);
     expect(shape.isCombinedCategory).toBe(true);
     expect(shape.headers).toHaveLength(5);

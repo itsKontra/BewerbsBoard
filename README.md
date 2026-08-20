@@ -1,32 +1,27 @@
 # BewerbsBoard
 
-A self-hosted scoreboard for fire brigade competitions. It provides a mobile spectator view, a full-screen TV presentation, and an administration interface for entrants, scoring, display control, and event configuration.
+BewerbsBoard is a self-hosted digital scoreboard designed for fire brigade competitions. 
+
+It replaces traditional paper or simple spreadsheet scoreboards with a modern, connected system. You can run it on your own hardware locally, or host it in the cloud.
 
 ## Table of contents
 
-- [Functionality](#functionality)
-- [Deployment](#deployment)
-  - [Option 1: Interactive deployment wizard](#option-1-interactive-deployment-wizard)
-  - [Option 2: Docker Compose](#option-2-docker-compose)
-  - [Option 3: Cloudflare Pages with Wrangler](#option-3-cloudflare-pages-with-wrangler)
-- [Configuration](#configuration)
-  - [Environment variables](#environment-variables)
-  - [Application control script](#application-control-script)
-- [Development](#development)
-  - [Project structure](#project-structure)
-  - [Build](#build)
-  - [Seed data](#seed-data)
-  - [Testing and demo mode](#testing-and-demo-mode)
-- [Set up a small set-top box](#set-up-a-small-set-top-box)
+- [Features](#features)
+- [Quick Start (The Easy Way)](#quick-start-the-easy-way)
+- [For Developers and Advanced Users](#for-developers-and-advanced-users)
+  - [Manual Deployment](#manual-deployment)
+  - [Configuration](#configuration)
+  - [Development Guide](#development-guide)
+  - [TV Display Set-Top Box Setup](#tv-display-set-top-box-setup)
 - [License](#license)
 
-## Functionality
+## Features
 
-The application exposes three views:
+The application provides three separate views, each designed for a specific purpose:
 
-- `/` is the public, mobile-friendly scoreboard with live rankings and upcoming starts.
-- `/admin` manages participants, start order, results, TV output, event setup, settings, and audit logs.
-- `/tv` is the full-screen display. It supports automatic rotation, a fixed ranking, announcements, winner presentations, QR codes, and three visual themes.
+1. **Public View (`/`)**: A mobile-friendly live scoreboard. Spectators can use their phones to see current rankings and upcoming starts in real time.
+2. **TV Display (`/tv`)**: A full-screen presentation mode designed for large monitors or TVs. It automatically rotates through rankings, shows announcements, displays QR codes, and includes three visual themes (Broadcast, Ceremony, and Outdoor).
+3. **Administration (`/admin`)**: A secure control panel for event organizers. Use this to manage participants, enter scores, control what shows on the TV displays, and configure the event.
 
 ### Software preview
 
@@ -34,26 +29,30 @@ The application exposes three views:
   <img src="docs/images/bewerbsboard-overview.png" alt="BewerbsBoard preview showing the public, administration, and TV interfaces" width="800">
 </p>
 
-## Deployment
+## Quick Start (The Easy Way)
 
-For self-hosting, install Git, Bash, Docker Engine, and Docker Compose v2. The application stores its SQLite database in the `scoreboard-data` Docker volume.
+The simplest way to explore or install BewerbsBoard is by using our interactive deployment wizard. It will guide you step-by-step through setting up a local demo or a full installation.
 
-### Option 1: Interactive deployment wizard
-
-The wizard is the easiest way to explore or deploy the project. It can start the local demo, configure a Docker deployment, provision Cloudflare resources, or guide an OAuth2/Keycloak proxy setup.
+To run the wizard, open your terminal (Command Prompt, PowerShell, or bash) and run the following commands:
 
 ```sh
 git clone https://github.com/itsKontra/BewerbsBoard.git
 cd BewerbsBoard
-chmod +x scripts/deploy-wizard.sh
 ./scripts/deploy-wizard.sh
 ```
 
-The wizard writes configuration to `.env`. For a local Docker deployment it also creates the unified `app.sh` management script described under [Application control script](#application-control-script).
+Follow the on-screen prompts. You can choose to run a quick local demo to test it out, or set up a permanent installation using Docker or Cloudflare.
 
-### Option 2: Docker Compose
+---
 
-Use this path when you want to inspect and control every step yourself.
+## For Developers and Advanced Users
+
+If you prefer to configure everything manually or want to contribute to the project, you will find detailed technical instructions in this section.
+
+### Manual Deployment
+
+#### Docker Compose (Local/Self-Hosted)
+Use this option to inspect and control every step yourself. For self-hosting, ensure Git, Bash, Docker Engine, and Docker Compose v2 are installed.
 
 ```sh
 git clone https://github.com/itsKontra/BewerbsBoard.git
@@ -61,234 +60,108 @@ cd BewerbsBoard
 cp example.env .env
 ```
 
-Edit `.env`, especially the administrator credentials. Then start and verify the application:
+Edit `.env` to set your administrator credentials. Then start the application:
 
 ```sh
-chmod +x app.sh
 ./app.sh start
-docker compose --project-name app_scoreboard ps
 curl --fail http://127.0.0.1:3080/healthz
 ```
 
 The default endpoints are:
-
 - Public scoreboard: `http://127.0.0.1:3080/`
 - Administration: `http://127.0.0.1:3080/admin`
 - TV display: `http://127.0.0.1:3080/tv`
 
-Without `.env`, the Compose default accepts connections only from the Docker host. The supplied `example.env` uses `0.0.0.0` for LAN access; prefer a specific LAN address when possible, and expose every interface only when the host firewall or a trusted network provides the required protection.
+#### Cloudflare Pages (Serverless)
+This deployment uses Cloudflare Pages Functions, D1 for relational data, and Workers KV for configuration. It requires Node.js 20+, npm, and a Cloudflare account.
 
-### Option 3: Cloudflare Pages with Wrangler
+1. Install dependencies and authenticate Wrangler:
+   ```sh
+   npm ci
+   npx wrangler login
+   ```
+2. Create backing services:
+   ```sh
+   npx wrangler d1 create bewerbsboard
+   npx wrangler kv namespace create KV
+   ```
+3. Copy the returned `database_id` and KV `id` into `wrangler.toml`.
+4. Deploy the project:
+   ```sh
+   npx wrangler pages project create bewerbsboard --production-branch main
+   npm run db:migrate:remote
+   npm run build
+   npx wrangler pages deploy dist --project-name bewerbsboard
+   ```
 
-This deployment uses Cloudflare Pages Functions, D1 for relational data, and Workers KV for application/display configuration. It requires Node.js 20 or newer, npm, and a Cloudflare account.
+*Note: Cloudflare deployments do not include the built-in login screen. You must protect `/admin` and `/api/admin/*` with a trusted authorization layer before using it publicly.*
 
-Install dependencies and authenticate Wrangler:
+### Configuration
 
-```sh
-npm ci
-npx wrangler --version
-npx wrangler login
-npx wrangler whoami
-```
+#### Environment Variables
+Copy `example.env` to `.env`. Docker Compose loads this file automatically.
 
-Create the backing services:
-
-```sh
-npx wrangler d1 create bewerbsboard
-npx wrangler kv namespace create KV
-```
-
-Copy the returned D1 `database_id` and KV namespace `id` into [`wrangler.toml`](wrangler.toml), replacing both `your-...-id` placeholders. Keep the binding names as `DB` and `KV`; the Pages Functions use those exact names.
-
-Create the Pages project, apply the D1 migrations, build, and deploy:
-
-```sh
-npx wrangler pages project create bewerbsboard --production-branch main
-npm run db:migrate:remote
-npm run build
-npx wrangler pages deploy dist --project-name bewerbsboard
-```
-
-Later deployments only need the migration, build, and deploy commands. Run `npx wrangler pages deployment list --project-name bewerbsboard` to inspect deployments.
-
-Cloudflare Direct Upload through Wrangler is required because this repository contains a `functions/` directory; dashboard drag-and-drop does not compile Pages Functions. The Cloudflare deployment does not provide the Docker deployment's built-in login screen. Protect `/admin` and `/api/admin/*` with a trusted authorization layer before using it publicly.
-
-For more detail, see Cloudflare's documentation for [Pages Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/), [Pages bindings](https://developers.cloudflare.com/pages/functions/bindings/), and [D1 migrations](https://developers.cloudflare.com/d1/reference/migrations/).
-
-## Configuration
-
-### Environment variables
-
-Copy [`example.env`](example.env) to `.env`. Docker Compose loads the file automatically. Never commit `.env` or real credentials.
-
-| Variable | Required | Compose default | Description |
-| --- | --- | --- | --- |
-| `APP_BIND_ADDRESS` | No | `127.0.0.1` | Address on the Docker host to which the container port is published. `example.env` sets `0.0.0.0` for LAN access; use a specific LAN address when possible because `0.0.0.0` exposes every interface. |
-| `APP_PORT` | No | `3080` | Port exposed on the Docker host. The container itself listens on port `8080`. |
-| `HOST_NETWORK_INFO_DIRECTORY` | No | `/var/lib/bewerbsboard` | Host directory used by the optional `compose.network-info.yaml` overlay. |
-| `LOCAL_AUTH_USER` | For built-in login | — | Administrator username. Local authentication is enabled only when both this and `LOCAL_AUTH_PASSWORD` are present. |
-| `LOCAL_AUTH_PASSWORD` | For built-in login | — | Administrator password. Use a strong, unique value. |
-| `LOCAL_AUTH_SECRET` | Recommended with built-in login | Random per restart | Secret used to sign the eight-hour session cookie. Set a stable random value so restarts do not invalidate every session. Generate one with `openssl rand -hex 32`. |
-| `OAUTH2_PROXY_OIDC_ISSUER_URL` | Proxy setups only | — | OIDC issuer URL used by an optional oauth2-proxy/Keycloak deployment. The Node application does not consume it directly. |
-| `OAUTH2_PROXY_CLIENT_ID` | Proxy setups only | — | OIDC client ID for oauth2-proxy. |
-| `OAUTH2_PROXY_CLIENT_SECRET` | Proxy setups only | — | OIDC client secret for oauth2-proxy. |
-| `OAUTH2_PROXY_COOKIE_SECRET` | Proxy setups only | — | Secret used by oauth2-proxy to protect its session cookie. |
-
-If `LOCAL_AUTH_USER` or `LOCAL_AUTH_PASSWORD` is missing, the self-hosted application expects a trusted reverse proxy to authenticate administrators and replace client-supplied `X-Auth-Request-*` headers.
-
-### Application control script
-
-[`app.sh`](app.sh) replaces the former `app-start.sh`, `app-stop.sh`, and `app-delete.sh` scripts. It resolves paths relative to the repository, uses the fixed Compose project name `app_scoreboard`, and selects `compose.keycloak.yaml` when that optional wizard-generated file exists; otherwise it uses `compose.yaml`.
-
-Ensure it is executable after copying it to a Linux host:
-
-```sh
-chmod +x app.sh
-```
-
-Use one of these subcommands:
-
-```sh
-./app.sh start         # build and start in the background, then wait for health
-./app.sh stop          # stop containers while preserving data
-./app.sh delete        # confirm, then remove containers, networks, and data
-./app.sh delete --yes  # perform the destructive delete without prompting
-```
-
-`delete` removes the `scoreboard-data` volume and all competition data. It cannot be undone unless you have an external backup.
-
-## Development
-
-Install Node.js 20 or newer and npm, then install the locked dependencies:
-
-```sh
-npm ci
-```
-
-### Project structure
-
-```text
-.
-├── src/                 React user interface and Vite demo data adapters
-│   └── features/        Public, TV, and administration feature modules
-├── server/              Self-hosted Hono server and SQLite persistence
-├── functions/           Cloudflare Pages Functions
-├── shared/              Domain logic, API mappers, schema, and seed source
-├── migrations/          Cloudflare D1 migrations
-├── server/migrations/   Self-hosted SQLite migrations
-├── tests/               Playwright end-to-end tests
-├── scripts/             Deployment, seed generation, and Debian setup tools
-├── deploy/              Reverse-proxy example configuration
-├── public/              Static application assets
-├── compose.yaml         Self-hosted Docker stack
-├── Dockerfile           Multi-stage production image
-└── wrangler.toml        Cloudflare Pages, D1, and KV bindings
-```
-
-The UI and both backends share the types and business rules in `shared/`, while `server/` and `functions/` adapt them to SQLite and Cloudflare respectively.
-
-### Build
-
-```sh
-npm run build
-```
-
-The build performs TypeScript project checks, creates the browser bundle in `dist/`, and compiles the self-hosted server into `dist-server/`.
-
-To run that production build outside Docker, provide a writable `/app/data` path expected by the server and then run `npm start`. Docker Compose is the supported self-hosted production path.
-
-### Seed data
-
-Seed data is for development and demonstration only. The single source of truth is [`shared/seed/seed-data.json`](shared/seed/seed-data.json). It supplies the Vite demo, fresh self-hosted databases, and fresh D1 databases.
-
-After changing the catalog or demo data, regenerate the seed blocks in both initial migrations:
-
-```sh
-npm run db:seed:generate
-```
-
-Verify and review the generated changes before committing them. Initial migration changes affect only new databases. For an existing installation, create a forward migration or deliberately replace/reset the database; do not expect the seed generator to update persisted competition data.
-
-For local D1 development, apply the migration with:
-
-```sh
-npm run db:migrate:local
-```
-
-For Cloudflare D1, use `npm run db:migrate:remote`.
-
-### Testing and demo mode
-
-Start Vite's development server:
-
-```sh
-npm run dev
-```
-
-Open these URLs for deterministic demo data:
-
-- Public: `http://localhost:5173/?demo=true`
-- Admin: `http://localhost:5173/admin?demo=true`
-- TV: `http://localhost:5173/tv?demo=true`
-
-The query parameter is `demo=true`; the UI stores its result internally in a variable named `isDemoMode`. The TV demo also accepts a `theme` parameter:
-
-| Value | Theme |
+| Variable | Description |
 | --- | --- |
-| `theme=1` or `theme=broadcast` | Broadcast |
-| `theme=2` or `theme=ceremony` | Ceremony |
-| `theme=3` or `theme=outdoor` | Outdoor |
+| `APP_BIND_ADDRESS` | Host address to bind to (default: `127.0.0.1`). |
+| `APP_PORT` | Port exposed on the host (default: `3080`). |
+| `LOCAL_AUTH_USER` | Administrator username for the built-in login. |
+| `LOCAL_AUTH_PASSWORD` | Administrator password. |
+| `LOCAL_AUTH_SECRET` | Secret used to sign session cookies. |
 
-For example: `http://localhost:5173/tv?demo=true&theme=ceremony`.
+*Additional variables for Keycloak/OIDC proxies are documented in `example.env`.*
 
-Run the automated checks with:
-
+#### Application Control Script
+The `app.sh` script manages your Docker installation. 
 ```sh
-npm test -- --run       # Vitest unit and integration tests once
-npm test                # Vitest in watch mode
-npm run lint            # oxlint
-npx playwright test     # browser tests; starts Vite automatically
+./app.sh start         # Start the containers
+./app.sh stop          # Stop containers (preserves data)
+./app.sh delete        # Remove containers and ALL data
 ```
 
-If Chromium is not installed for Playwright yet, run `npx playwright install chromium` once. The browser tests use the repository-required viewports: 360×740 for the public view and 1920×1080 for `/admin` and `/tv`.
+### Development Guide
 
-## Set up a small set-top box
+Install Node.js 20+ and run `npm ci` to get started.
 
-An Odroid, Raspberry Pi, or similar Debian device can run Firefox in kiosk mode and open the TV view on boot. The supplied example targets an ODROID-C2 running Armbian/Debian with a dedicated user named `app`.
+#### Project Structure
+- `src/`: React user interface.
+- `server/`: Self-hosted Hono server and SQLite persistence.
+- `functions/`: Cloudflare Pages Functions.
+- `shared/`: Shared domain logic, types, and schema.
 
-1. Review [`scripts/setup-debian-device.sh`](scripts/setup-debian-device.sh) before running it. Change the hard-coded kiosk URL (`https://bewerb.example.dev/tv`) to your scoreboard's `/tv` URL and adjust the `app` username if necessary.
-2. Copy the repository or script to the device, make it executable, and run it from a local terminal:
+#### Common Commands
+```sh
+npm run dev              # Start Vite development server
+npm run build            # Build the browser bundle and server
+npm run db:seed:generate # Regenerate seed data from JSON
+npm test                 # Run tests
+npx playwright test      # Run browser tests
+```
 
+#### Demo Mode
+You can view the UI with deterministic demo data by appending `?demo=true` to the URL (e.g., `http://localhost:5173/?demo=true`).
+
+### TV Display Set-Top Box Setup
+
+An Odroid, Raspberry Pi, or similar Debian device can run Firefox in kiosk mode to automatically open the TV view on boot.
+
+1. Review and adjust `scripts/setup-debian-device.sh` to match your TV URL.
+2. Run the script on your dedicated device:
    ```sh
    chmod +x scripts/setup-debian-device.sh
    ./scripts/setup-debian-device.sh
    sudo reboot
    ```
 
-3. Confirm that the installed Docker setup provides the Compose v2 command (`docker compose version`) before deploying the scoreboard with `./app.sh start`.
-4. For a device that creates its own offline Wi-Fi network, follow [`scripts/setup-debian-hotspot.md`](scripts/setup-debian-hotspot.md). Replace the example SSID and password before enabling the hotspot.
-5. To connect the headless device to an existing wireless network instead, follow [`scripts/setup-debian-wifi.md`](scripts/setup-debian-wifi.md).
+Optional guides for network setup are available in `scripts/setup-debian-hotspot.md` and `scripts/setup-debian-wifi.md`.
 
-The device setup script changes display-manager settings, configures automatic login, replaces Firefox policy/profile data, and installs system packages. Use it only on a dedicated kiosk device after reviewing it.
-
-### Host network addresses in the TV display (Optional)
-
-This feature is designed for standalone setups (such as a Raspberry Pi or set-top box running both Docker and the TV browser in kiosk mode). It displays the host's actual network IP addresses directly on the TV display, allowing administrators to easily discover and access the admin interface when connecting the device to an unfamiliar or DHCP-managed network.
-
-Docker cannot inspect the host's network interfaces. The collector is optional; without it, the application starts normally and reports only addresses visible inside its container. To display host interface names and addresses in the TV admin splash, install the collector on the Linux Docker host:
-
+*Optional Host Network Display:* To show the host's actual IP address on the TV display (useful for headless setups on unfamiliar networks), install the network-info collector:
 ```sh
 sudo install -Dm755 deploy/network-info-writer.sh /usr/local/lib/bewerbsboard/network-info-writer.sh
 sudo install -Dm644 deploy/bewerbsboard-network-info.service /etc/systemd/system/bewerbsboard-network-info.service
-sudo systemctl daemon-reload
 sudo systemctl enable --now bewerbsboard-network-info.service
 ```
-
-The service creates `/var/lib/bewerbsboard`, then refreshes `network_info.txt` there every 10 seconds. Enable the corresponding read-only container mount with the optional Compose overlay:
-
-```sh
-docker compose -f compose.yaml -f compose.network-info.yaml up -d --build
-```
+Then start Docker with: `docker compose -f compose.yaml -f compose.network-info.yaml up -d`
 
 ## License
 

@@ -101,7 +101,7 @@ Configure `dnsmasq` to assign IP addresses to devices that connect to the Wi-Fi 
    bind-interfaces
    dhcp-range=192.168.4.10,192.168.4.50,255.255.255.0,24h
    ```
-   *Note: The `bind-interfaces` directive is crucial. It prevents `dnsmasq` from attempting to listen on all interfaces, which otherwise causes a port 53 collision with systemd-resolved.*
+   *Note: The `bind-interfaces` directive is required. It prevents `dnsmasq` from attempting to listen on all interfaces, which otherwise causes a port 53 collision with systemd-resolved.*
 
 ## Step 5: Configure the Access Point (hostapd)
 
