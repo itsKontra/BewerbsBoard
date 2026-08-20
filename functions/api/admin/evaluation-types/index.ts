@@ -88,13 +88,15 @@ export async function onRequestPost(context: EventContext) {
     };
 
     await db.insert(evaluationTypes).values(newEval);
+    const { categoryTypeId1: _c1, categoryTypeId2: _c2, ...newRest } = newEval as any;
+
     await logAudit(db, context.data.adminUser as string, 'CREATE_EVALUATION_TYPE', {
       operation: 'CREATE',
       previous_value: null,
       new_value: {
-        ...newEval,
-        categoryTypeName1: cat1[0].name,
-        categoryTypeName2: cat2Name,
+        category1: cat1[0].name,
+        category2: cat2Name,
+        ...newRest,
       },
     });
 

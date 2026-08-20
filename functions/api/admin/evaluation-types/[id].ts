@@ -77,17 +77,20 @@ export async function onRequestPut(context: EventContext) {
     const prevCat1 = catMap.get(existing[0].categoryTypeId1);
     const prevCat2 = existing[0].categoryTypeId2 ? catMap.get(existing[0].categoryTypeId2) : undefined;
 
+    const { categoryTypeId1: _c1P, categoryTypeId2: _c2P, ...prevRest } = existing[0] as any;
+    const { categoryTypeId1: _c1N, categoryTypeId2: _c2N, ...newRest } = et as any;
+
     await logAudit(db, context.data.adminUser as string, 'UPDATE_EVALUATION_TYPE', {
       operation: 'UPDATE',
       previous_value: {
-        ...existing[0],
-        categoryTypeName1: prevCat1?.name || '',
-        categoryTypeName2: prevCat2?.name || null,
+        category1: prevCat1?.name || '',
+        category2: prevCat2?.name || null,
+        ...prevRest,
       },
       new_value: {
-        ...et,
-        categoryTypeName1: cat1?.name || '',
-        categoryTypeName2: cat2?.name || null,
+        category1: cat1?.name || '',
+        category2: cat2?.name || null,
+        ...newRest,
       },
     });
 
@@ -117,12 +120,14 @@ export async function onRequestDelete(context: EventContext) {
     const categoryTypeName1 = await getCategoryTypeName(db, deleted[0].categoryTypeId1);
     const categoryTypeName2 = deleted[0].categoryTypeId2 ? await getCategoryTypeName(db, deleted[0].categoryTypeId2) : null;
 
+    const { categoryTypeId1: _c1D, categoryTypeId2: _c2D, ...delRest } = deleted[0] as any;
+
     await logAudit(db, context.data.adminUser as string, 'DELETE_EVALUATION_TYPE', {
       operation: 'DELETE',
       previous_value: {
-        ...deleted[0],
-        categoryTypeName1,
-        categoryTypeName2,
+        category1: categoryTypeName1,
+        category2: categoryTypeName2,
+        ...delRest,
       },
       new_value: null,
     });
