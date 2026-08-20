@@ -153,17 +153,9 @@ An Odroid, Raspberry Pi, or similar Debian device can run Firefox in kiosk mode 
    sudo reboot
    ```
 
-3. Confirm that the installed Docker setup provides the Compose v2 command (`docker compose version`) before deploying the scoreboard with `./app.sh start`.
-4. For a device that creates its own offline Wi-Fi network, follow [`scripts/setup-debian-hotspot.md`](scripts/setup-debian-hotspot.md). Replace the example SSID and password before enabling the hotspot.
-5. To connect the headless device to an existing wireless network instead, follow [`scripts/setup-debian-wifi.md`](scripts/setup-debian-wifi.md).
+Optional guides for network setup are available in `scripts/setup-debian-hotspot.md` and `scripts/setup-debian-wifi.md`.
 
-The device setup script changes display-manager settings, configures automatic login, replaces Firefox policy/profile data, and installs system packages. Use it only on a dedicated kiosk device after reviewing it.
-
-### Host network addresses in the TV display (Optional)
-
-This feature is designed for standalone setups (such as a Raspberry Pi or set-top box running both Docker and the TV browser in kiosk mode). It displays the host's actual network IP addresses directly on the TV display, allowing administrators to discover and access the admin interface when connecting the device to an unfamiliar or DHCP-managed network.
-
-Docker cannot inspect the host's network interfaces. The collector is optional; without it, the application starts normally and reports only addresses visible inside its container. To display host interface names and addresses in the TV admin splash, install the collector on the Linux Docker host:
+*Optional Host Network Display:* To show the host's actual IP address on the TV display (useful for headless setups on unfamiliar networks), install the network-info collector:
 ```sh
 sudo install -Dm755 deploy/network-info-writer.sh /usr/local/lib/bewerbsboard/network-info-writer.sh
 sudo install -Dm644 deploy/bewerbsboard-network-info.service /etc/systemd/system/bewerbsboard-network-info.service
