@@ -1,6 +1,6 @@
 import { and, asc, eq, max, ne } from 'drizzle-orm';
 import * as schema from '../../../../shared/db/schema';
-import { getDb, jsonResponse, jsonError, fetchAuditNames, type EventContext } from '../utils';
+import { getDb, jsonResponse, jsonError, fetchAuditNames, buildAuditLog, type EventContext } from '../utils';
 import { parseGermanTimeToHundredths } from '../../../../shared/utils/time-parser';
 import { computeEntryScore } from '../../../../shared/domain/scoring';
 
@@ -202,16 +202,10 @@ export async function onRequestPut(context: EventContext) {
       .where(eq(schema.categoryEntries.id, entryId));
 
     const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
-    const auditInsert = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user,
-      action: 'UPDATE',
-      details: JSON.stringify({
-        operation: 'UPDATE',
-        previous_value: { ...previousEntry, groupName, categoryName },
-        new_value: { ...updatedEntryObj, groupName, categoryName },
-      }),
+    const auditInsert = buildAuditLog(db, user, 'UPDATE', {
+      operation: 'UPDATE',
+      previous_value: { ...previousEntry, groupName, categoryName },
+      new_value: { ...updatedEntryObj, groupName, categoryName },
     });
 
     await db.batch([updateQuery, ...compactionUpdates, auditInsert]);
@@ -261,13 +255,7 @@ export async function onRequestDelete(context: EventContext) {
     const compactionUpdates = await getCompactionUpdatesForRemoval(db, categoryTypeId, entryId);
 
     const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
-    const auditInsert = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user,
-      action: 'DELETE_CATEGORY_ENTRY',
-      details: JSON.stringify({ entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName }),
-    });
+    const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', { entryId, groupId: entry.groupId, groupName, categoryTypeId, categoryName });
 
     await db.batch([deleteOp, ...compactionUpdates, auditInsert]);
 

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import * as schema from '../../../shared/db/schema';
-import { getDb, jsonResponse, jsonError, type EventContext } from './utils';
+import { getDb, jsonResponse, jsonError, buildAuditLog, type EventContext } from './utils';
 
 export interface ResetScopes {
   categoryEntries?: boolean;
@@ -93,13 +93,7 @@ export async function onRequestPost(context: EventContext) {
       })
       .where(eq(schema.tvRuntimeState.id, 'default'));
 
-    const auditInsert = db.insert(schema.auditLog).values({
-      id: crypto.randomUUID(),
-      timestamp: Date.now(),
-      user,
-      action: 'DATABASE_CLEAR',
-      details: JSON.stringify(preClearSnapshot),
-    });
+    const auditInsert = buildAuditLog(db, user, 'DATABASE_CLEAR', preClearSnapshot);
 
     batchOps.push(tvReset, auditInsert);
 

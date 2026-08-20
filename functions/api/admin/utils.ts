@@ -28,14 +28,18 @@ export function jsonError(message: string, status: number) {
   });
 }
 
-export async function logAudit(db: any, user: string, action: string, details: any) {
-  await db.insert(schema.auditLog).values({
+export function buildAuditLog(db: any, user: string, action: string, details: any) {
+  return db.insert(schema.auditLog).values({
     id: crypto.randomUUID(),
     timestamp: Date.now(),
     user,
     action,
     details: details ? JSON.stringify(details) : null,
   });
+}
+
+export async function logAudit(db: any, user: string, action: string, details: any) {
+  await buildAuditLog(db, user, action, details);
 }
 
 export async function fetchAuditNames(db: any, groupId: string, categoryTypeId: string) {
