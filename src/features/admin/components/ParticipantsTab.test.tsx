@@ -194,10 +194,10 @@ describe('ParticipantsTab Component', () => {
     expect(stammdatenTabBtn).toBeInTheDocument();
 
     fireEvent.click(stammdatenTabBtn);
-    expect(stammdatenTabBtn).toHaveClass('bg-red-600');
+    expect(stammdatenTabBtn).toHaveClass('bg-indigo-600');
 
     fireEvent.click(startTabBtn);
-    expect(startTabBtn).toHaveClass('bg-red-600');
+    expect(startTabBtn).toHaveClass('bg-indigo-600');
   });
 
   it('orders Startreihenfolge categories by Wertungsklasse and then category name', async () => {

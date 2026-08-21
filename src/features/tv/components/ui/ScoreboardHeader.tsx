@@ -46,8 +46,8 @@ export function ScoreboardHeader({
               <span
                 className={
                   statusLabel === uiText.tv.disconnected
-                    ? 'rounded border border-red-500/40 bg-red-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-red-300'
-                    : 'rounded border border-sky-400/30 bg-sky-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-sky-300'
+                    ? 'rounded border border-red-600 bg-red-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm'
+                    : 'rounded border border-slate-900 bg-slate-950 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm ring-1 ring-white/10'
                 }
               >
                 {statusLabel}

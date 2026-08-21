@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { uiText } from '../../../../ui-text';
 import type { DataExportEnvelope, PreflightSummary } from '../../../../../shared/domain/data-management';
+import { AdminCard } from '../AdminCard';
+import { Download, Upload, FileText, CheckCircle2, AlertTriangle, X, Loader2, Info } from 'lucide-react';
 
 export function DataManagementSection() {
   const [exporting, setExporting] = useState(false);
@@ -136,7 +138,6 @@ export function DataManagementSection() {
       }
 
       setImportSuccess(t.importSuccess);
-      // Reset staging
       setSelectedFile(null);
       setFilePayload(null);
       setPreflightSummary(null);
@@ -162,95 +163,98 @@ export function DataManagementSection() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header Description */}
       <div>
-        <h3 className="text-xl font-bold text-white tracking-wide font-oswald flex items-center gap-2">
-          <span>💾</span>
+        <h3 className="text-xl font-bold text-slate-800 tracking-wide flex items-center gap-2">
           <span>{t.title}</span>
         </h3>
-        <p className="text-sm text-neutral-400 mt-1 max-w-3xl">
+        <p className="text-sm text-slate-500 mt-1 max-w-3xl">
           {t.description}
         </p>
       </div>
 
       {/* 1. EXPORT SECTION */}
-      <section className="bg-neutral-900/70 border border-neutral-800 rounded-2xl p-6 shadow-sm space-y-4">
-        <div>
-          <h4 className="text-base font-bold text-neutral-100 flex items-center gap-2">
-            <span>📥</span>
+      <AdminCard>
+        <div className="mb-4">
+          <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <Download size={18} className="text-indigo-600" />
             <span>{t.exportTitle}</span>
           </h4>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {t.exportDescription}
           </p>
         </div>
 
         {exportError && (
-          <div className="bg-red-950/80 border border-red-800 text-red-200 px-4 py-3 rounded-xl text-xs flex items-center justify-between">
-            <span>⚠️ {exportError}</span>
-            <button type="button" onClick={() => setExportError(null)} className="text-red-400 hover:text-white">✕</button>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-medium flex items-center justify-between mb-4">
+            <span>{exportError}</span>
+            <button type="button" onClick={() => setExportError(null)} className="text-red-400 hover:text-red-700">✕</button>
           </div>
         )}
 
         {exportSuccess && (
-          <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3 rounded-xl text-xs flex items-center justify-between">
-            <span>✓ {exportSuccess}</span>
-            <button type="button" onClick={() => setExportSuccess(null)} className="text-emerald-400 hover:text-white">✕</button>
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-xs font-medium flex items-center justify-between mb-4">
+            <span>{exportSuccess}</span>
+            <button type="button" onClick={() => setExportSuccess(null)} className="text-emerald-400 hover:text-emerald-700">✕</button>
           </div>
         )}
 
-        <div>
+        <div className="pt-2">
           <button
             type="button"
             onClick={handleExport}
             disabled={exporting}
-            className="px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-600 text-white font-semibold rounded-xl text-sm transition-colors border border-neutral-700 shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl text-sm transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {exporting ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <Loader2 size={16} className="animate-spin" />
                 <span>{t.exporting}</span>
               </>
             ) : (
               <>
-                <span>💾</span>
+                <Download size={16} />
                 <span>{t.exportButton}</span>
               </>
             )}
           </button>
         </div>
-      </section>
+      </AdminCard>
 
       {/* 2. IMPORT SECTION */}
-      <section className="bg-neutral-900/70 border border-neutral-800 rounded-2xl p-6 shadow-sm space-y-6">
+      <AdminCard className="space-y-6">
         <div>
-          <h4 className="text-base font-bold text-neutral-100 flex items-center gap-2">
-            <span>📤</span>
+          <h4 className="text-base font-bold text-slate-800 flex items-center gap-2">
+            <Upload size={18} className="text-indigo-600" />
             <span>{t.importTitle}</span>
           </h4>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             {t.importDescription}
           </p>
         </div>
 
         {importSuccess && (
-          <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3.5 rounded-xl text-sm flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-2 font-semibold">
-              <span>🎉</span>
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <CheckCircle2 size={18} />
               <span>{importSuccess}</span>
             </div>
-            <button type="button" onClick={() => setImportSuccess(null)} className="text-emerald-400 hover:text-white">✕</button>
+            <button type="button" onClick={() => setImportSuccess(null)} className="text-emerald-400 hover:text-emerald-700">
+              <X size={16} />
+            </button>
           </div>
         )}
 
         {importError && (
-          <div className="bg-red-950/80 border border-red-800 text-red-200 px-4 py-3.5 rounded-xl text-sm flex items-center justify-between shadow-md">
-            <div className="flex items-center gap-2">
-              <span>⚠️</span>
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-2 font-medium">
+              <AlertTriangle size={18} />
               <span>{importError}</span>
             </div>
-            <button type="button" onClick={() => setImportError(null)} className="text-red-400 hover:text-white">✕</button>
+            <button type="button" onClick={() => setImportError(null)} className="text-red-400 hover:text-red-700">
+              <X size={16} />
+            </button>
           </div>
         )}
 
@@ -259,7 +263,7 @@ export function DataManagementSection() {
           <div
             onDragOver={handleDragOver}
             onDrop={handleDrop}
-            className="border-2 border-dashed border-neutral-700 hover:border-red-500/60 rounded-xl p-8 text-center transition-colors bg-neutral-950/50 flex flex-col items-center justify-center space-y-3 cursor-pointer"
+            className="border-2 border-dashed border-slate-200 hover:border-indigo-400 rounded-2xl p-10 text-center transition-all bg-slate-50 hover:bg-indigo-50/20 flex flex-col items-center justify-center space-y-3 cursor-pointer"
             onClick={() => fileInputRef.current?.click()}
           >
             <input
@@ -269,11 +273,13 @@ export function DataManagementSection() {
               onChange={handleFileChange}
               className="hidden"
             />
-            <div className="text-3xl">📄</div>
-            <div className="text-sm font-semibold text-neutral-200">
+            <div className="p-4 bg-white rounded-2xl shadow-sm text-indigo-600 border border-slate-100">
+              <FileText size={32} />
+            </div>
+            <div className="text-sm font-semibold text-slate-800">
               {preflightLoading ? t.analyzingFile : t.selectFile}
             </div>
-            <div className="text-xs text-neutral-500">
+            <div className="text-xs text-slate-400">
               {t.dragDropHint} (.json)
             </div>
           </div>
@@ -281,12 +287,12 @@ export function DataManagementSection() {
 
         {/* Preflight Errors Box */}
         {preflightErrors.length > 0 && (
-          <div className="bg-red-950/80 border border-red-800 text-red-200 p-4 rounded-xl space-y-2">
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl space-y-2">
             <div className="text-sm font-bold flex items-center gap-2">
-              <span>⚠️</span>
+              <AlertTriangle size={16} />
               <span>{t.preflightInvalid}</span>
             </div>
-            <ul className="text-xs space-y-1 pl-5 list-disc text-red-300">
+            <ul className="text-xs space-y-1 pl-5 list-disc text-red-600">
               {preflightErrors.map((err, idx) => (
                 <li key={idx}>{err}</li>
               ))}
@@ -295,7 +301,7 @@ export function DataManagementSection() {
               <button
                 type="button"
                 onClick={handleResetImport}
-                className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white text-xs rounded-lg font-medium transition-colors"
+                className="px-3.5 py-1.5 bg-white border border-red-200 hover:bg-red-100/50 text-red-700 text-xs rounded-xl font-semibold transition-colors"
               >
                 {t.cancel}
               </button>
@@ -305,38 +311,38 @@ export function DataManagementSection() {
 
         {/* Preflight Success & Summary Table */}
         {preflightSummary && preflightSummary.isValid && (
-          <div className="space-y-4 bg-neutral-950/60 border border-neutral-800 rounded-xl p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+          <div className="space-y-4 bg-slate-50 border border-slate-200 rounded-2xl p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <div>
-                <h5 className="text-sm font-bold text-emerald-400 flex items-center gap-2">
-                  <span>✓</span>
+                <h5 className="text-sm font-bold text-emerald-700 flex items-center gap-2">
+                  <CheckCircle2 size={16} />
                   <span>{t.preflightValid}</span>
                 </h5>
-                <p className="text-xs text-neutral-400 mt-0.5 font-mono">
+                <p className="text-xs text-slate-500 mt-0.5 font-mono">
                   {selectedFile?.name} ({t.totalEntities(preflightSummary.totalEntities)})
                 </p>
               </div>
               <button
                 type="button"
                 onClick={handleResetImport}
-                className="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+                className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
               >
                 {t.cancel}
               </button>
             </div>
 
             {/* Table Breakdown */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
               <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-900 text-neutral-400">
+                <thead className="bg-slate-50 text-slate-500 font-semibold uppercase">
                   <tr>
-                    <th className="px-3.5 py-2.5 rounded-l-lg">{t.tableHeaderEntity}</th>
-                    <th className="px-3.5 py-2.5 text-center">{t.tableHeaderTotal}</th>
-                    <th className="px-3.5 py-2.5 text-center text-emerald-400">{t.tableHeaderNew}</th>
-                    <th className="px-3.5 py-2.5 text-center text-amber-400 rounded-r-lg">{t.tableHeaderUpdate}</th>
+                    <th className="px-4 py-2.5">{t.tableHeaderEntity}</th>
+                    <th className="px-4 py-2.5 text-center">{t.tableHeaderTotal}</th>
+                    <th className="px-4 py-2.5 text-center text-emerald-700">{t.tableHeaderNew}</th>
+                    <th className="px-4 py-2.5 text-center text-amber-700">{t.tableHeaderUpdate}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-900">
+                <tbody className="divide-y divide-slate-100">
                   {[
                     { label: t.entityAppConfig, count: preflightSummary.summary.appConfig },
                     { label: t.entityCompetitionClasses, count: preflightSummary.summary.competitionClasses },
@@ -346,19 +352,19 @@ export function DataManagementSection() {
                     { label: t.entityGroups, count: preflightSummary.summary.groups },
                     { label: t.entityCategoryEntries, count: preflightSummary.summary.categoryEntries },
                   ].map((row, idx) => (
-                    <tr key={idx} className="hover:bg-neutral-900/40">
-                      <td className="px-3.5 py-2 font-medium text-neutral-300">{row.label}</td>
-                      <td className="px-3.5 py-2 text-center font-mono text-neutral-400">{row.count.total}</td>
-                      <td className="px-3.5 py-2 text-center font-mono text-emerald-400 font-semibold">{row.count.toInsert}</td>
-                      <td className="px-3.5 py-2 text-center font-mono text-amber-400 font-semibold">{row.count.toUpdate}</td>
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-2 font-medium text-slate-700">{row.label}</td>
+                      <td className="px-4 py-2 text-center font-mono text-slate-500">{row.count.total}</td>
+                      <td className="px-4 py-2 text-center font-mono text-emerald-700 font-semibold">{row.count.toInsert}</td>
+                      <td className="px-4 py-2 text-center font-mono text-amber-700 font-semibold">{row.count.toUpdate}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            <div className="p-3 bg-neutral-900/80 border border-neutral-800 rounded-lg text-xs text-neutral-400 flex items-start gap-2">
-              <span className="text-amber-400 text-sm">ℹ️</span>
+            <div className="p-3 bg-white border border-slate-200 rounded-xl text-xs text-slate-500 flex items-start gap-2">
+              <Info size={16} className="text-amber-500 shrink-0 mt-0.5" />
               <span>{t.warningNote}</span>
             </div>
 
@@ -368,16 +374,16 @@ export function DataManagementSection() {
                 type="button"
                 onClick={handleExecuteImport}
                 disabled={importing}
-                className="px-5 py-2.5 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-xl text-sm transition-colors shadow-md flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold rounded-xl text-sm transition-all shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {importing ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <Loader2 size={16} className="animate-spin" />
                     <span>{t.importing}</span>
                   </>
                 ) : (
                   <>
-                    <span>⚡</span>
+                    <Upload size={16} />
                     <span>{t.importButton}</span>
                   </>
                 )}
@@ -386,14 +392,14 @@ export function DataManagementSection() {
                 type="button"
                 onClick={handleResetImport}
                 disabled={importing}
-                className="px-4 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-sm font-medium transition-colors"
+                className="px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
               >
                 {t.cancel}
               </button>
             </div>
           </div>
         )}
-      </section>
+      </AdminCard>
     </div>
   );
 }

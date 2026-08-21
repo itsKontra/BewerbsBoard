@@ -75,13 +75,13 @@ export function SingleRankingRow({
         </FittedCompetitorIdentity>
       </td>
       <td className="px-4 py-1.5 text-right">
-        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-extrabold">
+        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
           <span className={`text-right ${themeStyles.score.time}`}>
             {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : timeDisplay}
           </span>
           <span className="w-[6ch] text-left">
             {penaltyHundredths > 0 && (
-              <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
                 +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
               </span>
             )}

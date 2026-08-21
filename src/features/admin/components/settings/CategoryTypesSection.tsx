@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import type { CategoryType, CompetitionClass } from '../SetupTab';
 import { uiText } from '../../../../ui-text';
+import { AdminCard } from '../AdminCard';
+import { Plus, Edit2, Check, X, AlertTriangle, CheckCircle2, Trash2, Loader2 } from 'lucide-react';
 
 const text = uiText.admin.setup.categoryTypes;
 
@@ -146,58 +148,58 @@ export function CategoryTypesSection({
   };
 
   return (
-    <section className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-6 shadow-xl space-y-6">
-      <div className="border-b border-neutral-800 pb-3">
-        <h3 className="font-oswald text-lg font-bold text-white uppercase tracking-wider">
+    <AdminCard className="space-y-6">
+      <div className="border-b border-slate-100 pb-4">
+        <h3 className="text-lg font-bold text-slate-800">
           {text.title}
         </h3>
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-slate-500 mt-1">
           {text.description}
         </p>
       </div>
 
       {/* Action Alerts */}
       {actionError && (
-        <div className="bg-red-950/80 border border-red-800 text-red-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs font-semibold">
+        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center justify-between text-sm font-medium shadow-sm">
           <div className="flex items-center space-x-2">
-            <span>⚠️</span>
+            <AlertTriangle size={18} />
             <span>{actionError}</span>
           </div>
           <button
             type="button"
             onClick={() => setActionError(null)}
-            className="text-red-400 hover:text-white"
+            className="text-red-400 hover:text-red-700 p-1"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
 
       {actionSuccess && (
-        <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-200 px-4 py-3 rounded-lg flex items-center justify-between text-xs font-semibold">
+        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-4 rounded-2xl flex items-center justify-between text-sm font-medium shadow-sm">
           <div className="flex items-center space-x-2">
-            <span>✅</span>
+            <CheckCircle2 size={18} />
             <span>{actionSuccess}</span>
           </div>
           <button
             type="button"
             onClick={() => setActionSuccess(null)}
-            className="text-emerald-400 hover:text-white"
+            className="text-emerald-400 hover:text-emerald-700 p-1"
           >
-            ✕
+            <X size={16} />
           </button>
         </div>
       )}
 
       {/* Create Category Type Section */}
-      <div className="bg-neutral-950/80 border border-neutral-800 rounded-lg p-4 space-y-4">
-        <div className="text-xs font-bold text-neutral-200 uppercase tracking-wide">
+      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-4">
+        <div className="text-xs font-bold text-slate-700 uppercase tracking-wide">
           {text.createTitle}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-          <div className="sm:col-span-6">
-            <label htmlFor="newCategoryName" className="block text-[11px] font-bold uppercase text-neutral-400 mb-1">
+          <div className="sm:col-span-5">
+            <label htmlFor="newCategoryName" className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
               {text.categoryName}
             </label>
             <input
@@ -212,34 +214,19 @@ export function CategoryTypesSection({
                 }
               }}
               placeholder={text.namePlaceholder}
-              className="w-full bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
             />
           </div>
 
-          <div className="sm:col-span-4 flex items-center h-9">
-            <label className="flex items-center space-x-2 cursor-pointer select-none">
-              <input
-                id="newCategoryHasRelay"
-                type="checkbox"
-                checked={formData.hasRelayRace}
-                onChange={(e) => setFormData((prev) => ({ ...prev, hasRelayRace: e.target.checked }))}
-                className="w-4 h-4 accent-red-600 rounded bg-neutral-900 border-neutral-700 cursor-pointer"
-              />
-              <span className="text-xs font-semibold text-neutral-300">
-                {text.hasRelayRace}
-              </span>
-            </label>
-          </div>
-
           <div className="sm:col-span-4">
-            <label htmlFor="newCategoryCompetitionClass" className="block text-[11px] font-bold uppercase text-neutral-400 mb-1">
+            <label htmlFor="newCategoryCompetitionClass" className="block text-[11px] font-bold uppercase text-slate-500 mb-1">
               {text.competitionCategory}
             </label>
             <select
               id="newCategoryCompetitionClass"
               value={formData.competitionClassId}
               onChange={(e) => setFormData((prev) => ({ ...prev, competitionClassId: e.target.value }))}
-              className="w-full bg-neutral-900 border border-neutral-800 focus:border-red-600 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
             >
               <option value="">{text.selectClass}</option>
               {competitionClasses.map((competitionClass) => (
@@ -248,18 +235,33 @@ export function CategoryTypesSection({
             </select>
           </div>
 
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-3 flex items-center h-10">
+            <label className="flex items-center space-x-2 cursor-pointer select-none">
+              <input
+                id="newCategoryHasRelay"
+                type="checkbox"
+                checked={formData.hasRelayRace}
+                onChange={(e) => setFormData((prev) => ({ ...prev, hasRelayRace: e.target.checked }))}
+                className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 cursor-pointer"
+              />
+              <span className="text-xs font-semibold text-slate-700">
+                {text.hasRelayRace}
+              </span>
+            </label>
+          </div>
+
+          <div className="sm:col-span-12 flex justify-end">
             <button
               type="button"
               onClick={handleCreateCategoryType}
               disabled={isCreating || !formData.name.trim() || !formData.competitionClassId}
-              className="w-full h-9 px-3 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-xs font-bold uppercase tracking-wider font-oswald rounded-lg transition-colors flex items-center justify-center space-x-1 cursor-pointer"
+              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm shadow-indigo-200 transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               {isCreating ? (
                 <span>{text.creating}</span>
               ) : (
                 <>
-                  <span>+</span>
+                  <Plus size={16} />
                   <span>{text.create}</span>
                 </>
               )}
@@ -269,20 +271,20 @@ export function CategoryTypesSection({
       </div>
 
       {/* List of Category Types */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-2xl border border-slate-100">
         <table className="w-full text-left text-sm border-collapse">
           <thead>
-            <tr className="bg-neutral-950 text-neutral-400 font-oswald text-xs uppercase tracking-wider border-b border-neutral-800">
-              <th className="py-3 px-4 rounded-l-lg">{text.name}</th>
+            <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-100">
+              <th className="py-3 px-4">{text.name}</th>
               <th className="py-3 px-4">{text.competitionClass}</th>
               <th className="py-3 px-4 text-center">{text.relayColumn}</th>
-              <th className="py-3 px-4 text-right rounded-r-lg">{text.action}</th>
+              <th className="py-3 px-4 text-right">{text.action}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-neutral-800/80">
+          <tbody className="divide-y divide-slate-100">
             {categoryTypes.length === 0 ? (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-xs text-neutral-500 italic">
+                <td colSpan={4} className="py-8 text-center text-xs text-slate-400 italic">
                   {text.empty}
                 </td>
               </tr>
@@ -291,8 +293,8 @@ export function CategoryTypesSection({
                 const isEditing = editingId === cat.id;
 
                 return (
-                  <tr key={cat.id} className="hover:bg-neutral-800/30 transition-colors">
-                    <td className="py-3 px-4">
+                  <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="py-3.5 px-4">
                       {isEditing ? (
                         <div className="flex items-center space-x-2">
                           <input
@@ -309,65 +311,66 @@ export function CategoryTypesSection({
                               }
                             }}
                             autoFocus
-                            className="bg-neutral-950 border border-red-600 rounded px-2 py-1 text-xs text-white focus:outline-none min-w-[160px]"
+                            className="bg-white border border-indigo-400 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none min-w-[160px] shadow-sm"
                           />
                           <button
                             type="button"
                             onClick={() => handleSaveEdit(cat.id)}
                             disabled={isSavingEdit || !editingName.trim()}
-                            className="p-1 px-2 rounded bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white text-xs font-bold transition-colors cursor-pointer"
+                            className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-colors cursor-pointer"
                             title={text.save}
                           >
-                            ✓
+                            <Check size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={handleCancelEdit}
                             disabled={isSavingEdit}
-                            className="p-1 px-2 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs transition-colors cursor-pointer"
+                            className="p-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition-colors cursor-pointer"
                             title={text.cancel}
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         </div>
                       ) : (
                         <div className="flex items-center space-x-2 group">
-                          <span className="font-semibold text-white">{cat.name}</span>
+                          <span className="font-semibold text-slate-800">{cat.name}</span>
                           <button
                             type="button"
                             onClick={() => handleStartEdit(cat)}
-                            className="text-neutral-500 hover:text-amber-400 text-xs transition-colors p-1 rounded hover:bg-neutral-800 cursor-pointer"
+                            className="text-slate-400 hover:text-indigo-600 text-xs transition-colors p-1 rounded hover:bg-slate-100 cursor-pointer"
                             title={text.edit(cat.name)}
                             aria-label={text.edit(cat.name)}
                           >
-                            ✏️
+                            <Edit2 size={13} />
                           </button>
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-neutral-300 text-xs">
+                    <td className="py-3.5 px-4 text-slate-600 text-xs">
                       {competitionClasses.find((competitionClass) => competitionClass.id === cat.competitionClassId)?.name ?? cat.competitionClassId}
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center">
                       {cat.hasRelayRace ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/80 border border-emerald-700/60 text-emerald-300">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 border border-emerald-200 text-emerald-900">
                           {text.withRelay}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-neutral-800 border border-neutral-700 text-neutral-400">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 border border-slate-200 text-slate-700">
                           {text.withoutRelay}
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         type="button"
                         onClick={() => handleDeleteCategoryType(cat.id, cat.name)}
                         disabled={deletingId === cat.id}
-                        className="p-1.5 px-2.5 rounded bg-neutral-800 hover:bg-red-950/60 hover:text-red-300 hover:border-red-800 text-neutral-400 text-xs border border-neutral-700 transition-colors disabled:opacity-50 cursor-pointer"
+                        className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors disabled:opacity-50 inline-flex items-center justify-center cursor-pointer"
                         title={text.delete(cat.name)}
+                        aria-label={text.delete(cat.name)}
                       >
-                        {deletingId === cat.id ? text.deleting : text.deleteButton}
+                        {deletingId === cat.id ? <Loader2 size={16} className="animate-spin text-slate-400" /> : <Trash2 size={16} />}
                       </button>
                     </td>
                   </tr>
@@ -377,6 +380,6 @@ export function CategoryTypesSection({
           </tbody>
         </table>
       </div>
-    </section>
+    </AdminCard>
   );
 }

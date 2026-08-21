@@ -69,13 +69,13 @@ function TimeWithPenalty({
     : 0;
 
   return (
-    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.1rem,1.6vw,1.9rem)] font-extrabold">
+    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.1rem,1.6vw,1.9rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
         {formatHundredthsToDisplayTime(hasAttackTime ? attackTimeHundredths : scoreHundredths)}
       </span>
       <span className="w-[5.5ch] text-left">
         {penaltyHundredths > 0 && (
-          <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+          <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
           </span>
         )}

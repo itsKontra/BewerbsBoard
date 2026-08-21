@@ -93,29 +93,28 @@ export default function App() {
       };
 
       return (
-        <div className="min-h-screen bg-neutral-950 text-white flex flex-col items-center justify-center p-4">
-          <div className="max-w-md w-full bg-neutral-900 border border-red-900/60 rounded-xl p-6 shadow-2xl text-center space-y-4">
-            <div className="w-16 h-16 bg-red-950/80 border border-red-800 rounded-full flex items-center justify-center mx-auto text-red-500 text-3xl">
+        <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white border border-slate-100 rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] text-center space-y-5">
+            <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto text-red-600 text-2xl font-bold">
               🚫
             </div>
-            <h1 className="text-xl font-bold text-red-400">{uiText.auth.forbiddenTitle}</h1>
-            <p className="text-sm text-neutral-300">
+            <h1 className="text-xl font-bold text-slate-800">{uiText.auth.forbiddenTitle}</h1>
+            <p className="text-sm text-slate-500">
               {uiText.auth.forbiddenBeforeRole}{' '}
-              <code className="bg-neutral-800 px-1.5 py-0.5 rounded text-red-300 font-mono">admin</code>
+              <code className="bg-slate-100 px-2 py-0.5 rounded-md text-red-600 font-mono font-semibold border border-slate-200">admin</code>
               {uiText.auth.forbiddenAfterRole}
             </p>
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={handleForbiddenLogout}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-red-900/80 hover:bg-red-800 text-red-100 rounded-lg text-sm font-semibold transition-colors border border-red-700/80 shadow-md cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
-                <span>🚪</span>
                 <span>{uiText.auth.switchAccount}</span>
               </button>
               <a
                 href="/"
-                className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-sm font-semibold transition-colors border border-neutral-700"
+                className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
               >
                 {uiText.auth.backToHome}
               </a>

@@ -113,7 +113,7 @@ body,
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100svh;
-  background: var(--color-neutral-900); /* Will use Tailwind variables */
+  background: #ffffff;
   overflow-y: auto;
   scroll-snap-align: start;
   scrollbar-width: none;

@@ -160,5 +160,53 @@ describe('ResultsTab Component', () => {
     // Verify clean rank text
     expect(validRow).toHaveTextContent('1.');
   });
+
+  it('renders Save button in ghost/outline style by default and transitions to solid green when dirty', async () => {
+    render(<ResultsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('open-entry-row-entry-1')).toBeInTheDocument();
+    });
+
+    const saveButton = screen.getByRole('button', { name: 'Speichern' });
+    // Default/Clean State: ghost/outline style
+    expect(saveButton).toHaveClass('bg-white');
+    expect(saveButton).toHaveClass('text-emerald-700');
+    expect(saveButton).toHaveClass('border-emerald-600');
+    expect(saveButton).not.toHaveClass('bg-emerald-600');
+
+    // Dirty state: modify attack time input
+    const timeInput = screen.getByPlaceholderText('60,00');
+    fireEvent.change(timeInput, { target: { value: '45,12' } });
+
+    // Transition to solid green
+    expect(saveButton).toHaveClass('bg-emerald-600');
+    expect(saveButton).toHaveClass('text-white');
+
+    // Save action
+    fireEvent.click(saveButton);
+
+    // Reverts to ghost state after saving
+    await waitFor(() => {
+      expect(saveButton).toHaveClass('bg-white');
+      expect(saveButton).toHaveClass('text-emerald-700');
+    });
+  });
+
+  it('renders quick counters with high-contrast color classes', async () => {
+    render(<ResultsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/1 Offen/i)).toBeInTheDocument();
+    });
+
+    const openBadge = screen.getByText(/1 Offen/i);
+    const validBadge = screen.getByText(/1 Gültig/i);
+    const dnfBadge = screen.getByText(/0 DNF/i);
+
+    expect(openBadge).toHaveClass('text-blue-900');
+    expect(validBadge).toHaveClass('text-emerald-900');
+    expect(dnfBadge).toHaveClass('text-red-900');
+  });
 });
 

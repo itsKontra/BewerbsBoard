@@ -90,13 +90,13 @@ export function SingleRelayRow({
 
       {/* Attack Time & Errors */}
       <td className="px-4 py-1.5 text-center">
-        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-extrabold">
+        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
           <span className={themeStyles.score.time}>
             {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : '—'}
           </span>
           <span className="w-[4ch] text-left">
             {attackPenalty > 0 && (
-              <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
                 +{attackTimeErrors}F
               </span>
             )}
@@ -106,13 +106,13 @@ export function SingleRelayRow({
 
       {/* Relay Race Time & Errors */}
       <td className="px-4 py-1.5 text-center">
-        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-extrabold">
+        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
           <span className={themeStyles.score.time}>
             {hasRelay ? formatHundredthsToDisplayTime(relayRaceHundredths) : '—'}
           </span>
           <span className="w-[4ch] text-left">
             {relayPenalty > 0 && (
-              <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
                 +{relayRaceErrors}F
               </span>
             )}
