@@ -410,7 +410,7 @@ describe('TvScoreboard Component', () => {
       expect(firstPlace).toHaveClass('border-l-4', theme === 'outdoor' ? 'border-l-amber-500' : 'border-l-amber-400');
       expect(within(firstPlace).getByText('FF Siegerdorf Gruppe 1')).toHaveClass('font-black', 'whitespace-nowrap');
       expect(within(firstPlace).getByText('40,00 s').parentElement).toHaveClass('whitespace-nowrap');
-      expect(within(firstPlace).getByText('+5,00')).toHaveClass(theme === 'outdoor' ? 'text-red-700' : 'text-red-300');
+      expect(within(firstPlace).getByText('+5,00')).toHaveClass('text-white', 'bg-red-600');
       expect(within(firstPlace).getByText('1')).toHaveClass('text-[clamp(1.25rem,2.1vw,2.4rem)]');
 
       const identity = within(firstPlace).getByText('FF Siegerdorf Gruppe 1');
@@ -1154,7 +1154,7 @@ describe('TvScoreboard Component', () => {
     const row2PenaltySlot = row2TimeGrid?.querySelectorAll('span')[1];
     expect(row2PenaltySlot).toHaveClass('w-[6ch]', 'text-left');
     expect(row2PenaltySlot).toHaveTextContent('+10,00');
-    expect(within(row2PenaltySlot!).getByText('+10,00')).toHaveClass('text-red-300');
+    expect(within(row2PenaltySlot!).getByText('+10,00')).toHaveClass('text-white', 'bg-red-600');
   });
 
   it('handles offline resilience silently', async () => {

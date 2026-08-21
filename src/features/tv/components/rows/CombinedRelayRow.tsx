@@ -39,13 +39,13 @@ function CompactTimePenalty({
   const penalty = (errors ?? 0) * 100;
 
   return (
-    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.7vw,1.8rem)] font-extrabold">
+    <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.7vw,1.8rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
         {hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '—'}
       </span>
       <span className="w-[3.5ch] text-left">
         {penalty > 0 && (
-          <span className={`inline-block rounded-md px-1.5 py-1 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+          <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{errors}F
           </span>
         )}
