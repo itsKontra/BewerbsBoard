@@ -1,10 +1,13 @@
 import type { Context, Hono } from 'hono'
 
-import { computeEntryScore } from '../shared/domain/scoring.js'
 import { buildCategoriesResultMap } from '../shared/api-mappers/results-builder.js'
 import { createEvaluationTypeViews } from '../shared/seed/seed-data.js'
-import { parseGermanTimeToHundredths } from '../shared/utils/time-parser.js'
-import type { CategoryEntry, SelfHostedDatabase } from './database.js'
+import {
+  calculateEntryUpdate,
+  validateEntryDeletion,
+  EntryValidationError,
+} from '../shared/domain/entry-lifecycle.js'
+import type { SelfHostedDatabase } from './database.js'
 import type { SelfHostedAppEnvironment } from './app.js'
 
 export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, database: SelfHostedDatabase) {
@@ -274,10 +277,13 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
   app.delete('/api/admin/category-entries/:id', (context) => {
     const entry = database.scoring.findEntry(context.req.param('id') ?? '')
     if (!entry) return error(context, 'Category entry not found', 404)
-    if (entry.runStatus !== 'OPEN') return error(context, 'Only OPEN entries can be removed', 400)
+    const deletion = validateEntryDeletion(entry)
+    if (!deletion.canDelete) return error(context, deletion.errorMessage || 'Only OPEN entries can be removed', 400)
     database.transaction(() => {
       database.scoring.deleteEntry(entry.id)
-      database.scoring.compactOpenEntries(entry.categoryTypeId)
+      if (deletion.requiresCompaction) {
+        database.scoring.compactOpenEntries(entry.categoryTypeId)
+      }
       audit(database, context, 'DELETE_CATEGORY_ENTRY', { entryId: entry.id, categoryTypeId: entry.categoryTypeId, groupId: entry.groupId })
     })
     return context.json({ message: 'Category entry removed successfully' })
@@ -298,81 +304,27 @@ async function updateEntry(context: Context<SelfHostedAppEnvironment>, database:
   if (!existing) return error(context, 'Category entry not found', 404)
   const body = await context.req.json() as Record<string, unknown>
 
-  // Attack time
-  let attackTime = existing.attackTimeHundredths
-  if ('attackTimeStr' in body) {
-    attackTime = (body.attackTimeStr === null || (typeof body.attackTimeStr === 'string' && body.attackTimeStr.trim() === ''))
-      ? null
-      : typeof body.attackTimeStr === 'string' ? parseGermanTimeToHundredths(body.attackTimeStr) : null
-    if (attackTime === null && body.attackTimeStr && !(typeof body.attackTimeStr === 'string' && body.attackTimeStr.trim() === '')) {
-      return error(context, 'Invalid German decimal time format. Example valid inputs: 42, 42,3, 42,38 (0.01 to 999.99)', 400)
-    }
-  } else if ('attackTimeHundredths' in body) {
-    attackTime = typeof body.attackTimeHundredths === 'number' ? body.attackTimeHundredths : null
-  }
-
-  // Attack errors
-  let attackErrors = existing.attackTimeErrors
-  if ('errors' in body) {
-    attackErrors = (body.errors === null || (typeof body.errors === 'string' && body.errors.trim() === '')) ? null : Number(body.errors)
-    if (attackErrors !== null && (!Number.isInteger(attackErrors) || attackErrors < 0)) return error(context, 'Error count must be a non-negative integer', 400)
-  } else if ('attackTimeErrors' in body) {
-    attackErrors = (body.attackTimeErrors === null || (typeof body.attackTimeErrors === 'string' && (body.attackTimeErrors as string).trim() === '')) ? null : Number(body.attackTimeErrors)
-    if (attackErrors !== null && (!Number.isInteger(attackErrors) || attackErrors < 0)) return error(context, 'Error count must be a non-negative integer', 400)
-  }
-
-  // Relay race fields
-  let relayHundredths = existing.relayRaceHundredths
-  if ('relayRaceHundredths' in body) {
-    relayHundredths = typeof body.relayRaceHundredths === 'number' ? body.relayRaceHundredths : null
-  }
-  let relayErrors = existing.relayRaceErrors
-  if ('relayRaceErrors' in body) {
-    relayErrors = (body.relayRaceErrors === null || (typeof body.relayRaceErrors === 'string' && (body.relayRaceErrors as string).trim() === '')) ? null : Number(body.relayRaceErrors)
-    if (relayErrors !== null && (!Number.isInteger(relayErrors) || relayErrors < 0)) return error(context, 'Relay error count must be a non-negative integer', 400)
-  }
-
-  // Run status — look up the category type to know the relay descriptor for auto-promotion
-  let runStatus = existing.runStatus
   const categoryType = database.catalog.listCategoryTypes().find((ct) => ct.id === existing.categoryTypeId)
-  if ('runStatus' in body) {
-    if (!['OPEN', 'VALID', 'DNF'].includes(body.runStatus as string)) return error(context, 'Invalid runStatus value', 400)
-    runStatus = body.runStatus as CategoryEntry['runStatus']
-  } else if (runStatus === 'OPEN' && attackTime !== null && attackErrors !== null) {
-    // Auto-promote to VALID when all required fields are present
-    const needsRelay = categoryType?.hasRelayRace ?? false
-    const hasRelay = relayHundredths !== null && relayErrors !== null
-    if (!needsRelay || hasRelay) {
-      runStatus = 'VALID'
-    }
-  }
+  const hasRelayRace = categoryType?.hasRelayRace ?? false
 
-  const next: CategoryEntry = {
-    ...existing,
-    attackTimeHundredths: attackTime,
-    attackTimeErrors: attackErrors,
-    relayRaceHundredths: relayHundredths,
-    relayRaceErrors: relayErrors,
-    runStatus,
-    startOrderPosition: runStatus === 'OPEN'
-      ? (existing.runStatus === 'OPEN' ? existing.startOrderPosition : database.scoring.nextOpenPosition(existing.categoryTypeId))
-      : null,
+  let result
+  try {
+    result = calculateEntryUpdate(existing, body, {
+      hasRelayRace,
+      getNextOpenPosition: () => database.scoring.nextOpenPosition(existing.categoryTypeId),
+    })
+  } catch (err: any) {
+    return error(context, err.message, err instanceof EntryValidationError ? 400 : 500)
   }
-
-  // Compute score for the response (not stored; computed on-the-fly for display)
-  const scoreHundredths = runStatus === 'VALID' && attackTime !== null && attackErrors !== null
-    ? computeEntryScore(
-        { attackTimeHundredths: attackTime, attackTimeErrors: attackErrors, relayRaceHundredths: relayHundredths, relayRaceErrors: relayErrors },
-        { hasRelayRace: categoryType?.hasRelayRace ?? false, excludeRelayRace: false },
-      )
-    : null
 
   database.transaction(() => {
-    database.scoring.updateEntry(next)
-    if (existing.runStatus === 'OPEN' && runStatus !== 'OPEN') database.scoring.compactOpenEntries(existing.categoryTypeId, existing.id)
-    audit(database, context, 'UPDATE', { operation: 'UPDATE', previous_value: existing, new_value: next })
+    database.scoring.updateEntry(result.nextEntry)
+    if (result.requiresCompaction) {
+      database.scoring.compactOpenEntries(existing.categoryTypeId, existing.id)
+    }
+    audit(database, context, 'UPDATE', { operation: 'UPDATE', previous_value: existing, new_value: result.nextEntry })
   })
-  return context.json({ message: 'Category entry updated successfully', entry: { ...next, scoreHundredths } })
+  return context.json({ message: 'Category entry updated successfully', entry: { ...result.nextEntry, scoreHundredths: result.scoreHundredths } })
 }
 
 function publicResults(database: SelfHostedDatabase) {
