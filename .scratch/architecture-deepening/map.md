@@ -16,6 +16,8 @@ A deepened, unified codebase architecture where:
 
 - [01-design-entry-lifecycle-interface](file:///d:/developement/web-scoreboard/.scratch/architecture-deepening/issues/01-design-entry-lifecycle-interface.md) — Created pure `shared/domain/entry-lifecycle.ts` module handling status transitions, auto-promotion, compaction flags, score derivation, and audit generation.
 - [03-integrate-entry-lifecycle-into-routes](file:///d:/developement/web-scoreboard/.scratch/architecture-deepening/issues/03-integrate-entry-lifecycle-into-routes.md) — Refactored Cloudflare Pages Functions and Self-Hosted Hono routes to delegate all entry lifecycle and deletion validations to `shared/domain/entry-lifecycle.ts`.
+- [02-research-drizzle-better-sqlite3-parity](file:///d:/developement/web-scoreboard/.scratch/architecture-deepening/issues/02-research-drizzle-better-sqlite3-parity.md) — Researched Drizzle Better-SQLite3 synchronous execution, schema sharing with Cloudflare D1, and migration roadmap for `server/database.ts`.
+- [04-migrate-server-database-to-drizzle](file:///d:/developement/web-scoreboard/.scratch/architecture-deepening/issues/04-migrate-server-database-to-drizzle.md) — Migrated `server/database.ts` from raw SQL `sqlite.prepare` queries to type-safe Drizzle ORM queries over `shared/db/schema.ts`.
 
 ## Not yet specified
 
