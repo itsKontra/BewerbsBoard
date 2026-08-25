@@ -72,8 +72,50 @@ describe('self-hosted scoring and public-results routes', () => {
           },
         },
       })
-      expect(resultsPayload.categories['eval-gesamt-aktiv']).toMatchObject({ type: 'combined', rankedResults: [], openEntries: [], dnfEntries: [] })
-      expect(database.audit.list().map((audit) => audit.action)).toEqual(['CREATE_BRIGADE', 'CREATE_GROUP', 'CREATE_GROUP', 'CREATE_CATEGORY_ENTRY', 'CREATE_CATEGORY_ENTRY', 'REORDER_CATEGORY_ENTRIES', 'UPDATE'])
+      const deleteRes = await request(`/api/admin/category-entries/${entries[1].id}`, { method: 'DELETE', headers })
+      expect(deleteRes.status).toBe(200)
+
+      const auditLogs = database.audit.list()
+      expect(auditLogs.map((audit) => audit.action)).toEqual([
+        'CREATE_BRIGADE',
+        'CREATE_GROUP',
+        'CREATE_GROUP',
+        'CREATE_CATEGORY_ENTRY',
+        'CREATE_CATEGORY_ENTRY',
+        'REORDER_CATEGORY_ENTRIES',
+        'UPDATE',
+        'DELETE_CATEGORY_ENTRY',
+      ])
+
+      const updateAudit = auditLogs.find((a) => a.action === 'UPDATE')
+      expect(updateAudit?.details).toEqual({
+        operation: 'UPDATE',
+        previous_value: expect.objectContaining({
+          id: entries[0].id,
+          group: '1',
+          category: 'bronze-aktiv',
+          runStatus: 'OPEN',
+        }),
+        new_value: expect.objectContaining({
+          id: entries[0].id,
+          group: '1',
+          category: 'bronze-aktiv',
+          runStatus: 'VALID',
+          attackTimeHundredths: 4238,
+          attackTimeErrors: 1,
+        }),
+      })
+
+      const deleteAudit = auditLogs.find((a) => a.action === 'DELETE_CATEGORY_ENTRY')
+      expect(deleteAudit?.details).toEqual({
+        operation: 'DELETE_CATEGORY_ENTRY',
+        previous_value: {
+          entryId: entries[1].id,
+          group: '2',
+          category: 'bronze-aktiv',
+        },
+        new_value: null,
+      })
     } finally {
       database.close()
       await rm(directory, { recursive: true, force: true })

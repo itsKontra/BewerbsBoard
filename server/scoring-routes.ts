@@ -277,14 +277,19 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
   app.delete('/api/admin/category-entries/:id', (context) => {
     const entry = database.scoring.findEntry(context.req.param('id') ?? '')
     if (!entry) return error(context, 'Category entry not found', 404)
-    const deletion = validateEntryDeletion(entry)
+    const group = database.scoring.findGroup(entry.groupId)
+    const categoryType = database.catalog.findCategoryTypeById(entry.categoryTypeId)
+    const deletion = validateEntryDeletion(entry, {
+      groupName: group?.name,
+      categoryName: categoryType?.name,
+    })
     if (!deletion.canDelete) return error(context, deletion.errorMessage || 'Only OPEN entries can be removed', 400)
     database.transaction(() => {
       database.scoring.deleteEntry(entry.id)
       if (deletion.requiresCompaction) {
         database.scoring.compactOpenEntries(entry.categoryTypeId)
       }
-      audit(database, context, 'DELETE_CATEGORY_ENTRY', { entryId: entry.id, categoryTypeId: entry.categoryTypeId, groupId: entry.groupId })
+      audit(database, context, 'DELETE_CATEGORY_ENTRY', deletion.auditPayload)
     })
     return context.json({ message: 'Category entry removed successfully' })
   })
@@ -306,12 +311,15 @@ async function updateEntry(context: Context<SelfHostedAppEnvironment>, database:
 
   const categoryType = database.catalog.listCategoryTypes().find((ct) => ct.id === existing.categoryTypeId)
   const hasRelayRace = categoryType?.hasRelayRace ?? false
+  const group = database.scoring.findGroup(existing.groupId)
 
   let result
   try {
     result = calculateEntryUpdate(existing, body, {
       hasRelayRace,
       getNextOpenPosition: () => database.scoring.nextOpenPosition(existing.categoryTypeId),
+      groupName: group?.name,
+      categoryName: categoryType?.name,
     })
   } catch (err: any) {
     return error(context, err.message, err instanceof EntryValidationError ? 400 : 500)
@@ -322,7 +330,7 @@ async function updateEntry(context: Context<SelfHostedAppEnvironment>, database:
     if (result.requiresCompaction) {
       database.scoring.compactOpenEntries(existing.categoryTypeId, existing.id)
     }
-    audit(database, context, 'UPDATE', { operation: 'UPDATE', previous_value: existing, new_value: result.nextEntry })
+    audit(database, context, 'UPDATE', result.auditPayload)
   })
   return context.json({ message: 'Category entry updated successfully', entry: { ...result.nextEntry, scoreHundredths: result.scoreHundredths } })
 }
