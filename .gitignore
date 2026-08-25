@@ -39,4 +39,4 @@ dist-server
 .codex/
 skills-lock.json
 .scratch/
-docs/
+docs/agents/
