@@ -145,7 +145,7 @@ function mockTvScenario({
   resultsData = mockResultsData,
 }: MockTvScenario) {
   globalThis.fetch = vi.fn().mockImplementation(async (url: string) => {
-    if (url === '/api/public/tv-state') {
+    if (url.startsWith('/api/public/tv-state')) {
       return {
         ok: true,
         json: async () => ({

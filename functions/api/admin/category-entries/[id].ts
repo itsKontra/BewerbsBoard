@@ -1,86 +1,12 @@
 import { and, asc, eq, max, ne } from 'drizzle-orm';
 import * as schema from '../../../../shared/db/schema';
 import { getDb, jsonResponse, jsonError, fetchAuditNames, buildAuditLog, type EventContext } from '../utils';
-import { parseGermanTimeToHundredths } from '../../../../shared/utils/time-parser';
-import { computeEntryScore } from '../../../../shared/domain/scoring';
-
-// --- Field Parsers ---
-
-function parseAttackTime(body: Record<string, unknown>, previousTime: number | null): number | null {
-  if ('attackTimeStr' in body) {
-    const val = body.attackTimeStr;
-    if (val === null || (typeof val === 'string' && val.trim() === '')) return null;
-    if (typeof val === 'string') {
-      const parsed = parseGermanTimeToHundredths(val);
-      if (parsed === null) {
-        throw new Error('Invalid German decimal time format. Example valid inputs: 42, 42,3, 42,38 (0.01 to 999.99)');
-      }
-      return parsed;
-    }
-  } else if (typeof body.attackTimeHundredths === 'number') {
-    return body.attackTimeHundredths;
-  }
-  return previousTime;
-}
-
-function parseErrorCount(val: unknown, previousErrors: number | null, errorMessage: string): number | null {
-  if (val === undefined) return previousErrors;
-  if (val === null || (typeof val === 'string' && val.trim() === '')) return null;
-  const numErrors = Number(val);
-  if (isNaN(numErrors) || numErrors < 0 || !Number.isInteger(numErrors)) {
-    throw new Error(errorMessage);
-  }
-  return numErrors;
-}
-
-function extractAttackErrors(body: Record<string, unknown>, previousErrors: number | null): number | null {
-  if ('errors' in body || 'attackTimeErrors' in body) {
-    const val = 'attackTimeErrors' in body ? body.attackTimeErrors : body.errors;
-    return parseErrorCount(val, previousErrors, 'Error count must be a non-negative integer');
-  }
-  return previousErrors;
-}
-
-function extractRelayHundredths(body: Record<string, unknown>, previousHundredths: number | null): number | null {
-  if ('relayRaceHundredths' in body) {
-    return typeof body.relayRaceHundredths === 'number' ? body.relayRaceHundredths : null;
-  }
-  return previousHundredths;
-}
-
-function extractRelayErrors(body: Record<string, unknown>, previousErrors: number | null): number | null {
-  if ('relayRaceErrors' in body) {
-    return parseErrorCount(body.relayRaceErrors, previousErrors, 'Relay error count must be a non-negative integer');
-  }
-  return previousErrors;
-}
-
-function determineTargetRunStatus(
-  body: Record<string, unknown>,
-  previousStatus: string,
-  hasRelayRace: boolean,
-  newAttackTime: number | null,
-  newAttackErrors: number | null,
-  newRelayHundredths: number | null,
-  newRelayErrors: number | null
-): string {
-  if (body.runStatus) {
-    if (!['OPEN', 'VALID', 'DNF'].includes(body.runStatus as string)) {
-      throw new Error('Invalid runStatus value');
-    }
-    return body.runStatus as string;
-  }
-
-  if (previousStatus === 'OPEN' && newAttackTime !== null && newAttackErrors !== null) {
-    const needsRelay = hasRelayRace;
-    const hasRelay = newRelayHundredths !== null && newRelayErrors !== null;
-    if (!needsRelay || hasRelay) {
-      return 'VALID';
-    }
-  }
-
-  return previousStatus;
-}
+import {
+  calculateEntryUpdate,
+  validateEntryDeletion,
+  EntryValidationError,
+} from '../../../../shared/domain/entry-lifecycle';
+import type { CategoryEntry } from '../../../../shared/domain/scoring';
 
 // --- DB Helpers ---
 
@@ -143,73 +69,52 @@ export async function onRequestPut(context: EventContext) {
 
     const previousEntry = entryRows[0];
     const categoryTypeId = previousEntry.categoryTypeId;
-    const hasRelayRace = (previousEntry as any).hasRelayRace ?? false;
 
-    // Parse fields
-    let newAttackTime, newAttackErrors, newRelayHundredths, newRelayErrors, targetRunStatus;
+    // Look up category type to know hasRelayRace
+    const catRows = await db
+      .select({ hasRelayRace: schema.categoryTypes.hasRelayRace })
+      .from(schema.categoryTypes)
+      .where(eq(schema.categoryTypes.id, categoryTypeId))
+      .limit(1);
+    const hasRelayRace = (previousEntry as any).hasRelayRace ?? catRows[0]?.hasRelayRace ?? false;
+
+    // Only fetch nextOpenPos when the domain will need it (non-OPEN → OPEN transition).
+    // The seam (getNextOpenPosition) is synchronous; D1 requires async, so we pre-resolve here.
+    const nextOpenPos = (previousEntry.runStatus !== 'OPEN')
+      ? await getNextStartOrderPosition(db, categoryTypeId)
+      : undefined;
+
+    const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
+
+    let result;
     try {
-      newAttackTime = parseAttackTime(body, previousEntry.attackTimeHundredths);
-      newAttackErrors = extractAttackErrors(body, previousEntry.attackTimeErrors ?? (previousEntry as any).errors ?? null);
-      newRelayHundredths = extractRelayHundredths(body, previousEntry.relayRaceHundredths);
-      newRelayErrors = extractRelayErrors(body, previousEntry.relayRaceErrors);
-      targetRunStatus = determineTargetRunStatus(
-        body, previousEntry.runStatus, hasRelayRace, newAttackTime, newAttackErrors, newRelayHundredths, newRelayErrors
-      );
+      result = calculateEntryUpdate(previousEntry as CategoryEntry, body, {
+        hasRelayRace,
+        getNextOpenPosition: nextOpenPos !== undefined ? () => nextOpenPos : undefined,
+        groupName,
+        categoryName,
+      });
     } catch (err: any) {
-      return jsonError(err.message, 400);
+      return jsonError(err.message, err instanceof EntryValidationError ? 400 : 500);
     }
 
-    // Determine start order position
-    let newStartOrderPosition = previousEntry.startOrderPosition;
-    if (targetRunStatus !== 'OPEN') {
-      newStartOrderPosition = null;
-    } else if (previousEntry.runStatus !== 'OPEN') {
-      newStartOrderPosition = await getNextStartOrderPosition(db, categoryTypeId);
-    }
-
-    // Handle compaction
-    const compactionUpdates = previousEntry.runStatus === 'OPEN' && targetRunStatus !== 'OPEN'
+    const compactionUpdates = result.requiresCompaction
       ? await getCompactionUpdatesForRemoval(db, categoryTypeId, entryId)
       : [];
 
-    const updatedEntryObj = {
-      id: previousEntry.id,
-      groupId: previousEntry.groupId,
-      categoryTypeId,
-      runStatus: targetRunStatus,
-      startOrderPosition: newStartOrderPosition,
-      attackTimeHundredths: newAttackTime,
-      attackTimeErrors: newAttackErrors,
-      relayRaceHundredths: newRelayHundredths,
-      relayRaceErrors: newRelayErrors,
-    };
-
-    const scoreHundredths = targetRunStatus === 'VALID'
-      ? computeEntryScore(updatedEntryObj, { hasRelayRace, excludeRelayRace: false })
-      : null;
-
-    // Build updates
     const updateQuery = db
       .update(schema.categoryEntries)
       .set({
-        attackTimeHundredths: newAttackTime,
-        attackTimeErrors: newAttackErrors,
-        relayRaceHundredths: newRelayHundredths,
-        relayRaceErrors: newRelayErrors,
-        runStatus: targetRunStatus,
-        startOrderPosition: newStartOrderPosition,
+        attackTimeHundredths: result.nextEntry.attackTimeHundredths,
+        attackTimeErrors: result.nextEntry.attackTimeErrors,
+        relayRaceHundredths: result.nextEntry.relayRaceHundredths,
+        relayRaceErrors: result.nextEntry.relayRaceErrors,
+        runStatus: result.nextEntry.runStatus,
+        startOrderPosition: result.nextEntry.startOrderPosition,
       })
       .where(eq(schema.categoryEntries.id, entryId));
 
-    const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
-    const { groupId: _gP, categoryTypeId: _cP, ...prevRest } = previousEntry as any;
-    const { groupId: _gN, categoryTypeId: _cN, ...newRest } = updatedEntryObj as any;
-
-    const auditInsert = buildAuditLog(db, user, 'UPDATE', {
-      operation: 'UPDATE',
-      previous_value: { group: groupName, category: categoryName, ...prevRest },
-      new_value: { group: groupName, category: categoryName, ...newRest },
-    });
+    const auditInsert = buildAuditLog(db, user, 'UPDATE', result.auditPayload);
 
     await db.batch([updateQuery, ...compactionUpdates, auditInsert]);
 
@@ -217,10 +122,10 @@ export async function onRequestPut(context: EventContext) {
       {
         message: 'Category entry updated successfully',
         entry: {
-          ...updatedEntryObj,
-          errors: newAttackErrors, // For legacy/frontend compat
-          attackTimeErrors: newAttackErrors,
-          scoreHundredths,
+          ...result.nextEntry,
+          errors: result.nextEntry.attackTimeErrors, // For legacy/frontend compat
+          attackTimeErrors: result.nextEntry.attackTimeErrors,
+          scoreHundredths: result.scoreHundredths,
         },
       },
       200
@@ -250,19 +155,20 @@ export async function onRequestDelete(context: EventContext) {
     if (entryRows.length === 0) return jsonError('Category entry not found', 404);
 
     const entry = entryRows[0];
-    if (entry.runStatus !== 'OPEN') return jsonError('Only OPEN entries can be removed', 400);
-
     const { categoryTypeId } = entry;
+    const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
+
+    const deletion = validateEntryDeletion(entry as CategoryEntry, { groupName, categoryName });
+    if (!deletion.canDelete) {
+      return jsonError(deletion.errorMessage || 'Cannot delete entry', 400);
+    }
 
     const deleteOp = db.delete(schema.categoryEntries).where(eq(schema.categoryEntries.id, entryId));
-    const compactionUpdates = await getCompactionUpdatesForRemoval(db, categoryTypeId, entryId);
+    const compactionUpdates = deletion.requiresCompaction
+      ? await getCompactionUpdatesForRemoval(db, categoryTypeId, entryId)
+      : [];
 
-    const { groupName, categoryName } = await fetchAuditNames(db, entry.groupId, categoryTypeId);
-    const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', {
-      operation: 'DELETE',
-      previous_value: { entryId, group: groupName, category: categoryName },
-      new_value: null
-    });
+    const auditInsert = buildAuditLog(db, user, 'DELETE_CATEGORY_ENTRY', deletion.auditPayload);
 
     await db.batch([deleteOp, ...compactionUpdates, auditInsert]);
 

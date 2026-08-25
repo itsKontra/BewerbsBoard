@@ -1,7 +1,6 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 
 import { createSelfHostedApp } from './app.js'
@@ -9,20 +8,10 @@ import { createDatabase } from './database.js'
 
 /** Seeds the minimal catalog rows needed to register AKTIV groups and bronze-aktiv entries. */
 function seedCatalog(database: ReturnType<typeof createDatabase>) {
-  database.drizzle.run(sql`
-    INSERT OR IGNORE INTO competition_classes (id, name) VALUES
-      ('cc-aktiv', 'AKTIV'), ('cc-jugend', 'JUGEND'), ('cc-gast', 'GAST')
-  `)
-  database.drizzle.run(sql`
-    INSERT OR IGNORE INTO category_types (id, name, competition_class_id, has_relay_race) VALUES
-      ('ct-bronze-aktiv', 'bronze-aktiv', 'cc-aktiv', 0),
-      ('ct-silber-aktiv', 'silber-aktiv', 'cc-aktiv', 1)
-  `)
-  database.drizzle.run(sql`
-    INSERT OR IGNORE INTO evaluation_types (id, name, category_type_id_1, category_type_id_2, exclude_relay_race, public, public_tv) VALUES
-      ('eval-bronze-aktiv', 'Test Bronze Aktiv', 'ct-bronze-aktiv', NULL, 0, 1, 1),
-      ('eval-gesamt-aktiv', 'Test Gesamtwertung Aktiv', 'ct-bronze-aktiv', 'ct-silber-aktiv', 0, 1, 1)
-  `)
+  database.catalog.createCategoryType({ id: 'ct-bronze-aktiv', name: 'bronze-aktiv', competitionClassId: 'cc-aktiv', hasRelayRace: false })
+  database.catalog.createCategoryType({ id: 'ct-silber-aktiv', name: 'silber-aktiv', competitionClassId: 'cc-aktiv', hasRelayRace: true })
+  database.catalog.createEvaluationType({ id: 'eval-bronze-aktiv', name: 'Test Bronze Aktiv', categoryTypeId1: 'ct-bronze-aktiv', categoryTypeId2: null, excludeRelayRace: false, isBrigadePairing: false, public: true, publicTv: true, displayDurationSeconds: 10, order: 1 })
+  database.catalog.createEvaluationType({ id: 'eval-gesamt-aktiv', name: 'Test Gesamtwertung Aktiv', categoryTypeId1: 'ct-bronze-aktiv', categoryTypeId2: 'ct-silber-aktiv', excludeRelayRace: false, isBrigadePairing: false, public: true, publicTv: true, displayDurationSeconds: 10, order: 2 })
 }
 
 describe('self-hosted scoring and public-results routes', () => {
@@ -72,8 +61,50 @@ describe('self-hosted scoring and public-results routes', () => {
           },
         },
       })
-      expect(resultsPayload.categories['eval-gesamt-aktiv']).toMatchObject({ type: 'combined', rankedResults: [], openEntries: [], dnfEntries: [] })
-      expect(database.audit.list().map((audit) => audit.action)).toEqual(['CREATE_BRIGADE', 'CREATE_GROUP', 'CREATE_GROUP', 'CREATE_CATEGORY_ENTRY', 'CREATE_CATEGORY_ENTRY', 'REORDER_CATEGORY_ENTRIES', 'UPDATE'])
+      const deleteRes = await request(`/api/admin/category-entries/${entries[1].id}`, { method: 'DELETE', headers })
+      expect(deleteRes.status).toBe(200)
+
+      const auditLogs = database.audit.list()
+      expect(auditLogs.map((audit) => audit.action)).toEqual([
+        'CREATE_BRIGADE',
+        'CREATE_GROUP',
+        'CREATE_GROUP',
+        'CREATE_CATEGORY_ENTRY',
+        'CREATE_CATEGORY_ENTRY',
+        'REORDER_CATEGORY_ENTRIES',
+        'UPDATE',
+        'DELETE_CATEGORY_ENTRY',
+      ])
+
+      const updateAudit = auditLogs.find((a) => a.action === 'UPDATE')
+      expect(updateAudit?.details).toEqual({
+        operation: 'UPDATE',
+        previous_value: expect.objectContaining({
+          id: entries[0].id,
+          group: '1',
+          category: 'bronze-aktiv',
+          runStatus: 'OPEN',
+        }),
+        new_value: expect.objectContaining({
+          id: entries[0].id,
+          group: '1',
+          category: 'bronze-aktiv',
+          runStatus: 'VALID',
+          attackTimeHundredths: 4238,
+          attackTimeErrors: 1,
+        }),
+      })
+
+      const deleteAudit = auditLogs.find((a) => a.action === 'DELETE_CATEGORY_ENTRY')
+      expect(deleteAudit?.details).toEqual({
+        operation: 'DELETE_CATEGORY_ENTRY',
+        previous_value: {
+          entryId: entries[1].id,
+          group: '2',
+          category: 'bronze-aktiv',
+        },
+        new_value: null,
+      })
     } finally {
       database.close()
       await rm(directory, { recursive: true, force: true })
@@ -131,14 +162,8 @@ describe('self-hosted scoring and public-results routes', () => {
     const directory = await mkdtemp(join(tmpdir(), 'scoreboard-combined-'))
     const database = createDatabase(join(directory, 'scoreboard.sqlite'))
     seedCatalog(database)
-    database.drizzle.run(sql`
-      INSERT INTO category_types (id, name, competition_class_id, has_relay_race)
-      VALUES ('ct-bronze-jugend', 'bronze-jugend', 'cc-jugend', 0)
-    `)
-    database.drizzle.run(sql`
-      INSERT INTO evaluation_types (id, name, category_type_id_1, category_type_id_2, exclude_relay_race, is_brigade_pairing, public, public_tv)
-      VALUES ('eval-overall-brigade', 'Overall Brigade', 'ct-bronze-aktiv', 'ct-bronze-jugend', 0, 1, 1, 1)
-    `)
+    database.catalog.createCategoryType({ id: 'ct-bronze-jugend', name: 'bronze-jugend', competitionClassId: 'cc-jugend', hasRelayRace: false })
+    database.catalog.createEvaluationType({ id: 'eval-overall-brigade', name: 'Overall Brigade', categoryTypeId1: 'ct-bronze-aktiv', categoryTypeId2: 'ct-bronze-jugend', excludeRelayRace: false, isBrigadePairing: true, public: true, publicTv: true, displayDurationSeconds: 10, order: 3 })
     const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
     const headers = { 'Content-Type': 'application/json', 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' }
     try {

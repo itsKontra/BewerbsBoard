@@ -1,8 +1,10 @@
 import Database from 'better-sqlite3'
+import { and, asc, count, desc, eq, like, max, ne, or, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import { resolve } from 'node:path'
 
+import * as schema from '../shared/db/schema.js'
 import { createConfigurationRepository, type ConfigurationRepository } from './configuration.js'
 import type {
   DataExportEnvelope,
@@ -10,6 +12,24 @@ import type {
   EntityImportCount,
 } from '../shared/domain/data-management.js'
 import { validateDataExportEnvelope } from '../shared/domain/data-management.js'
+
+// ---------------------------------------------------------------------------
+// Catalog constraint errors — thrown by catalog mutation methods; callers
+// catch and map to HTTP responses. Exported so callers can use instanceof.
+// ---------------------------------------------------------------------------
+
+export class DuplicateCatalogItemError extends Error {
+  constructor(message = 'An item with this name already exists') { super(message); this.name = 'DuplicateCatalogItemError' }
+}
+export class InvalidCatalogReferenceError extends Error {
+  constructor(message: string) { super(message); this.name = 'InvalidCatalogReferenceError' }
+}
+export class CatalogItemHasEntriesError extends Error {
+  constructor(message = 'Cannot delete: entries exist for this catalog item') { super(message); this.name = 'CatalogItemHasEntriesError' }
+}
+export class CatalogItemHasEvaluationsError extends Error {
+  constructor(message = 'Cannot delete: evaluation types reference this catalog item') { super(message); this.name = 'CatalogItemHasEvaluationsError' }
+}
 
 export interface TvRuntimeState {
   id: string
@@ -105,6 +125,20 @@ export interface EvaluationType {
   order: number
 }
 
+export type EvaluationTypeWrite = Pick<
+  EvaluationType,
+  | 'id'
+  | 'name'
+  | 'categoryTypeId1'
+  | 'categoryTypeId2'
+  | 'excludeRelayRace'
+  | 'isBrigadePairing'
+  | 'public'
+  | 'publicTv'
+  | 'displayDurationSeconds'
+  | 'order'
+>
+
 export interface CategoryEntry {
   id: string
   groupId: string
@@ -127,7 +161,7 @@ export interface CategoryEntryDetails extends CategoryEntry {
 }
 
 export interface SelfHostedDatabase {
-  readonly drizzle: ReturnType<typeof drizzle>
+  readonly drizzle: ReturnType<typeof drizzle<typeof schema>>
   close(): void
   readonly configuration: ConfigurationRepository
   readonly administration: {
@@ -151,7 +185,7 @@ export interface SelfHostedDatabase {
   }
   readonly audit: {
     list(): AuditRecord[]
-    listPage(page: number, limit: number, search: string): AuditLogPage
+    listPage(page: number, limit: number, search?: string): AuditLogPage
     record(record: AuditRecord): void
   }
   clearCompetitionAndRuntime(updatedAt: number, scopes?: ResetScopes): ResetSummary
@@ -169,27 +203,37 @@ export interface SelfHostedDatabase {
   readonly catalog: {
     listCategoryTypes(): CategoryType[]
     findCategoryTypeById(id: string): CategoryType | undefined
-    findCategoryTypeByName(name: string): CategoryType | undefined
+    /**
+     * Creates a category type. Validates uniqueness and ref-integrity internally.
+     * @throws {DuplicateCatalogItemError} if name already exists
+     * @throws {InvalidCatalogReferenceError} if competitionClassId does not exist
+     */
     createCategoryType(categoryType: CategoryType): CategoryType
-    updateCategoryType(id: string, categoryType: Partial<{ name: string; competitionClassId: string; hasRelayRace: boolean }>): CategoryType | undefined
+    /**
+     * Updates a category type. Returns undefined if id not found.
+     * @throws {DuplicateCatalogItemError} if the new name conflicts with an existing type
+     * @throws {InvalidCatalogReferenceError} if the new competitionClassId does not exist
+     */
+    updateCategoryType(id: string, data: Partial<Omit<CategoryType, 'id'>>): CategoryType | undefined
+    /**
+     * Deletes a category type. Returns undefined if id not found.
+     * @throws {CatalogItemHasEntriesError} if entries exist for this type
+     * @throws {CatalogItemHasEvaluationsError} if evaluation types reference this type
+     */
     deleteCategoryType(id: string): CategoryType | undefined
-    hasEntriesForCategoryType(categoryTypeId: string): boolean
-    hasEvaluationsForCategoryType(categoryTypeId: string): boolean
     listEvaluationTypes(): EvaluationType[]
     findEvaluationTypeById(id: string): EvaluationType | undefined
-    createEvaluationType(evaluationType: {
-      id: string
-      name: string
-      categoryTypeId1: string
-      categoryTypeId2?: string | null
-      excludeRelayRace: boolean
-      isBrigadePairing?: boolean
-      public: boolean
-      publicTv: boolean
-      displayDurationSeconds?: number
-      order?: number
-    }): EvaluationType
-    updateEvaluationType(id: string, evaluationType: Partial<{
+    /**
+     * Creates an evaluation type. Validates ref-integrity and name uniqueness internally.
+     * @throws {DuplicateCatalogItemError} if name already exists
+     * @throws {InvalidCatalogReferenceError} if a referenced categoryTypeId does not exist
+     */
+    createEvaluationType(evaluationType: EvaluationTypeWrite): EvaluationType
+    /**
+     * Updates an evaluation type. Returns undefined if id not found.
+     * @throws {InvalidCatalogReferenceError} if a referenced categoryTypeId does not exist
+     */
+    updateEvaluationType(id: string, data: Partial<{
       name: string
       categoryTypeId1: string
       categoryTypeId2: string | null
@@ -200,6 +244,7 @@ export interface SelfHostedDatabase {
       displayDurationSeconds: number
       order: number
     }>): EvaluationType | undefined
+    /** Deletes an evaluation type. Returns undefined if id not found. */
     deleteEvaluationType(id: string): EvaluationType | undefined
   }
   readonly dataManagement: {
@@ -220,133 +265,218 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('synchronous = FULL')
   sqlite.pragma('busy_timeout = 5000')
-  const database = drizzle(sqlite)
+  const database = drizzle(sqlite, { schema })
   migrate(database, { migrationsFolder: resolve('server/migrations') })
 
-  const mapEvaluationTypeRow = (row: any): EvaluationType => ({
-    id: row.id,
-    name: row.name,
-    categoryTypeId1: row.categoryTypeId1,
-    categoryTypeName1: row.categoryTypeName1,
-    hasRelayRace1: Boolean(row.hasRelayRace1),
-    competitionClassId1: row.competitionClassId1 ?? null,
-    categoryTypeId2: row.categoryTypeId2 ?? null,
-    categoryTypeName2: row.categoryTypeName2 ?? null,
-    hasRelayRace2: Boolean(row.hasRelayRace2),
-    competitionClassId2: row.competitionClassId2 ?? null,
-    excludeRelayRace: Boolean(row.excludeRelayRace),
-    isBrigadePairing: Boolean(row.isBrigadePairing),
-    public: Boolean(row.public),
-    publicTv: Boolean(row.publicTv),
-    displayDurationSeconds: Number(row.displayDurationSeconds ?? 10),
-    order: Number(row.order ?? 1),
-  })
+  const mapEvaluationTypeRow = (
+    et: typeof schema.evaluationTypes.$inferSelect,
+    catMap: Map<string, typeof schema.categoryTypes.$inferSelect>
+  ): EvaluationType => {
+    const c1 = catMap.get(et.categoryTypeId1)
+    const c2 = et.categoryTypeId2 ? catMap.get(et.categoryTypeId2) : undefined
+    return {
+      id: et.id,
+      name: et.name,
+      categoryTypeId1: et.categoryTypeId1,
+      categoryTypeName1: c1?.name ?? '',
+      hasRelayRace1: Boolean(c1?.hasRelayRace),
+      competitionClassId1: c1?.competitionClassId ?? null,
+      categoryTypeId2: et.categoryTypeId2 ?? null,
+      categoryTypeName2: c2?.name ?? null,
+      hasRelayRace2: Boolean(c2?.hasRelayRace),
+      competitionClassId2: c2?.competitionClassId ?? null,
+      excludeRelayRace: Boolean(et.excludeRelayRace),
+      isBrigadePairing: Boolean(et.isBrigadePairing),
+      public: Boolean(et.public),
+      publicTv: Boolean(et.public_tv),
+      displayDurationSeconds: Number(et.displayDurationSeconds ?? 10),
+      order: Number(et.order ?? 1),
+    }
+  }
 
   const self: SelfHostedDatabase = {
     drizzle: database,
     close: () => sqlite.close(),
     configuration: createConfigurationRepository(sqlite),
     administration: {
-      listBrigades: () => sqlite.prepare('SELECT id, name FROM fire_brigades').all() as FireBrigade[],
+      listBrigades: () => database.select().from(schema.fireBrigades).all(),
       findDuplicateBrigade: (name, excludedId) => {
         const normalizedName = name.trim().toLocaleLowerCase('de-AT')
-        return (sqlite.prepare('SELECT id, name FROM fire_brigades').all() as FireBrigade[]).some(
+        return database.select().from(schema.fireBrigades).all().some(
           (brigade) => brigade.id !== excludedId && brigade.name.trim().toLocaleLowerCase('de-AT') === normalizedName,
         )
       },
       createBrigade: (brigade) => {
-        sqlite.prepare('INSERT INTO fire_brigades (id, name) VALUES (?, ?)').run(brigade.id, brigade.name)
+        database.insert(schema.fireBrigades).values({ id: brigade.id, name: brigade.name }).run()
         return brigade
       },
       updateBrigade: (id, name) => {
-        const result = sqlite.prepare('UPDATE fire_brigades SET name = ? WHERE id = ? RETURNING id, name').get(name, id)
-        return result as FireBrigade | undefined
+        const result = database.update(schema.fireBrigades).set({ name }).where(eq(schema.fireBrigades.id, id)).returning({ id: schema.fireBrigades.id, name: schema.fireBrigades.name }).get()
+        return result
       },
-      deleteBrigade: (id) => sqlite.prepare('DELETE FROM fire_brigades WHERE id = ? RETURNING id, name').get(id) as FireBrigade | undefined,
-      hasGroups: (brigadeId) => sqlite.prepare('SELECT 1 FROM groups WHERE fire_brigade_id = ? LIMIT 1').get(brigadeId) !== undefined,
-      listGroups: () => sqlite.prepare(`
-        SELECT g.id, g.fire_brigade_id AS fireBrigadeId, g.name, g.competition_class_id AS competitionClassId, cc.name AS competitionClass
-        FROM groups g
-        JOIN competition_classes cc ON cc.id = g.competition_class_id
-      `).all() as Group[],
+      deleteBrigade: (id) => {
+        return database.delete(schema.fireBrigades).where(eq(schema.fireBrigades.id, id)).returning({ id: schema.fireBrigades.id, name: schema.fireBrigades.name }).get()
+      },
+      hasGroups: (brigadeId) => {
+        const row = database.select({ id: schema.groups.id }).from(schema.groups).where(eq(schema.groups.fireBrigadeId, brigadeId)).limit(1).get()
+        return row !== undefined
+      },
+      listGroups: () => {
+        return database
+          .select({
+            id: schema.groups.id,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            name: schema.groups.name,
+            competitionClassId: schema.groups.competitionClassId,
+            competitionClass: schema.competitionClasses.name,
+          })
+          .from(schema.groups)
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .all()
+      },
       createGroup: (group) => {
-        sqlite.prepare(`
-          INSERT INTO groups (id, fire_brigade_id, name, competition_class_id)
-          VALUES (?, ?, ?, ?)
-        `).run(group.id, group.fireBrigadeId, group.name, group.competitionClassId)
-        return sqlite.prepare(`
-          SELECT g.id, g.fire_brigade_id AS fireBrigadeId, g.name, g.competition_class_id AS competitionClassId, cc.name AS competitionClass
-          FROM groups g JOIN competition_classes cc ON cc.id = g.competition_class_id WHERE g.id = ?
-        `).get(group.id) as Group
+        database.insert(schema.groups).values({
+          id: group.id,
+          fireBrigadeId: group.fireBrigadeId,
+          name: group.name,
+          competitionClassId: group.competitionClassId,
+        }).run()
+        return database
+          .select({
+            id: schema.groups.id,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            name: schema.groups.name,
+            competitionClassId: schema.groups.competitionClassId,
+            competitionClass: schema.competitionClasses.name,
+          })
+          .from(schema.groups)
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .where(eq(schema.groups.id, group.id))
+          .get()!
       },
       findDuplicateGroup: (group, excludedId) => {
-        return sqlite.prepare(`
-          SELECT 1 FROM groups
-          WHERE fire_brigade_id = ? AND name = ? AND competition_class_id = ?
-          ${excludedId === undefined ? '' : 'AND id != ?'}
-          LIMIT 1
-        `).get(...(excludedId === undefined
-          ? [group.fireBrigadeId, group.name, group.competitionClassId]
-          : [group.fireBrigadeId, group.name, group.competitionClassId, excludedId])) !== undefined
+        const conditions = [
+          eq(schema.groups.fireBrigadeId, group.fireBrigadeId),
+          eq(schema.groups.name, group.name),
+          eq(schema.groups.competitionClassId, group.competitionClassId),
+        ]
+        if (excludedId !== undefined) {
+          conditions.push(ne(schema.groups.id, excludedId))
+        }
+        const row = database.select({ id: schema.groups.id }).from(schema.groups).where(and(...conditions)).limit(1).get()
+        return row !== undefined
       },
       updateGroup: (id, group) => {
-        const rowsChanged = sqlite.prepare(
-          'UPDATE groups SET name = ?, competition_class_id = ? WHERE id = ?'
-        ).run(group.name, group.competitionClassId, id).changes
+        const rowsChanged = database.update(schema.groups).set({
+          name: group.name,
+          competitionClassId: group.competitionClassId,
+        }).where(eq(schema.groups.id, id)).run().changes
         if (rowsChanged === 0) return undefined
-        return sqlite.prepare(`
-          SELECT g.id, g.fire_brigade_id AS fireBrigadeId, g.name, g.competition_class_id AS competitionClassId, cc.name AS competitionClass
-          FROM groups g JOIN competition_classes cc ON cc.id = g.competition_class_id WHERE g.id = ?
-        `).get(id) as Group
+        return database
+          .select({
+            id: schema.groups.id,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            name: schema.groups.name,
+            competitionClassId: schema.groups.competitionClassId,
+            competitionClass: schema.competitionClasses.name,
+          })
+          .from(schema.groups)
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .where(eq(schema.groups.id, id))
+          .get()
       },
       deleteGroup: (id) => {
-        const existing = sqlite.prepare(`
-          SELECT g.id, g.fire_brigade_id AS fireBrigadeId, g.name, g.competition_class_id AS competitionClassId, cc.name AS competitionClass
-          FROM groups g JOIN competition_classes cc ON cc.id = g.competition_class_id
-          WHERE g.id = ?
-        `).get(id) as Group | undefined
+        const existing = database
+          .select({
+            id: schema.groups.id,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            name: schema.groups.name,
+            competitionClassId: schema.groups.competitionClassId,
+            competitionClass: schema.competitionClasses.name,
+          })
+          .from(schema.groups)
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .where(eq(schema.groups.id, id))
+          .get()
         if (!existing) return undefined
-        sqlite.prepare('DELETE FROM groups WHERE id = ?').run(id)
+        database.delete(schema.groups).where(eq(schema.groups.id, id)).run()
         return existing
       },
-      listCompetitionClasses: () => sqlite.prepare('SELECT id, name FROM competition_classes ORDER BY name').all() as CompetitionClass[],
-      findCompetitionClassByName: (name) => sqlite.prepare("SELECT id, name FROM competition_classes WHERE name = ? COLLATE NOCASE OR id = ? OR replace(lower(name), ' ', '-') = lower(?)").get(name, name, name) as CompetitionClass | undefined,
-      findCompetitionClassById: (id) => sqlite.prepare('SELECT id, name FROM competition_classes WHERE id = ?').get(id) as CompetitionClass | undefined,
+      listCompetitionClasses: () => database.select().from(schema.competitionClasses).orderBy(asc(schema.competitionClasses.name)).all(),
+      findCompetitionClassByName: (name) => {
+        return database
+          .select()
+          .from(schema.competitionClasses)
+          .where(
+            or(
+              sql`${schema.competitionClasses.name} = ${name} COLLATE NOCASE`,
+              eq(schema.competitionClasses.id, name),
+              sql`replace(lower(${schema.competitionClasses.name}), ' ', '-') = lower(${name})`
+            )
+          )
+          .get()
+      },
+      findCompetitionClassById: (id) => database.select().from(schema.competitionClasses).where(eq(schema.competitionClasses.id, id)).get(),
       createCompetitionClass: (cc) => {
-        sqlite.prepare('INSERT INTO competition_classes (id, name) VALUES (?, ?)').run(cc.id, cc.name)
+        database.insert(schema.competitionClasses).values(cc).run()
         return cc
       },
-      deleteCompetitionClass: (id) => sqlite.prepare('DELETE FROM competition_classes WHERE id = ? RETURNING id, name').get(id) as CompetitionClass | undefined,
-      hasGroupsForCompetitionClass: (ccId) => sqlite.prepare('SELECT 1 FROM groups WHERE competition_class_id = ? LIMIT 1').get(ccId) !== undefined,
+      deleteCompetitionClass: (id) => {
+        return database.delete(schema.competitionClasses).where(eq(schema.competitionClasses.id, id)).returning({ id: schema.competitionClasses.id, name: schema.competitionClasses.name }).get()
+      },
+      hasGroupsForCompetitionClass: (ccId) => {
+        const row = database.select({ id: schema.groups.id }).from(schema.groups).where(eq(schema.groups.competitionClassId, ccId)).limit(1).get()
+        return row !== undefined
+      },
     },
     audit: {
-      list: () => sqlite.prepare(`
-        SELECT id, timestamp, user, action, details
-        FROM audit_log
-        ORDER BY timestamp, id
-      `).all().map((row) => {
-        const audit = row as Omit<AuditRecord, 'details'> & { details: string | null }
-        return { ...audit, details: audit.details === null ? null : JSON.parse(audit.details) }
-      }),
+      list: () => {
+        return database
+          .select()
+          .from(schema.auditLog)
+          .orderBy(asc(schema.auditLog.timestamp), asc(schema.auditLog.id))
+          .all()
+          .map((row) => ({
+            id: row.id,
+            timestamp: row.timestamp,
+            user: row.user,
+            action: row.action,
+            details: row.details === null ? null : JSON.parse(row.details),
+          }))
+      },
       listPage: (page, limit, search) => {
-        const whereClause = search ? 'WHERE user LIKE ? OR action LIKE ? OR details LIKE ?' : ''
-        const searchValues = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : []
-        const total = (sqlite.prepare(`SELECT COUNT(*) AS count FROM audit_log ${whereClause}`).get(...searchValues) as { count: number }).count
-        const logs = sqlite.prepare(`SELECT id, timestamp, user, action, details FROM audit_log ${whereClause} ORDER BY timestamp DESC, id DESC LIMIT ? OFFSET ?`)
-          .all(...searchValues, limit, (page - 1) * limit) as Array<Omit<AuditRecord, 'details'> & { details: string | null }>
+        const whereClause = search
+          ? or(
+              like(schema.auditLog.user, `%${search}%`),
+              like(schema.auditLog.action, `%${search}%`),
+              like(schema.auditLog.details, `%${search}%`)
+            )
+          : undefined
+        const total = database.select({ count: count() }).from(schema.auditLog).where(whereClause).get()?.count ?? 0
+        const logs = database
+          .select({
+            id: schema.auditLog.id,
+            timestamp: schema.auditLog.timestamp,
+            user: schema.auditLog.user,
+            action: schema.auditLog.action,
+            details: schema.auditLog.details,
+          })
+          .from(schema.auditLog)
+          .where(whereClause)
+          .orderBy(desc(schema.auditLog.timestamp), desc(schema.auditLog.id))
+          .limit(limit)
+          .offset((page - 1) * limit)
+          .all()
         return { logs, total }
       },
       record: (record) => {
-        sqlite.prepare(`
-          INSERT INTO audit_log (id, timestamp, user, action, details)
-          VALUES (?, ?, ?, ?, ?)
-        `).run(
-          record.id,
-          record.timestamp,
-          record.user,
-          record.action,
-          record.details === undefined ? null : JSON.stringify(record.details),
-        )
+        database.insert(schema.auditLog).values({
+          id: record.id,
+          timestamp: record.timestamp,
+          user: record.user,
+          action: record.action,
+          details: record.details === undefined ? null : JSON.stringify(record.details),
+        }).run()
       },
     },
     clearCompetitionAndRuntime: (updatedAt, rawScopes) => {
@@ -358,7 +488,6 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         categoryTypes: rawScopes?.categoryTypes ?? false,
       }
 
-      // Enforce dependency resolution
       if (scopes.fireBrigades) {
         scopes.groups = true
         scopes.categoryEntries = true
@@ -377,278 +506,281 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
       const summary: ResetSummary = {}
 
       if (scopes.categoryEntries) {
-        summary.categoryEntriesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_entries').get() as { count: number }).count
-        sqlite.prepare('DELETE FROM category_entries').run()
+        summary.categoryEntriesCount = database.select({ count: count() }).from(schema.categoryEntries).get()?.count ?? 0
+        database.delete(schema.categoryEntries).run()
       }
       if (scopes.evaluationTypes) {
-        summary.evaluationTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM evaluation_types').get() as { count: number }).count
-        sqlite.prepare('DELETE FROM evaluation_types').run()
+        summary.evaluationTypesCount = database.select({ count: count() }).from(schema.evaluationTypes).get()?.count ?? 0
+        database.delete(schema.evaluationTypes).run()
       }
       if (scopes.groups) {
-        summary.groupsCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM groups').get() as { count: number }).count
-        sqlite.prepare('DELETE FROM groups').run()
+        summary.groupsCount = database.select({ count: count() }).from(schema.groups).get()?.count ?? 0
+        database.delete(schema.groups).run()
       }
       if (scopes.fireBrigades) {
-        summary.fireBrigadesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM fire_brigades').get() as { count: number }).count
-        sqlite.prepare('DELETE FROM fire_brigades').run()
+        summary.fireBrigadesCount = database.select({ count: count() }).from(schema.fireBrigades).get()?.count ?? 0
+        database.delete(schema.fireBrigades).run()
       }
       if (scopes.categoryTypes) {
-        summary.categoryTypesCount = (sqlite.prepare('SELECT COUNT(*) AS count FROM category_types').get() as { count: number }).count
-        sqlite.prepare('DELETE FROM category_types').run()
+        summary.categoryTypesCount = database.select({ count: count() }).from(schema.categoryTypes).get()?.count ?? 0
+        database.delete(schema.categoryTypes).run()
       }
 
-      sqlite.prepare(`UPDATE tv_runtime_state SET mode = 'ROTATION', selected_category_id = NULL, updated_at = ? WHERE id = 'default'`).run(updatedAt)
+      database.update(schema.tvRuntimeState).set({
+        mode: 'ROTATION',
+        selectedCategoryId: null,
+        updatedAt,
+      }).where(eq(schema.tvRuntimeState.id, 'default')).run()
+
       return summary
     },
     scoring: {
-      listEntries: () => sqlite.prepare(`
-        SELECT e.id, e.group_id AS groupId, e.category_type_id AS categoryTypeId,
-          e.run_status AS runStatus, e.start_order_position AS startOrderPosition,
-          e.attack_time_hundredths AS attackTimeHundredths,
-          e.attack_time_errors AS attackTimeErrors,
-          relay_race_hundredths AS relayRaceHundredths,
-          relay_race_errors AS relayRaceErrors,
-          ct.name AS categoryTypeName,
-          ct.has_relay_race AS hasRelayRace,
-          g.name AS groupName,
-          cc.name AS competitionClass,
-          g.fire_brigade_id AS fireBrigadeId,
-          b.name AS fireBrigadeName
-        FROM category_entries e
-        JOIN groups g ON g.id = e.group_id
-        JOIN competition_classes cc ON cc.id = g.competition_class_id
-        JOIN fire_brigades b ON b.id = g.fire_brigade_id
-        JOIN category_types ct ON ct.id = e.category_type_id
-      `).all() as CategoryEntryDetails[],
-      findEntry: (id) => sqlite.prepare(`
-        SELECT id, group_id AS groupId, category_type_id AS categoryTypeId,
-          run_status AS runStatus, start_order_position AS startOrderPosition,
-          attack_time_hundredths AS attackTimeHundredths,
-          attack_time_errors AS attackTimeErrors,
-          relay_race_hundredths AS relayRaceHundredths,
-          relay_race_errors AS relayRaceErrors
-        FROM category_entries WHERE id = ?
-      `).get(id) as CategoryEntry | undefined,
-      findGroup: (id) => sqlite.prepare(`
-        SELECT g.id, g.fire_brigade_id AS fireBrigadeId, g.name, g.competition_class_id AS competitionClassId, cc.name AS competitionClass
-        FROM groups g
-        JOIN competition_classes cc ON cc.id = g.competition_class_id
-        WHERE g.id = ?
-      `).get(id) as Group | undefined,
-      findDuplicateEntry: (groupId, categoryTypeId) => sqlite.prepare(
-        'SELECT 1 FROM category_entries WHERE group_id = ? AND category_type_id = ?'
-      ).get(groupId, categoryTypeId) !== undefined,
-      nextOpenPosition: (categoryTypeId) => (sqlite.prepare(
-        "SELECT COALESCE(MAX(start_order_position), 0) + 1 AS position FROM category_entries WHERE category_type_id = ? AND run_status = 'OPEN'"
-      ).get(categoryTypeId) as { position: number }).position,
-      createEntry: (entry) => sqlite.prepare(
-        'INSERT INTO category_entries (id, group_id, category_type_id, run_status, start_order_position, attack_time_hundredths, attack_time_errors, relay_race_hundredths, relay_race_errors) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      ).run(entry.id, entry.groupId, entry.categoryTypeId, entry.runStatus, entry.startOrderPosition, entry.attackTimeHundredths, entry.attackTimeErrors, entry.relayRaceHundredths, entry.relayRaceErrors),
-      updateEntry: (entry) => sqlite.prepare(
-        'UPDATE category_entries SET run_status = ?, start_order_position = ?, attack_time_hundredths = ?, attack_time_errors = ?, relay_race_hundredths = ?, relay_race_errors = ? WHERE id = ?'
-      ).run(entry.runStatus, entry.startOrderPosition, entry.attackTimeHundredths, entry.attackTimeErrors, entry.relayRaceHundredths, entry.relayRaceErrors, entry.id),
-      deleteEntry: (id) => sqlite.prepare('DELETE FROM category_entries WHERE id = ?').run(id),
+      listEntries: () => {
+        return database
+          .select({
+            id: schema.categoryEntries.id,
+            groupId: schema.categoryEntries.groupId,
+            categoryTypeId: schema.categoryEntries.categoryTypeId,
+            runStatus: schema.categoryEntries.runStatus,
+            startOrderPosition: schema.categoryEntries.startOrderPosition,
+            attackTimeHundredths: schema.categoryEntries.attackTimeHundredths,
+            attackTimeErrors: schema.categoryEntries.attackTimeErrors,
+            relayRaceHundredths: schema.categoryEntries.relayRaceHundredths,
+            relayRaceErrors: schema.categoryEntries.relayRaceErrors,
+            categoryTypeName: schema.categoryTypes.name,
+            hasRelayRace: schema.categoryTypes.hasRelayRace,
+            groupName: schema.groups.name,
+            competitionClass: schema.competitionClasses.name,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            fireBrigadeName: schema.fireBrigades.name,
+          })
+          .from(schema.categoryEntries)
+          .innerJoin(schema.groups, eq(schema.categoryEntries.groupId, schema.groups.id))
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .innerJoin(schema.fireBrigades, eq(schema.groups.fireBrigadeId, schema.fireBrigades.id))
+          .innerJoin(schema.categoryTypes, eq(schema.categoryEntries.categoryTypeId, schema.categoryTypes.id))
+          .all() as unknown as CategoryEntryDetails[]
+      },
+      findEntry: (id) => {
+        const row = database.select().from(schema.categoryEntries).where(eq(schema.categoryEntries.id, id)).get()
+        return row ? { ...row, runStatus: row.runStatus as 'OPEN' | 'VALID' | 'DNF' } : undefined
+      },
+      findGroup: (id) => {
+        return database
+          .select({
+            id: schema.groups.id,
+            fireBrigadeId: schema.groups.fireBrigadeId,
+            name: schema.groups.name,
+            competitionClassId: schema.groups.competitionClassId,
+            competitionClass: schema.competitionClasses.name,
+          })
+          .from(schema.groups)
+          .innerJoin(schema.competitionClasses, eq(schema.groups.competitionClassId, schema.competitionClasses.id))
+          .where(eq(schema.groups.id, id))
+          .get()
+      },
+      findDuplicateEntry: (groupId, categoryTypeId) => {
+        const row = database
+          .select({ id: schema.categoryEntries.id })
+          .from(schema.categoryEntries)
+          .where(
+            and(
+              eq(schema.categoryEntries.groupId, groupId),
+              eq(schema.categoryEntries.categoryTypeId, categoryTypeId)
+            )
+          )
+          .limit(1)
+          .get()
+        return row !== undefined
+      },
+      nextOpenPosition: (categoryTypeId) => {
+        const row = database
+          .select({ maxPos: max(schema.categoryEntries.startOrderPosition) })
+          .from(schema.categoryEntries)
+          .where(
+            and(
+              eq(schema.categoryEntries.categoryTypeId, categoryTypeId),
+              eq(schema.categoryEntries.runStatus, 'OPEN')
+            )
+          )
+          .get()
+        return (row?.maxPos ?? 0) + 1
+      },
+      createEntry: (entry) => {
+        database.insert(schema.categoryEntries).values(entry).run()
+      },
+      updateEntry: (entry) => {
+        database.update(schema.categoryEntries).set(entry).where(eq(schema.categoryEntries.id, entry.id)).run()
+      },
+      deleteEntry: (id) => {
+        database.delete(schema.categoryEntries).where(eq(schema.categoryEntries.id, id)).run()
+      },
       compactOpenEntries: (categoryTypeId, excludedId) => {
-        const entries = sqlite.prepare(
-          `SELECT id FROM category_entries WHERE category_type_id = ? AND run_status = 'OPEN' ${excludedId ? 'AND id != ?' : ''} ORDER BY start_order_position`
-        ).all(...(excludedId ? [categoryTypeId, excludedId] : [categoryTypeId])) as { id: string }[]
-        const update = sqlite.prepare('UPDATE category_entries SET start_order_position = ? WHERE id = ?')
-        entries.forEach((entry, index) => update.run(index + 1, entry.id))
+        const conditions = [
+          eq(schema.categoryEntries.categoryTypeId, categoryTypeId),
+          eq(schema.categoryEntries.runStatus, 'OPEN'),
+        ]
+        if (excludedId) {
+          conditions.push(ne(schema.categoryEntries.id, excludedId))
+        }
+        const entries = database
+          .select({ id: schema.categoryEntries.id })
+          .from(schema.categoryEntries)
+          .where(and(...conditions))
+          .orderBy(asc(schema.categoryEntries.startOrderPosition))
+          .all()
+        for (let i = 0; i < entries.length; i++) {
+          database
+            .update(schema.categoryEntries)
+            .set({ startOrderPosition: i + 1 })
+            .where(eq(schema.categoryEntries.id, entries[i].id))
+            .run()
+        }
       },
     },
     catalog: {
-      listCategoryTypes: () => sqlite.prepare(
-        'SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types ORDER BY name'
-      ).all().map((r: any) => ({ ...r, hasRelayRace: Boolean(r.hasRelayRace) })) as CategoryType[],
-      findCategoryTypeById: (id) => {
-        const r = sqlite.prepare('SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types WHERE id = ?').get(id) as any
-        return r ? { ...r, hasRelayRace: Boolean(r.hasRelayRace) } as CategoryType : undefined
-      },
-      findCategoryTypeByName: (name) => {
-        const r = sqlite.prepare(`
-          SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace
-          FROM category_types
-          WHERE name = ? COLLATE NOCASE OR id = ? OR replace(lower(name), ' ', '-') = lower(?)
-          ORDER BY CASE
-            WHEN id = ? THEN 0
-            WHEN name = ? COLLATE NOCASE THEN 1
-            ELSE 2
-          END
-          LIMIT 1
-        `).get(name, name, name, name, name) as any
-        return r ? { ...r, hasRelayRace: Boolean(r.hasRelayRace) } as CategoryType : undefined
-      },
+      listCategoryTypes: () => database.select().from(schema.categoryTypes).orderBy(asc(schema.categoryTypes.name)).all(),
+      findCategoryTypeById: (id) => database.select().from(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).get(),
       createCategoryType: (ct) => {
-        sqlite.prepare('INSERT INTO category_types (id, name, competition_class_id, has_relay_race) VALUES (?, ?, ?, ?)').run(ct.id, ct.name, ct.competitionClassId, ct.hasRelayRace ? 1 : 0)
+        if (!database.select({ id: schema.competitionClasses.id }).from(schema.competitionClasses).where(eq(schema.competitionClasses.id, ct.competitionClassId)).get()) {
+          throw new InvalidCatalogReferenceError(`Competition class '${ct.competitionClassId}' not found`)
+        }
+        const duplicate = database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes)
+          .where(sql`lower(${schema.categoryTypes.name}) = lower(${ct.name})`).limit(1).get()
+        if (duplicate) throw new DuplicateCatalogItemError('A category type with this name already exists')
+        sqlite.transaction(() => { database.insert(schema.categoryTypes).values(ct).run() })()
         return ct
       },
       updateCategoryType: (id, data) => {
-        const current = sqlite.prepare('SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types WHERE id = ?').get(id) as any
+        const current = database.select().from(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).get()
         if (!current) return undefined
-        const sets: string[] = []
-        const values: unknown[] = []
-        if (data.name !== undefined) { sets.push('name = ?'); values.push(data.name) }
-        if (data.competitionClassId !== undefined) { sets.push('competition_class_id = ?'); values.push(data.competitionClassId) }
-        if (data.hasRelayRace !== undefined) { sets.push('has_relay_race = ?'); values.push(data.hasRelayRace ? 1 : 0) }
-        if (sets.length > 0) {
-          values.push(id)
-          sqlite.prepare(`UPDATE category_types SET ${sets.join(', ')} WHERE id = ?`).run(...values)
+        if (data.competitionClassId !== undefined && data.competitionClassId !== current.competitionClassId) {
+          if (!database.select({ id: schema.competitionClasses.id }).from(schema.competitionClasses).where(eq(schema.competitionClasses.id, data.competitionClassId)).get()) {
+            throw new InvalidCatalogReferenceError(`Competition class '${data.competitionClassId}' not found`)
+          }
         }
-        const updated = sqlite.prepare('SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types WHERE id = ?').get(id) as any
-        return updated ? { ...updated, hasRelayRace: Boolean(updated.hasRelayRace) } : undefined
+        if (data.name !== undefined && data.name.trim() !== current.name) {
+          const dup = database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes)
+            .where(and(sql`lower(${schema.categoryTypes.name}) = lower(${data.name})`, ne(schema.categoryTypes.id, id))).limit(1).get()
+          if (dup) throw new DuplicateCatalogItemError('A category type with this name already exists')
+        }
+        return sqlite.transaction(() =>
+          database.update(schema.categoryTypes).set(data).where(eq(schema.categoryTypes.id, id)).returning().get()
+        )()
       },
       deleteCategoryType: (id) => {
-        const r = sqlite.prepare('DELETE FROM category_types WHERE id = ? RETURNING id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace').get(id) as any
-        return r ? { ...r, hasRelayRace: Boolean(r.hasRelayRace) } as CategoryType : undefined
+        const hasEntries = database.select({ id: schema.categoryEntries.id }).from(schema.categoryEntries).where(eq(schema.categoryEntries.categoryTypeId, id)).limit(1).get() !== undefined
+        if (hasEntries) throw new CatalogItemHasEntriesError('Cannot delete category type with registered entries')
+        const hasEvals = database.select({ id: schema.evaluationTypes.id }).from(schema.evaluationTypes)
+          .where(or(eq(schema.evaluationTypes.categoryTypeId1, id), eq(schema.evaluationTypes.categoryTypeId2, id))).limit(1).get() !== undefined
+        if (hasEvals) throw new CatalogItemHasEvaluationsError('Cannot delete category type referenced by evaluation types')
+        return sqlite.transaction(() =>
+          database.delete(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).returning().get()
+        )()
       },
-      hasEntriesForCategoryType: (ctId) => sqlite.prepare('SELECT 1 FROM category_entries WHERE category_type_id = ? LIMIT 1').get(ctId) !== undefined,
-      hasEvaluationsForCategoryType: (ctId) => sqlite.prepare('SELECT 1 FROM evaluation_types WHERE category_type_id_1 = ? OR category_type_id_2 = ? LIMIT 1').get(ctId, ctId) !== undefined,
-      listEvaluationTypes: () => (sqlite.prepare(`
-        SELECT
-          et.id, et.name,
-          et.category_type_id_1 AS categoryTypeId1, ct1.name AS categoryTypeName1, ct1.has_relay_race AS hasRelayRace1, ct1.competition_class_id AS competitionClassId1,
-          et.category_type_id_2 AS categoryTypeId2, ct2.name AS categoryTypeName2, ct2.has_relay_race AS hasRelayRace2, ct2.competition_class_id AS competitionClassId2,
-          et.exclude_relay_race AS excludeRelayRace, et.is_brigade_pairing AS isBrigadePairing,
-          et.public AS public, et.public_tv AS publicTv,
-          COALESCE(et.display_duration_seconds, 10) AS displayDurationSeconds,
-          COALESCE(et."order", 1) AS "order"
-        FROM evaluation_types et
-        JOIN category_types ct1 ON ct1.id = et.category_type_id_1
-        LEFT JOIN category_types ct2 ON ct2.id = et.category_type_id_2
-        ORDER BY et."order", et.name
-      `).all() as any[]).map(mapEvaluationTypeRow),
+      listEvaluationTypes: () => {
+        const rawEvalTypes = database.select().from(schema.evaluationTypes).orderBy(asc(schema.evaluationTypes.order), asc(schema.evaluationTypes.name)).all()
+        const catTypes = database.select().from(schema.categoryTypes).all()
+        const catMap = new Map(catTypes.map((c) => [c.id, c]))
+        return rawEvalTypes.map((et) => mapEvaluationTypeRow(et, catMap))
+      },
       findEvaluationTypeById: (id) => {
-        const row = sqlite.prepare(`
-          SELECT
-            et.id, et.name,
-            et.category_type_id_1 AS categoryTypeId1, ct1.name AS categoryTypeName1, ct1.has_relay_race AS hasRelayRace1, ct1.competition_class_id AS competitionClassId1,
-            et.category_type_id_2 AS categoryTypeId2, ct2.name AS categoryTypeName2, ct2.has_relay_race AS hasRelayRace2, ct2.competition_class_id AS competitionClassId2,
-            et.exclude_relay_race AS excludeRelayRace, et.is_brigade_pairing AS isBrigadePairing,
-            et.public AS public, et.public_tv AS publicTv,
-            COALESCE(et.display_duration_seconds, 10) AS displayDurationSeconds,
-            COALESCE(et."order", 1) AS "order"
-          FROM evaluation_types et
-          JOIN category_types ct1 ON ct1.id = et.category_type_id_1
-          LEFT JOIN category_types ct2 ON ct2.id = et.category_type_id_2
-          WHERE et.id = ?
-        `).get(id) as any
-        return row ? mapEvaluationTypeRow(row) : undefined
+        const row = database.select().from(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).get()
+        if (!row) return undefined
+        const catTypes = database.select().from(schema.categoryTypes).all()
+        const catMap = new Map(catTypes.map((c) => [c.id, c]))
+        return mapEvaluationTypeRow(row, catMap)
       },
       createEvaluationType: (et) => {
-        sqlite.prepare(`
-          INSERT INTO evaluation_types (id, name, category_type_id_1, category_type_id_2, exclude_relay_race, is_brigade_pairing, public, public_tv, display_duration_seconds, "order")
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          et.id,
-          et.name,
-          et.categoryTypeId1,
-          et.categoryTypeId2 ?? null,
-          et.excludeRelayRace ? 1 : 0,
-          et.isBrigadePairing ? 1 : 0,
-          et.public ? 1 : 0,
-          et.publicTv ? 1 : 0,
-          et.displayDurationSeconds ?? 10,
-          et.order ?? 1,
-        )
-        const row = sqlite.prepare(`
-          SELECT
-            et.id, et.name,
-            et.category_type_id_1 AS categoryTypeId1, ct1.name AS categoryTypeName1, ct1.has_relay_race AS hasRelayRace1, ct1.competition_class_id AS competitionClassId1,
-            et.category_type_id_2 AS categoryTypeId2, ct2.name AS categoryTypeName2, ct2.has_relay_race AS hasRelayRace2, ct2.competition_class_id AS competitionClassId2,
-            et.exclude_relay_race AS excludeRelayRace, et.is_brigade_pairing AS isBrigadePairing,
-            et.public AS public, et.public_tv AS publicTv,
-            COALESCE(et.display_duration_seconds, 10) AS displayDurationSeconds,
-            COALESCE(et."order", 1) AS "order"
-          FROM evaluation_types et
-          JOIN category_types ct1 ON ct1.id = et.category_type_id_1
-          LEFT JOIN category_types ct2 ON ct2.id = et.category_type_id_2
-          WHERE et.id = ?
-        `).get(et.id) as any
-        return mapEvaluationTypeRow(row)
+        if (!database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, et.categoryTypeId1)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${et.categoryTypeId1}' not found`)
+        }
+        if (et.categoryTypeId2 && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, et.categoryTypeId2)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${et.categoryTypeId2}' not found`)
+        }
+        const dup = database.select({ id: schema.evaluationTypes.id }).from(schema.evaluationTypes)
+          .where(sql`lower(${schema.evaluationTypes.name}) = lower(${et.name})`).limit(1).get()
+        if (dup) throw new DuplicateCatalogItemError('An evaluation type with this name already exists')
+        sqlite.transaction(() => {
+          database.insert(schema.evaluationTypes).values({
+            id: et.id,
+            name: et.name,
+            categoryTypeId1: et.categoryTypeId1,
+            categoryTypeId2: et.categoryTypeId2 ?? null,
+            excludeRelayRace: et.excludeRelayRace,
+            isBrigadePairing: et.isBrigadePairing,
+            public: et.public,
+            public_tv: et.publicTv,
+            displayDurationSeconds: et.displayDurationSeconds ?? 10,
+            order: et.order ?? 1,
+          }).run()
+        })()
+        return self.catalog.findEvaluationTypeById(et.id)!
       },
       updateEvaluationType: (id, data) => {
-        const current = sqlite.prepare('SELECT id FROM evaluation_types WHERE id = ?').get(id)
+        const current = database.select().from(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).get()
         if (!current) return undefined
-        const sets: string[] = []
-        const values: unknown[] = []
-        if (data.name !== undefined) { sets.push('name = ?'); values.push(data.name) }
-        if (data.categoryTypeId1 !== undefined) { sets.push('category_type_id_1 = ?'); values.push(data.categoryTypeId1) }
-        if ('categoryTypeId2' in data) { sets.push('category_type_id_2 = ?'); values.push(data.categoryTypeId2) }
-        if (data.excludeRelayRace !== undefined) { sets.push('exclude_relay_race = ?'); values.push(data.excludeRelayRace ? 1 : 0) }
-        if (data.isBrigadePairing !== undefined) { sets.push('is_brigade_pairing = ?'); values.push(data.isBrigadePairing ? 1 : 0) }
-        if (data.public !== undefined) { sets.push('public = ?'); values.push(data.public ? 1 : 0) }
-        if (data.publicTv !== undefined) { sets.push('public_tv = ?'); values.push(data.publicTv ? 1 : 0) }
-        if (data.displayDurationSeconds !== undefined) { sets.push('display_duration_seconds = ?'); values.push(data.displayDurationSeconds) }
-        if (data.order !== undefined) { sets.push('"order" = ?'); values.push(data.order) }
-
-        if (sets.length > 0) {
-          values.push(id)
-          sqlite.prepare(`UPDATE evaluation_types SET ${sets.join(', ')} WHERE id = ?`).run(...values)
+        if (data.categoryTypeId1 !== undefined && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, data.categoryTypeId1)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${data.categoryTypeId1}' not found`)
         }
-        const row = sqlite.prepare(`
-          SELECT
-            et.id, et.name,
-            et.category_type_id_1 AS categoryTypeId1, ct1.name AS categoryTypeName1, ct1.has_relay_race AS hasRelayRace1, ct1.competition_class_id AS competitionClassId1,
-            et.category_type_id_2 AS categoryTypeId2, ct2.name AS categoryTypeName2, ct2.has_relay_race AS hasRelayRace2, ct2.competition_class_id AS competitionClassId2,
-            et.exclude_relay_race AS excludeRelayRace, et.is_brigade_pairing AS isBrigadePairing,
-            et.public AS public, et.public_tv AS publicTv,
-            COALESCE(et.display_duration_seconds, 10) AS displayDurationSeconds,
-            COALESCE(et."order", 1) AS "order"
-          FROM evaluation_types et
-          JOIN category_types ct1 ON ct1.id = et.category_type_id_1
-          LEFT JOIN category_types ct2 ON ct2.id = et.category_type_id_2
-          WHERE et.id = ?
-        `).get(id) as any
-        return row ? mapEvaluationTypeRow(row) : undefined
+        if (data.categoryTypeId2 !== undefined && data.categoryTypeId2 !== null && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, data.categoryTypeId2)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${data.categoryTypeId2}' not found`)
+        }
+        const updateValues: Record<string, unknown> = {}
+        if (data.name !== undefined) updateValues.name = data.name
+        if (data.categoryTypeId1 !== undefined) updateValues.categoryTypeId1 = data.categoryTypeId1
+        if ('categoryTypeId2' in data) updateValues.categoryTypeId2 = data.categoryTypeId2
+        if (data.excludeRelayRace !== undefined) updateValues.excludeRelayRace = data.excludeRelayRace
+        if (data.isBrigadePairing !== undefined) updateValues.isBrigadePairing = data.isBrigadePairing
+        if (data.public !== undefined) updateValues.public = data.public
+        if (data.publicTv !== undefined) updateValues.public_tv = data.publicTv
+        if (data.displayDurationSeconds !== undefined) updateValues.displayDurationSeconds = data.displayDurationSeconds
+        if (data.order !== undefined) updateValues.order = data.order
+        if (Object.keys(updateValues).length > 0) {
+          sqlite.transaction(() => {
+            database.update(schema.evaluationTypes).set(updateValues).where(eq(schema.evaluationTypes.id, id)).run()
+          })()
+        }
+        return self.catalog.findEvaluationTypeById(id)
       },
       deleteEvaluationType: (id) => {
-        const existing = sqlite.prepare('SELECT id, name FROM evaluation_types WHERE id = ?').get(id) as { id: string; name: string } | undefined
+        const existing = self.catalog.findEvaluationTypeById(id)
         if (!existing) return undefined
-        sqlite.prepare('DELETE FROM evaluation_types WHERE id = ?').run(id)
-        return existing as any
+        sqlite.transaction(() => { database.delete(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).run() })()
+        return existing
       },
     },
     dataManagement: {
       exportAll: (): DataExportEnvelope => {
-        const appConfigRows = sqlite.prepare('SELECT key, value_json AS valueJson, updated_at AS updatedAt FROM app_config ORDER BY key').all() as any[]
-        const compClasses = sqlite.prepare('SELECT id, name FROM competition_classes ORDER BY id').all() as any[]
-        const brigades = sqlite.prepare('SELECT id, name FROM fire_brigades ORDER BY id').all() as any[]
-        const catTypes = sqlite.prepare('SELECT id, name, competition_class_id AS competitionClassId, has_relay_race AS hasRelayRace FROM category_types ORDER BY id').all().map((r: any) => ({
-          ...r,
-          hasRelayRace: Boolean(r.hasRelayRace),
-        })) as any[]
-        const evalTypes = (sqlite.prepare(`
-          SELECT
-            id, name,
-            category_type_id_1 AS categoryTypeId1,
-            category_type_id_2 AS categoryTypeId2,
-            exclude_relay_race AS excludeRelayRace,
-            is_brigade_pairing AS isBrigadePairing,
-            public,
-            public_tv AS publicTv,
-            COALESCE(display_duration_seconds, 10) AS displayDurationSeconds,
-            COALESCE("order", 1) AS "order"
-          FROM evaluation_types
-          ORDER BY "order", id
-        `).all() as any[]).map((r: any) => ({
-          ...r,
-          excludeRelayRace: Boolean(r.excludeRelayRace),
-          isBrigadePairing: Boolean(r.isBrigadePairing),
-          public: Boolean(r.public),
-          publicTv: Boolean(r.publicTv),
-        })) as any[]
-        const grps = sqlite.prepare('SELECT id, fire_brigade_id AS fireBrigadeId, competition_class_id AS competitionClassId, name FROM groups ORDER BY id').all() as any[]
-        const entries = sqlite.prepare(`
-          SELECT
-            id, group_id AS groupId, category_type_id AS categoryTypeId,
-            run_status AS runStatus, start_order_position AS startOrderPosition,
-            attack_time_hundredths AS attackTimeHundredths,
-            attack_time_errors AS attackTimeErrors,
-            relay_race_hundredths AS relayRaceHundredths,
-            relay_race_errors AS relayRaceErrors
-          FROM category_entries
-          ORDER BY id
-        `).all() as any[]
+        const appConfigRows = database.select().from(schema.appConfig).orderBy(asc(schema.appConfig.key)).all()
+        const compClasses = database.select().from(schema.competitionClasses).orderBy(asc(schema.competitionClasses.id)).all()
+        const brigades = database.select().from(schema.fireBrigades).orderBy(asc(schema.fireBrigades.id)).all()
+        const catTypes = database.select().from(schema.categoryTypes).orderBy(asc(schema.categoryTypes.id)).all()
+        const rawEvalTypes = database.select().from(schema.evaluationTypes).orderBy(asc(schema.evaluationTypes.order), asc(schema.evaluationTypes.id)).all()
+        const evalTypes = rawEvalTypes.map((et) => ({
+          id: et.id,
+          name: et.name,
+          categoryTypeId1: et.categoryTypeId1,
+          categoryTypeId2: et.categoryTypeId2,
+          excludeRelayRace: et.excludeRelayRace,
+          isBrigadePairing: et.isBrigadePairing,
+          public: et.public,
+          publicTv: et.public_tv,
+          displayDurationSeconds: et.displayDurationSeconds,
+          order: et.order,
+        }))
+        const grps = database.select().from(schema.groups).orderBy(asc(schema.groups.id)).all()
+        const entries = database.select().from(schema.categoryEntries).orderBy(asc(schema.categoryEntries.id)).all().map((e) => ({
+          id: e.id,
+          groupId: e.groupId,
+          categoryTypeId: e.categoryTypeId,
+          runStatus: e.runStatus as 'OPEN' | 'VALID' | 'DNF',
+          startOrderPosition: e.startOrderPosition,
+          attackTimeHundredths: e.attackTimeHundredths,
+          attackTimeErrors: e.attackTimeErrors,
+          relayRaceHundredths: e.relayRaceHundredths,
+          relayRaceErrors: e.relayRaceErrors,
+        }))
 
         return {
           version: 1,
@@ -688,15 +820,15 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
 
         const countTable = (
           items: any[],
-          tableName: string,
-          pkCol: string = 'id',
+          table: any,
+          pkCol: any,
           itemKey: (item: any) => string = (item) => item.id
         ): EntityImportCount => {
           let toUpdate = 0
           let toInsert = 0
           for (const item of items) {
             const keyVal = itemKey(item)
-            const exists = sqlite.prepare(`SELECT 1 FROM ${tableName} WHERE ${pkCol} = ? LIMIT 1`).get(keyVal) !== undefined
+            const exists = database.select({ id: pkCol }).from(table).where(eq(pkCol, keyVal)).limit(1).get() !== undefined
             if (exists) {
               toUpdate++
             } else {
@@ -707,13 +839,13 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         }
 
         const summary = {
-          appConfig: countTable(data.appConfig, 'app_config', 'key', (item) => item.key),
-          competitionClasses: countTable(data.competitionClasses, 'competition_classes'),
-          fireBrigades: countTable(data.fireBrigades, 'fire_brigades'),
-          categoryTypes: countTable(data.categoryTypes, 'category_types'),
-          evaluationTypes: countTable(data.evaluationTypes, 'evaluation_types'),
-          groups: countTable(data.groups, 'groups'),
-          categoryEntries: countTable(data.categoryEntries, 'category_entries'),
+          appConfig: countTable(data.appConfig, schema.appConfig, schema.appConfig.key, (item) => item.key),
+          competitionClasses: countTable(data.competitionClasses, schema.competitionClasses, schema.competitionClasses.id),
+          fireBrigades: countTable(data.fireBrigades, schema.fireBrigades, schema.fireBrigades.id),
+          categoryTypes: countTable(data.categoryTypes, schema.categoryTypes, schema.categoryTypes.id),
+          evaluationTypes: countTable(data.evaluationTypes, schema.evaluationTypes, schema.evaluationTypes.id),
+          groups: countTable(data.groups, schema.groups, schema.groups.id),
+          categoryEntries: countTable(data.categoryEntries, schema.categoryEntries, schema.categoryEntries.id),
         }
 
         const totalEntities = Object.values(summary).reduce((sum, item) => sum + item.total, 0)
@@ -735,130 +867,146 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
 
         sqlite.transaction(() => {
           // 1. app_config
-          const upsertAppConfig = sqlite.prepare(`
-            INSERT INTO app_config (key, value_json, updated_at)
-            VALUES (?, ?, ?)
-            ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
-          `)
           for (const item of data.appConfig) {
-            upsertAppConfig.run(item.key, item.valueJson, item.updatedAt ?? Date.now())
+            database.insert(schema.appConfig).values({
+              key: item.key,
+              valueJson: item.valueJson,
+              updatedAt: item.updatedAt ?? Date.now(),
+            }).onConflictDoUpdate({
+              target: schema.appConfig.key,
+              set: {
+                valueJson: item.valueJson,
+                updatedAt: item.updatedAt ?? Date.now(),
+              },
+            }).run()
           }
 
           // 2. competition_classes
-          const upsertCompClass = sqlite.prepare(`
-            INSERT INTO competition_classes (id, name)
-            VALUES (?, ?)
-            ON CONFLICT(id) DO UPDATE SET name = excluded.name
-          `)
           for (const item of data.competitionClasses) {
-            upsertCompClass.run(item.id, item.name)
+            database.insert(schema.competitionClasses).values({
+              id: item.id,
+              name: item.name,
+            }).onConflictDoUpdate({
+              target: schema.competitionClasses.id,
+              set: { name: item.name },
+            }).run()
           }
 
           // 3. fire_brigades
-          const upsertBrigade = sqlite.prepare(`
-            INSERT INTO fire_brigades (id, name)
-            VALUES (?, ?)
-            ON CONFLICT(id) DO UPDATE SET name = excluded.name
-          `)
           for (const item of data.fireBrigades) {
-            upsertBrigade.run(item.id, item.name)
+            database.insert(schema.fireBrigades).values({
+              id: item.id,
+              name: item.name,
+            }).onConflictDoUpdate({
+              target: schema.fireBrigades.id,
+              set: { name: item.name },
+            }).run()
           }
 
           // 4. category_types
-          const upsertCatType = sqlite.prepare(`
-            INSERT INTO category_types (id, name, competition_class_id, has_relay_race)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET name = excluded.name, competition_class_id = excluded.competition_class_id, has_relay_race = excluded.has_relay_race
-          `)
           for (const item of data.categoryTypes) {
-            upsertCatType.run(item.id, item.name, item.competitionClassId, item.hasRelayRace ? 1 : 0)
+            database.insert(schema.categoryTypes).values({
+              id: item.id,
+              name: item.name,
+              competitionClassId: item.competitionClassId,
+              hasRelayRace: item.hasRelayRace,
+            }).onConflictDoUpdate({
+              target: schema.categoryTypes.id,
+              set: {
+                name: item.name,
+                competitionClassId: item.competitionClassId,
+                hasRelayRace: item.hasRelayRace,
+              },
+            }).run()
           }
 
           // 5. evaluation_types
-          const upsertEvalType = sqlite.prepare(`
-            INSERT INTO evaluation_types (id, name, category_type_id_1, category_type_id_2, exclude_relay_race, is_brigade_pairing, public, public_tv, display_duration_seconds, "order")
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              name = excluded.name,
-              category_type_id_1 = excluded.category_type_id_1,
-              category_type_id_2 = excluded.category_type_id_2,
-              exclude_relay_race = excluded.exclude_relay_race,
-              is_brigade_pairing = excluded.is_brigade_pairing,
-              public = excluded.public,
-              public_tv = excluded.public_tv,
-              display_duration_seconds = excluded.display_duration_seconds,
-              "order" = excluded."order"
-          `)
           for (const item of data.evaluationTypes) {
             const publicTv = item.publicTv !== undefined ? item.publicTv : item.public_tv
-            upsertEvalType.run(
-              item.id,
-              item.name,
-              item.categoryTypeId1,
-              item.categoryTypeId2 ?? null,
-              item.excludeRelayRace ? 1 : 0,
-              item.isBrigadePairing ? 1 : 0,
-              item.public !== false ? 1 : 0,
-              publicTv !== false ? 1 : 0,
-              item.displayDurationSeconds ?? 10,
-              item.order ?? 1,
-            )
+            database.insert(schema.evaluationTypes).values({
+              id: item.id,
+              name: item.name,
+              categoryTypeId1: item.categoryTypeId1,
+              categoryTypeId2: item.categoryTypeId2 ?? null,
+              excludeRelayRace: item.excludeRelayRace,
+              isBrigadePairing: item.isBrigadePairing,
+              public: item.public !== false,
+              public_tv: publicTv !== false,
+              displayDurationSeconds: item.displayDurationSeconds ?? 10,
+              order: item.order ?? 1,
+            }).onConflictDoUpdate({
+              target: schema.evaluationTypes.id,
+              set: {
+                name: item.name,
+                categoryTypeId1: item.categoryTypeId1,
+                categoryTypeId2: item.categoryTypeId2 ?? null,
+                excludeRelayRace: item.excludeRelayRace,
+                isBrigadePairing: item.isBrigadePairing,
+                public: item.public !== false,
+                public_tv: publicTv !== false,
+                displayDurationSeconds: item.displayDurationSeconds ?? 10,
+                order: item.order ?? 1,
+              },
+            }).run()
           }
 
           // 6. groups
-          const upsertGroup = sqlite.prepare(`
-            INSERT INTO groups (id, fire_brigade_id, competition_class_id, name)
-            VALUES (?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET fire_brigade_id = excluded.fire_brigade_id, competition_class_id = excluded.competition_class_id, name = excluded.name
-          `)
           for (const item of data.groups) {
-            upsertGroup.run(item.id, item.fireBrigadeId, item.competitionClassId, item.name)
+            database.insert(schema.groups).values({
+              id: item.id,
+              fireBrigadeId: item.fireBrigadeId,
+              competitionClassId: item.competitionClassId,
+              name: item.name,
+            }).onConflictDoUpdate({
+              target: schema.groups.id,
+              set: {
+                fireBrigadeId: item.fireBrigadeId,
+                competitionClassId: item.competitionClassId,
+                name: item.name,
+              },
+            }).run()
           }
 
           // 7. category_entries
-          const upsertEntry = sqlite.prepare(`
-            INSERT INTO category_entries (id, group_id, category_type_id, run_status, start_order_position, attack_time_hundredths, attack_time_errors, relay_race_hundredths, relay_race_errors)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              group_id = excluded.group_id,
-              category_type_id = excluded.category_type_id,
-              run_status = excluded.run_status,
-              start_order_position = excluded.start_order_position,
-              attack_time_hundredths = excluded.attack_time_hundredths,
-              attack_time_errors = excluded.attack_time_errors,
-              relay_race_hundredths = excluded.relay_race_hundredths,
-              relay_race_errors = excluded.relay_race_errors
-          `)
           for (const item of data.categoryEntries) {
-            upsertEntry.run(
-              item.id,
-              item.groupId,
-              item.categoryTypeId,
-              item.runStatus ?? 'OPEN',
-              item.startOrderPosition ?? null,
-              item.attackTimeHundredths ?? null,
-              item.attackTimeErrors ?? null,
-              item.relayRaceHundredths ?? null,
-              item.relayRaceErrors ?? null,
-            )
+            database.insert(schema.categoryEntries).values({
+              id: item.id,
+              groupId: item.groupId,
+              categoryTypeId: item.categoryTypeId,
+              runStatus: item.runStatus ?? 'OPEN',
+              startOrderPosition: item.startOrderPosition ?? null,
+              attackTimeHundredths: item.attackTimeHundredths ?? null,
+              attackTimeErrors: item.attackTimeErrors ?? null,
+              relayRaceHundredths: item.relayRaceHundredths ?? null,
+              relayRaceErrors: item.relayRaceErrors ?? null,
+            }).onConflictDoUpdate({
+              target: schema.categoryEntries.id,
+              set: {
+                groupId: item.groupId,
+                categoryTypeId: item.categoryTypeId,
+                runStatus: item.runStatus ?? 'OPEN',
+                startOrderPosition: item.startOrderPosition ?? null,
+                attackTimeHundredths: item.attackTimeHundredths ?? null,
+                attackTimeErrors: item.attackTimeErrors ?? null,
+                relayRaceHundredths: item.relayRaceHundredths ?? null,
+                relayRaceErrors: item.relayRaceErrors ?? null,
+              },
+            }).run()
           }
 
-          // Record DATA_IMPORT in audit log
+          // 8. Record DATA_IMPORT in audit log
           const timestamp = Date.now()
-          sqlite.prepare(`
-            INSERT INTO audit_log (id, timestamp, user, action, details)
-            VALUES (?, ?, ?, ?, ?)
-          `).run(
-            crypto.randomUUID(),
+          database.insert(schema.auditLog).values({
+            id: crypto.randomUUID(),
             timestamp,
             user,
-            'DATA_IMPORT',
-            JSON.stringify({
+            action: 'DATA_IMPORT',
+            details: JSON.stringify({
               summary: preflight.summary,
               totalEntities: preflight.totalEntities,
               importedAt: new Date(timestamp).toISOString(),
             }),
-          )
+          }).run()
         })()
 
         return preflight
@@ -871,24 +1019,26 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
       synchronous: synchronousMode(sqlite),
     }),
     getTvRuntimeState: () => {
-      const state = sqlite.prepare(`
-        SELECT id, mode, selected_category_id AS selectedCategoryId, updated_at AS updatedAt
-        FROM tv_runtime_state
-        WHERE id = 'default'
-      `).get() as TvRuntimeState | undefined
-      return state
+      const state = database.select().from(schema.tvRuntimeState).where(eq(schema.tvRuntimeState.id, 'default')).get()
+      return state as TvRuntimeState | undefined
     },
     setTvRuntimeState: (state) => {
-      sqlite.prepare(`UPDATE tv_runtime_state SET mode = ?, selected_category_id = ?, updated_at = ? WHERE id = 'default'`)
-        .run(state.mode, state.selectedCategoryId, state.updatedAt)
+      database.update(schema.tvRuntimeState).set({
+        mode: state.mode,
+        selectedCategoryId: state.selectedCategoryId,
+        updatedAt: state.updatedAt,
+      }).where(eq(schema.tvRuntimeState.id, 'default')).run()
       return { id: 'default', ...state }
     },
-    listTables: () => sqlite.prepare(`
-      SELECT name
-      FROM sqlite_master
-      WHERE type = 'table'
-      ORDER BY name
-    `).all().map((row) => (row as { name: string }).name),
+    listTables: () => {
+      const rows = sqlite.prepare(`
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table'
+        ORDER BY name
+      `).all() as Array<{ name: string }>
+      return rows.map((row) => row.name)
+    },
     transaction: (work) => sqlite.transaction(work)(),
   }
 

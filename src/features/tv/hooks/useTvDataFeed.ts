@@ -46,7 +46,8 @@ export interface TvDataFeedAdapter {
 
 export const httpTvDataFeedAdapter: TvDataFeedAdapter = {
   fetchTvState: async (): Promise<TvStateApiResponse> => {
-    const response = await fetch('/api/public/tv-state');
+    const search = typeof window !== 'undefined' ? window.location.search : '';
+    const response = await fetch('/api/public/tv-state' + search);
     if (!response.ok) {
       throw new Error(`Failed to fetch tv state: ${response.status}`);
     }

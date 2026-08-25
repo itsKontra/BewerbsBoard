@@ -10,7 +10,9 @@ export function getDemoTvState(searchParams?: string) {
     if (location?.search) locationSearch = location.search;
   }
 
-  const params = new URLSearchParams(searchParams ?? locationSearch);
+  const rawQuery = searchParams ?? locationSearch;
+  const queryString = rawQuery.includes('?') ? rawQuery.slice(rawQuery.indexOf('?') + 1) : rawQuery;
+  const params = new URLSearchParams(queryString);
   const overrideTheme = parseThemeParam(params.get('theme'));
   if (!overrideTheme) return demo.publicTvState;
 
