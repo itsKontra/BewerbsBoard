@@ -5,7 +5,12 @@ import { join } from 'node:path'
 import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
 
-import { createDatabase } from './database.js'
+import {
+  createDatabase,
+  CatalogItemHasEntriesError,
+  CatalogItemHasEvaluationsError,
+  DuplicateCatalogItemError,
+} from './database.js'
 
 describe('self-hosted SQLite database', () => {
   it('creates the clean baseline and default Television Scoreboard runtime state', async () => {
@@ -251,9 +256,10 @@ describe('self-hosted SQLite database', () => {
         // 2. Category Types
         database.catalog.createCategoryType({ id: 'ct-staffel', name: 'Staffel Test', competitionClassId: 'cc-aktiv', hasRelayRace: true })
         expect(database.catalog.findCategoryTypeById('ct-staffel')).toEqual({ id: 'ct-staffel', name: 'Staffel Test', competitionClassId: 'cc-aktiv', hasRelayRace: true })
-        expect(database.catalog.findCategoryTypeByName('staffel test')).toEqual({ id: 'ct-staffel', name: 'Staffel Test', competitionClassId: 'cc-aktiv', hasRelayRace: true })
-        expect(database.catalog.hasEntriesForCategoryType('ct-staffel')).toBe(false)
-        expect(database.catalog.hasEvaluationsForCategoryType('ct-staffel')).toBe(false)
+        // Duplicate name should throw DuplicateCatalogItemError (deep module enforces uniqueness)
+        expect(() => database.catalog.createCategoryType({ id: 'ct-staffel-dup', name: 'Staffel Test', competitionClassId: 'cc-aktiv', hasRelayRace: false }))
+          .toThrowError(DuplicateCatalogItemError)
+        // Deleting a type with no entries/evaluations succeeds — tested after teardown below
 
         // 3. Evaluation Types
         const evalStaffel = database.catalog.createEvaluationType({
@@ -278,7 +284,9 @@ describe('self-hosted SQLite database', () => {
           displayDurationSeconds: 15,
           order: 10,
         })
-        expect(database.catalog.hasEvaluationsForCategoryType('ct-staffel')).toBe(true)
+        // Deleting the category type now must throw because an evaluation references it
+        expect(() => database.catalog.deleteCategoryType('ct-staffel'))
+          .toThrowError(CatalogItemHasEvaluationsError)
 
         // Update evaluation type name, duration and visibility
         const updatedEval = database.catalog.updateEvaluationType('eval-staffel', {
@@ -310,7 +318,7 @@ describe('self-hosted SQLite database', () => {
         const deletedEval = database.catalog.deleteEvaluationType('eval-staffel')
         expect(deletedEval?.name).toBe('Staffel Wertung Renamed')
         expect(database.catalog.findEvaluationTypeById('eval-staffel')).toBeUndefined()
-        expect(database.catalog.hasEvaluationsForCategoryType('ct-staffel')).toBe(false)
+        // Evaluation is gone: deletion of category type should now succeed
 
         // Delete category type
         const deletedCat = database.catalog.deleteCategoryType('ct-staffel')

@@ -13,6 +13,24 @@ import type {
 } from '../shared/domain/data-management.js'
 import { validateDataExportEnvelope } from '../shared/domain/data-management.js'
 
+// ---------------------------------------------------------------------------
+// Catalog constraint errors — thrown by catalog mutation methods; callers
+// catch and map to HTTP responses. Exported so callers can use instanceof.
+// ---------------------------------------------------------------------------
+
+export class DuplicateCatalogItemError extends Error {
+  constructor(message = 'An item with this name already exists') { super(message); this.name = 'DuplicateCatalogItemError' }
+}
+export class InvalidCatalogReferenceError extends Error {
+  constructor(message: string) { super(message); this.name = 'InvalidCatalogReferenceError' }
+}
+export class CatalogItemHasEntriesError extends Error {
+  constructor(message = 'Cannot delete: entries exist for this catalog item') { super(message); this.name = 'CatalogItemHasEntriesError' }
+}
+export class CatalogItemHasEvaluationsError extends Error {
+  constructor(message = 'Cannot delete: evaluation types reference this catalog item') { super(message); this.name = 'CatalogItemHasEvaluationsError' }
+}
+
 export interface TvRuntimeState {
   id: string
   mode: string
@@ -185,15 +203,36 @@ export interface SelfHostedDatabase {
   readonly catalog: {
     listCategoryTypes(): CategoryType[]
     findCategoryTypeById(id: string): CategoryType | undefined
-    findCategoryTypeByName(name: string): CategoryType | undefined
+    /**
+     * Creates a category type. Validates uniqueness and ref-integrity internally.
+     * @throws {DuplicateCatalogItemError} if name already exists
+     * @throws {InvalidCatalogReferenceError} if competitionClassId does not exist
+     */
     createCategoryType(categoryType: CategoryType): CategoryType
+    /**
+     * Updates a category type. Returns undefined if id not found.
+     * @throws {DuplicateCatalogItemError} if the new name conflicts with an existing type
+     * @throws {InvalidCatalogReferenceError} if the new competitionClassId does not exist
+     */
     updateCategoryType(id: string, data: Partial<Omit<CategoryType, 'id'>>): CategoryType | undefined
+    /**
+     * Deletes a category type. Returns undefined if id not found.
+     * @throws {CatalogItemHasEntriesError} if entries exist for this type
+     * @throws {CatalogItemHasEvaluationsError} if evaluation types reference this type
+     */
     deleteCategoryType(id: string): CategoryType | undefined
-    hasEntriesForCategoryType(categoryTypeId: string): boolean
-    hasEvaluationsForCategoryType(categoryTypeId: string): boolean
     listEvaluationTypes(): EvaluationType[]
     findEvaluationTypeById(id: string): EvaluationType | undefined
+    /**
+     * Creates an evaluation type. Validates ref-integrity and name uniqueness internally.
+     * @throws {DuplicateCatalogItemError} if name already exists
+     * @throws {InvalidCatalogReferenceError} if a referenced categoryTypeId does not exist
+     */
     createEvaluationType(evaluationType: EvaluationTypeWrite): EvaluationType
+    /**
+     * Updates an evaluation type. Returns undefined if id not found.
+     * @throws {InvalidCatalogReferenceError} if a referenced categoryTypeId does not exist
+     */
     updateEvaluationType(id: string, data: Partial<{
       name: string
       categoryTypeId1: string
@@ -205,6 +244,7 @@ export interface SelfHostedDatabase {
       displayDurationSeconds: number
       order: number
     }>): EvaluationType | undefined
+    /** Deletes an evaluation type. Returns undefined if id not found. */
     deleteEvaluationType(id: string): EvaluationType | undefined
   }
   readonly dataManagement: {
@@ -601,46 +641,42 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
     catalog: {
       listCategoryTypes: () => database.select().from(schema.categoryTypes).orderBy(asc(schema.categoryTypes.name)).all(),
       findCategoryTypeById: (id) => database.select().from(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).get(),
-      findCategoryTypeByName: (name) => {
-        return database
-          .select()
-          .from(schema.categoryTypes)
-          .where(
-            or(
-              sql`${schema.categoryTypes.name} = ${name} COLLATE NOCASE`,
-              eq(schema.categoryTypes.id, name),
-              sql`replace(lower(${schema.categoryTypes.name}), ' ', '-') = lower(${name})`
-            )
-          )
-          .orderBy(
-            sql`CASE
-              WHEN ${schema.categoryTypes.id} = ${name} THEN 0
-              WHEN ${schema.categoryTypes.name} = ${name} COLLATE NOCASE THEN 1
-              ELSE 2
-            END`
-          )
-          .limit(1)
-          .get()
-      },
       createCategoryType: (ct) => {
-        database.insert(schema.categoryTypes).values(ct).run()
+        if (!database.select({ id: schema.competitionClasses.id }).from(schema.competitionClasses).where(eq(schema.competitionClasses.id, ct.competitionClassId)).get()) {
+          throw new InvalidCatalogReferenceError(`Competition class '${ct.competitionClassId}' not found`)
+        }
+        const duplicate = database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes)
+          .where(sql`lower(${schema.categoryTypes.name}) = lower(${ct.name})`).limit(1).get()
+        if (duplicate) throw new DuplicateCatalogItemError('A category type with this name already exists')
+        sqlite.transaction(() => { database.insert(schema.categoryTypes).values(ct).run() })()
         return ct
       },
       updateCategoryType: (id, data) => {
         const current = database.select().from(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).get()
         if (!current) return undefined
-        return database.update(schema.categoryTypes).set(data).where(eq(schema.categoryTypes.id, id)).returning().get()
+        if (data.competitionClassId !== undefined && data.competitionClassId !== current.competitionClassId) {
+          if (!database.select({ id: schema.competitionClasses.id }).from(schema.competitionClasses).where(eq(schema.competitionClasses.id, data.competitionClassId)).get()) {
+            throw new InvalidCatalogReferenceError(`Competition class '${data.competitionClassId}' not found`)
+          }
+        }
+        if (data.name !== undefined && data.name.trim() !== current.name) {
+          const dup = database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes)
+            .where(and(sql`lower(${schema.categoryTypes.name}) = lower(${data.name})`, ne(schema.categoryTypes.id, id))).limit(1).get()
+          if (dup) throw new DuplicateCatalogItemError('A category type with this name already exists')
+        }
+        return sqlite.transaction(() =>
+          database.update(schema.categoryTypes).set(data).where(eq(schema.categoryTypes.id, id)).returning().get()
+        )()
       },
       deleteCategoryType: (id) => {
-        return database.delete(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).returning().get()
-      },
-      hasEntriesForCategoryType: (ctId) => {
-        const row = database.select({ id: schema.categoryEntries.id }).from(schema.categoryEntries).where(eq(schema.categoryEntries.categoryTypeId, ctId)).limit(1).get()
-        return row !== undefined
-      },
-      hasEvaluationsForCategoryType: (ctId) => {
-        const row = database.select({ id: schema.evaluationTypes.id }).from(schema.evaluationTypes).where(or(eq(schema.evaluationTypes.categoryTypeId1, ctId), eq(schema.evaluationTypes.categoryTypeId2, ctId))).limit(1).get()
-        return row !== undefined
+        const hasEntries = database.select({ id: schema.categoryEntries.id }).from(schema.categoryEntries).where(eq(schema.categoryEntries.categoryTypeId, id)).limit(1).get() !== undefined
+        if (hasEntries) throw new CatalogItemHasEntriesError('Cannot delete category type with registered entries')
+        const hasEvals = database.select({ id: schema.evaluationTypes.id }).from(schema.evaluationTypes)
+          .where(or(eq(schema.evaluationTypes.categoryTypeId1, id), eq(schema.evaluationTypes.categoryTypeId2, id))).limit(1).get() !== undefined
+        if (hasEvals) throw new CatalogItemHasEvaluationsError('Cannot delete category type referenced by evaluation types')
+        return sqlite.transaction(() =>
+          database.delete(schema.categoryTypes).where(eq(schema.categoryTypes.id, id)).returning().get()
+        )()
       },
       listEvaluationTypes: () => {
         const rawEvalTypes = database.select().from(schema.evaluationTypes).orderBy(asc(schema.evaluationTypes.order), asc(schema.evaluationTypes.name)).all()
@@ -656,23 +692,40 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         return mapEvaluationTypeRow(row, catMap)
       },
       createEvaluationType: (et) => {
-        database.insert(schema.evaluationTypes).values({
-          id: et.id,
-          name: et.name,
-          categoryTypeId1: et.categoryTypeId1,
-          categoryTypeId2: et.categoryTypeId2 ?? null,
-          excludeRelayRace: et.excludeRelayRace,
-          isBrigadePairing: et.isBrigadePairing,
-          public: et.public,
-          public_tv: et.publicTv,
-          displayDurationSeconds: et.displayDurationSeconds ?? 10,
-          order: et.order ?? 1,
-        }).run()
+        if (!database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, et.categoryTypeId1)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${et.categoryTypeId1}' not found`)
+        }
+        if (et.categoryTypeId2 && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, et.categoryTypeId2)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${et.categoryTypeId2}' not found`)
+        }
+        const dup = database.select({ id: schema.evaluationTypes.id }).from(schema.evaluationTypes)
+          .where(sql`lower(${schema.evaluationTypes.name}) = lower(${et.name})`).limit(1).get()
+        if (dup) throw new DuplicateCatalogItemError('An evaluation type with this name already exists')
+        sqlite.transaction(() => {
+          database.insert(schema.evaluationTypes).values({
+            id: et.id,
+            name: et.name,
+            categoryTypeId1: et.categoryTypeId1,
+            categoryTypeId2: et.categoryTypeId2 ?? null,
+            excludeRelayRace: et.excludeRelayRace,
+            isBrigadePairing: et.isBrigadePairing,
+            public: et.public,
+            public_tv: et.publicTv,
+            displayDurationSeconds: et.displayDurationSeconds ?? 10,
+            order: et.order ?? 1,
+          }).run()
+        })()
         return self.catalog.findEvaluationTypeById(et.id)!
       },
       updateEvaluationType: (id, data) => {
         const current = database.select().from(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).get()
         if (!current) return undefined
+        if (data.categoryTypeId1 !== undefined && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, data.categoryTypeId1)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${data.categoryTypeId1}' not found`)
+        }
+        if (data.categoryTypeId2 !== undefined && data.categoryTypeId2 !== null && !database.select({ id: schema.categoryTypes.id }).from(schema.categoryTypes).where(eq(schema.categoryTypes.id, data.categoryTypeId2)).get()) {
+          throw new InvalidCatalogReferenceError(`Category type '${data.categoryTypeId2}' not found`)
+        }
         const updateValues: Record<string, unknown> = {}
         if (data.name !== undefined) updateValues.name = data.name
         if (data.categoryTypeId1 !== undefined) updateValues.categoryTypeId1 = data.categoryTypeId1
@@ -683,16 +736,17 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         if (data.publicTv !== undefined) updateValues.public_tv = data.publicTv
         if (data.displayDurationSeconds !== undefined) updateValues.displayDurationSeconds = data.displayDurationSeconds
         if (data.order !== undefined) updateValues.order = data.order
-
         if (Object.keys(updateValues).length > 0) {
-          database.update(schema.evaluationTypes).set(updateValues).where(eq(schema.evaluationTypes.id, id)).run()
+          sqlite.transaction(() => {
+            database.update(schema.evaluationTypes).set(updateValues).where(eq(schema.evaluationTypes.id, id)).run()
+          })()
         }
         return self.catalog.findEvaluationTypeById(id)
       },
       deleteEvaluationType: (id) => {
         const existing = self.catalog.findEvaluationTypeById(id)
         if (!existing) return undefined
-        database.delete(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).run()
+        sqlite.transaction(() => { database.delete(schema.evaluationTypes).where(eq(schema.evaluationTypes.id, id)).run() })()
         return existing
       },
     },

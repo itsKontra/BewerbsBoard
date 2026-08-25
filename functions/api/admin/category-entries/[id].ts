@@ -78,10 +78,11 @@ export async function onRequestPut(context: EventContext) {
       .limit(1);
     const hasRelayRace = (previousEntry as any).hasRelayRace ?? catRows[0]?.hasRelayRace ?? false;
 
-    let nextOpenPos: number | undefined;
-    if (previousEntry.runStatus !== 'OPEN' && body.runStatus === 'OPEN') {
-      nextOpenPos = await getNextStartOrderPosition(db, categoryTypeId);
-    }
+    // Only fetch nextOpenPos when the domain will need it (non-OPEN → OPEN transition).
+    // The seam (getNextOpenPosition) is synchronous; D1 requires async, so we pre-resolve here.
+    const nextOpenPos = (previousEntry.runStatus !== 'OPEN')
+      ? await getNextStartOrderPosition(db, categoryTypeId)
+      : undefined;
 
     const { groupName, categoryName } = await fetchAuditNames(db, previousEntry.groupId, categoryTypeId);
 
@@ -89,7 +90,7 @@ export async function onRequestPut(context: EventContext) {
     try {
       result = calculateEntryUpdate(previousEntry as CategoryEntry, body, {
         hasRelayRace,
-        getNextOpenPosition: nextOpenPos !== undefined ? () => nextOpenPos! : undefined,
+        getNextOpenPosition: nextOpenPos !== undefined ? () => nextOpenPos : undefined,
         groupName,
         categoryName,
       });

@@ -9,6 +9,12 @@ import {
 } from '../shared/domain/entry-lifecycle.js'
 import type { SelfHostedDatabase } from './database.js'
 import type { SelfHostedAppEnvironment } from './app.js'
+import {
+  DuplicateCatalogItemError,
+  InvalidCatalogReferenceError,
+  CatalogItemHasEntriesError,
+  CatalogItemHasEvaluationsError,
+} from './database.js'
 
 export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, database: SelfHostedDatabase) {
   // Category Types CRUD
@@ -19,26 +25,14 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
       const body = await context.req.json() as Record<string, unknown>
       if (!nonEmpty(body.name)) return error(context, 'Name is required and must be a string', 400)
       if (!nonEmpty(body.competitionClassId)) return error(context, 'competitionClassId is required', 400)
-      const name = body.name as string
-      const competitionClassId = body.competitionClassId as string
       const id = (typeof body.id === 'string' && body.id.trim()) ? body.id.trim() : crypto.randomUUID()
       const hasRelayRace = typeof body.hasRelayRace === 'boolean' ? body.hasRelayRace : true
-
-      const categoryType = database.transaction(() => {
-        if (!database.administration.findCompetitionClassById(competitionClassId)) {
-          throw new InvalidCompetitionClassReferenceError(`Competition class '${competitionClassId}' not found`)
-        }
-        if (database.catalog.findCategoryTypeByName(name)) {
-          throw new DuplicateCategoryTypeError()
-        }
-        const created = database.catalog.createCategoryType({ id, name, competitionClassId, hasRelayRace })
-        audit(database, context, 'CREATE_CATEGORY_TYPE', created)
-        return created
-      })
-      return context.json(categoryType, 201)
+      const created = database.catalog.createCategoryType({ id, name: body.name as string, competitionClassId: body.competitionClassId as string, hasRelayRace })
+      audit(database, context, 'CREATE_CATEGORY_TYPE', created)
+      return context.json(created, 201)
     } catch (exception) {
-      if (exception instanceof DuplicateCategoryTypeError) return error(context, 'A category type with this name already exists', 409)
-      if (exception instanceof InvalidCompetitionClassReferenceError) return error(context, exception.message, 400)
+      if (exception instanceof DuplicateCatalogItemError) return error(context, exception.message, 409)
+      if (exception instanceof InvalidCatalogReferenceError) return error(context, exception.message, 400)
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
   })
@@ -50,36 +44,16 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
       if (body.name !== undefined && !nonEmpty(body.name)) {
         return error(context, 'Name cannot be empty', 400)
       }
-
-      const updated = database.transaction(() => {
-        const existing = database.catalog.findCategoryTypeById(id)
-        if (!existing) return undefined
-
-        if (typeof body.name === 'string' && body.name.trim() !== existing.name) {
-          const duplicate = database.catalog.findCategoryTypeByName(body.name.trim())
-          if (duplicate && duplicate.id !== id) {
-            throw new DuplicateCategoryTypeError()
-          }
-        }
-
-        const payload: Parameters<typeof database.catalog.updateCategoryType>[1] = {}
-        if (typeof body.name === 'string' && body.name.trim()) payload.name = body.name.trim()
-        if (typeof body.hasRelayRace === 'boolean') payload.hasRelayRace = body.hasRelayRace
-        if (nonEmpty(body.competitionClassId)) {
-          if (!database.administration.findCompetitionClassById(body.competitionClassId as string)) {
-            throw new InvalidCompetitionClassReferenceError(`Competition class '${body.competitionClassId}' not found`)
-          }
-          payload.competitionClassId = body.competitionClassId as string
-        }
-
-        const result = database.catalog.updateCategoryType(id, payload)
-        if (result) audit(database, context, 'UPDATE_CATEGORY_TYPE', { id, ...payload })
-        return result
-      })
+      const payload: Partial<{ name: string; hasRelayRace: boolean; competitionClassId: string }> = {}
+      if (typeof body.name === 'string' && body.name.trim()) payload.name = body.name.trim()
+      if (typeof body.hasRelayRace === 'boolean') payload.hasRelayRace = body.hasRelayRace
+      if (nonEmpty(body.competitionClassId)) payload.competitionClassId = body.competitionClassId as string
+      const updated = database.catalog.updateCategoryType(id, payload)
+      if (updated) audit(database, context, 'UPDATE_CATEGORY_TYPE', { id, ...payload })
       return updated ? context.json(updated) : error(context, 'Category type not found', 404)
     } catch (exception) {
-      if (exception instanceof DuplicateCategoryTypeError) return error(context, 'A category type with this name already exists', 409)
-      if (exception instanceof InvalidCompetitionClassReferenceError) return error(context, exception.message, 400)
+      if (exception instanceof DuplicateCatalogItemError) return error(context, exception.message, 409)
+      if (exception instanceof InvalidCatalogReferenceError) return error(context, exception.message, 400)
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
   })
@@ -87,18 +61,13 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
   app.delete('/api/admin/category-types/:id', (context) => {
     try {
       const id = context.req.param('id')
-      const outcome = database.transaction(() => {
-        if (database.catalog.hasEntriesForCategoryType(id)) return 'has-entries' as const
-        if (database.catalog.hasEvaluationsForCategoryType(id)) return 'has-evaluations' as const
-        const deleted = database.catalog.deleteCategoryType(id)
-        if (!deleted) return undefined
-        audit(database, context, 'DELETE_CATEGORY_TYPE', { id, name: deleted.name })
-        return deleted
-      })
-      if (outcome === 'has-entries') return error(context, 'Cannot delete category type with registered entries', 400)
-      if (outcome === 'has-evaluations') return error(context, 'Cannot delete category type referenced by evaluation types', 400)
-      return outcome ? context.json({ success: true, deletedId: id }) : error(context, 'Category type not found', 404)
+      const deleted = database.catalog.deleteCategoryType(id)
+      if (!deleted) return error(context, 'Category type not found', 404)
+      audit(database, context, 'DELETE_CATEGORY_TYPE', { id, name: deleted.name })
+      return context.json({ success: true, deletedId: id })
     } catch (exception) {
+      if (exception instanceof CatalogItemHasEntriesError) return error(context, exception.message, 400)
+      if (exception instanceof CatalogItemHasEvaluationsError) return error(context, exception.message, 400)
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
   })
@@ -121,39 +90,20 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
       const publicVisibility = typeof body.public === 'boolean' ? body.public : true
       const publicTvVisibility = typeof body.publicTv === 'boolean' ? body.publicTv : (typeof body.public_tv === 'boolean' ? body.public_tv : true)
       const displayDurationSeconds = typeof body.displayDurationSeconds === 'number' && Number.isInteger(body.displayDurationSeconds) && body.displayDurationSeconds > 0
-        ? body.displayDurationSeconds
-        : 10
+        ? body.displayDurationSeconds : 10
       const order = typeof body.order === 'number' && Number.isInteger(body.order) ? body.order : 1
 
-      const evaluationType = database.transaction(() => {
-        if (!database.catalog.findCategoryTypeById(categoryTypeId1)) {
-          throw new InvalidCategoryReferenceError(`Category type '${categoryTypeId1}' not found`)
-        }
-        if (categoryTypeId2 && !database.catalog.findCategoryTypeById(categoryTypeId2)) {
-          throw new InvalidCategoryReferenceError(`Category type '${categoryTypeId2}' not found`)
-        }
-        const existing = database.catalog.listEvaluationTypes().find((e) => e.name.toLowerCase() === name.toLowerCase())
-        if (existing) throw new DuplicateEvaluationTypeError()
-
-        const created = database.catalog.createEvaluationType({
-          id,
-          name,
-          categoryTypeId1,
-          categoryTypeId2,
-          excludeRelayRace,
-          isBrigadePairing,
-          public: publicVisibility,
-          publicTv: publicTvVisibility,
-          displayDurationSeconds,
-          order,
-        })
-        audit(database, context, 'CREATE_EVALUATION_TYPE', created)
-        return created
+      const evaluationType = database.catalog.createEvaluationType({
+        id, name, categoryTypeId1, categoryTypeId2,
+        excludeRelayRace, isBrigadePairing,
+        public: publicVisibility, publicTv: publicTvVisibility,
+        displayDurationSeconds, order,
       })
+      audit(database, context, 'CREATE_EVALUATION_TYPE', evaluationType)
       return context.json(evaluationType, 201)
     } catch (exception) {
-      if (exception instanceof DuplicateEvaluationTypeError) return error(context, 'An evaluation type with this name already exists', 409)
-      if (exception instanceof InvalidCategoryReferenceError) return error(context, exception.message, 400)
+      if (exception instanceof DuplicateCatalogItemError) return error(context, exception.message, 409)
+      if (exception instanceof InvalidCatalogReferenceError) return error(context, exception.message, 400)
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
   })
@@ -162,37 +112,23 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
     try {
       const id = context.req.param('id')
       const body = await context.req.json() as Record<string, unknown>
-      const updated = database.transaction(() => {
-        const existing = database.catalog.findEvaluationTypeById(id)
-        if (!existing) return undefined
-
-        if (nonEmpty(body.categoryTypeId1) && !database.catalog.findCategoryTypeById(body.categoryTypeId1 as string)) {
-          throw new InvalidCategoryReferenceError(`Category type '${body.categoryTypeId1}' not found`)
-        }
-        if (nonEmpty(body.categoryTypeId2) && !database.catalog.findCategoryTypeById(body.categoryTypeId2 as string)) {
-          throw new InvalidCategoryReferenceError(`Category type '${body.categoryTypeId2}' not found`)
-        }
-
-        const payload: Parameters<typeof database.catalog.updateEvaluationType>[1] = {}
-        if (typeof body.name === 'string' && body.name.trim()) payload.name = body.name.trim()
-        if (typeof body.categoryTypeId1 === 'string' && body.categoryTypeId1.trim()) payload.categoryTypeId1 = body.categoryTypeId1.trim()
-        if ('categoryTypeId2' in body) payload.categoryTypeId2 = nonEmpty(body.categoryTypeId2) ? body.categoryTypeId2 as string : null
-        if (typeof body.excludeRelayRace === 'boolean') payload.excludeRelayRace = body.excludeRelayRace
-        if (typeof body.public === 'boolean') payload.public = body.public
-        if (typeof body.publicTv === 'boolean') payload.publicTv = body.publicTv
-        if (typeof body.public_tv === 'boolean') payload.publicTv = body.public_tv
-        if (typeof body.displayDurationSeconds === 'number' && Number.isInteger(body.displayDurationSeconds) && body.displayDurationSeconds > 0) {
-          payload.displayDurationSeconds = body.displayDurationSeconds
-        }
-        if (typeof body.order === 'number' && Number.isInteger(body.order)) payload.order = body.order
-
-        const result = database.catalog.updateEvaluationType(id, payload)
-        if (result) audit(database, context, 'UPDATE_EVALUATION_TYPE', { id, ...payload })
-        return result
-      })
+      const payload: Parameters<typeof database.catalog.updateEvaluationType>[1] = {}
+      if (typeof body.name === 'string' && body.name.trim()) payload.name = body.name.trim()
+      if (typeof body.categoryTypeId1 === 'string' && body.categoryTypeId1.trim()) payload.categoryTypeId1 = body.categoryTypeId1.trim()
+      if ('categoryTypeId2' in body) payload.categoryTypeId2 = nonEmpty(body.categoryTypeId2) ? body.categoryTypeId2 as string : null
+      if (typeof body.excludeRelayRace === 'boolean') payload.excludeRelayRace = body.excludeRelayRace
+      if (typeof body.public === 'boolean') payload.public = body.public
+      if (typeof body.publicTv === 'boolean') payload.publicTv = body.publicTv
+      if (typeof body.public_tv === 'boolean') payload.publicTv = body.public_tv
+      if (typeof body.displayDurationSeconds === 'number' && Number.isInteger(body.displayDurationSeconds) && body.displayDurationSeconds > 0) {
+        payload.displayDurationSeconds = body.displayDurationSeconds
+      }
+      if (typeof body.order === 'number' && Number.isInteger(body.order)) payload.order = body.order
+      const updated = database.catalog.updateEvaluationType(id, payload)
+      if (updated) audit(database, context, 'UPDATE_EVALUATION_TYPE', { id, ...payload })
       return updated ? context.json(updated) : error(context, 'Evaluation type not found', 404)
     } catch (exception) {
-      if (exception instanceof InvalidCategoryReferenceError) return error(context, exception.message, 400)
+      if (exception instanceof InvalidCatalogReferenceError) return error(context, exception.message, 400)
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
   })
@@ -200,13 +136,10 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
   app.delete('/api/admin/evaluation-types/:id', (context) => {
     try {
       const id = context.req.param('id')
-      const outcome = database.transaction(() => {
-        const deleted = database.catalog.deleteEvaluationType(id)
-        if (!deleted) return undefined
-        audit(database, context, 'DELETE_EVALUATION_TYPE', { id, name: deleted.name })
-        return deleted
-      })
-      return outcome ? context.json({ success: true, deletedId: id }) : error(context, 'Evaluation type not found', 404)
+      const deleted = database.catalog.deleteEvaluationType(id)
+      if (!deleted) return error(context, 'Evaluation type not found', 404)
+      audit(database, context, 'DELETE_EVALUATION_TYPE', { id, name: deleted.name })
+      return context.json({ success: true, deletedId: id })
     } catch (exception) {
       return error(context, exception instanceof Error ? exception.message : 'Internal Server Error', 500)
     }
@@ -304,6 +237,12 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
   })
 }
 
+/**
+ * Handler alias — shared by PUT and PATCH /api/admin/category-entries/:id.
+ * This is a deduplication helper, not a module or seam. It contains no independent logic
+ * and should not grow any. If constraint or domain logic accumulates here, promote it
+ * to a proper seam at that point (e.g., a `scoring` module that absorbs it).
+ */
 async function updateEntry(context: Context<SelfHostedAppEnvironment>, database: SelfHostedDatabase) {
   const existing = database.scoring.findEntry(context.req.param('id') ?? '')
   if (!existing) return error(context, 'Category entry not found', 404)
@@ -353,8 +292,3 @@ function audit(database: SelfHostedDatabase, context: Context<SelfHostedAppEnvir
 }
 function nonEmpty(value: unknown): value is string { return typeof value === 'string' && value.length > 0 }
 function error(context: Context<SelfHostedAppEnvironment>, message: string, status: number) { return context.json({ error: message }, status as never) }
-
-class DuplicateCategoryTypeError extends Error {}
-class InvalidCompetitionClassReferenceError extends Error {}
-class DuplicateEvaluationTypeError extends Error {}
-class InvalidCategoryReferenceError extends Error {}
