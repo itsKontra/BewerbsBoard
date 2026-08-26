@@ -32,6 +32,7 @@ export async function onRequestPut(context: EventContext) {
     if (typeof data.categoryTypeId1 === 'string' && data.categoryTypeId1.trim()) updateValues.categoryTypeId1 = data.categoryTypeId1.trim();
     if ('categoryTypeId2' in data) updateValues.categoryTypeId2 = (typeof data.categoryTypeId2 === 'string' && data.categoryTypeId2.trim()) ? data.categoryTypeId2.trim() : null;
     if (typeof data.excludeRelayRace === 'boolean') updateValues.excludeRelayRace = data.excludeRelayRace;
+    if (typeof data.showSingleResults === 'boolean') updateValues.showSingleResults = data.showSingleResults;
     if (typeof data.public === 'boolean') updateValues.public = data.public;
     if (typeof data.publicTv === 'boolean') updateValues.public_tv = data.publicTv;
     if (typeof data.public_tv === 'boolean') updateValues.public_tv = data.public_tv;
@@ -68,6 +69,7 @@ export async function onRequestPut(context: EventContext) {
       hasRelayRace2: Boolean(cat2?.hasRelayRace),
       excludeRelayRace: Boolean(et.excludeRelayRace),
       isBrigadePairing: Boolean(et.isBrigadePairing),
+      showSingleResults: Boolean((et as any).showSingleResults || (et as any).show_single_results),
       public: Boolean(et.public),
       publicTv: Boolean(et.public_tv),
       displayDurationSeconds: et.displayDurationSeconds,

@@ -28,6 +28,8 @@ export interface EvaluationTypeRecord {
   categoryTypeId2: string | null;
   excludeRelayRace: boolean;
   isBrigadePairing: boolean;
+  showSingleResults?: boolean;
+  show_single_results?: boolean;
   public: boolean;
   public_tv?: boolean;
   publicTv?: boolean;

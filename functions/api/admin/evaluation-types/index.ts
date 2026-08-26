@@ -27,6 +27,7 @@ export async function onRequestGet(context: EventContext) {
         hasRelayRace2: Boolean(cat2?.hasRelayRace),
         excludeRelayRace: Boolean(et.excludeRelayRace || et.exclude_relay_race),
         isBrigadePairing: Boolean(et.isBrigadePairing || et.is_brigade_pairing),
+        showSingleResults: Boolean(et.showSingleResults || et.show_single_results),
         public: et.public !== undefined ? Boolean(et.public) : true,
         publicTv: et.public_tv !== undefined ? Boolean(et.public_tv) : (et.publicTv !== undefined ? Boolean(et.publicTv) : true),
         displayDurationSeconds: et.displayDurationSeconds ?? et.display_duration_seconds ?? 10,
@@ -79,6 +80,7 @@ export async function onRequestPost(context: EventContext) {
       categoryTypeId2: data.categoryTypeId2 || null,
       excludeRelayRace: Boolean(data.excludeRelayRace),
       isBrigadePairing: Boolean(data.categoryTypeId2 && data.isBrigadePairing),
+      showSingleResults: Boolean(data.categoryTypeId2 && data.showSingleResults),
       public: data.public !== undefined ? Boolean(data.public) : true,
       public_tv: data.publicTv !== undefined ? Boolean(data.publicTv) : (data.public_tv !== undefined ? Boolean(data.public_tv) : true),
       displayDurationSeconds: typeof data.displayDurationSeconds === 'number' && Number.isInteger(data.displayDurationSeconds) && data.displayDurationSeconds > 0
@@ -111,6 +113,7 @@ export async function onRequestPost(context: EventContext) {
       hasRelayRace2: cat2HasRelay,
       excludeRelayRace: newEval.excludeRelayRace,
       isBrigadePairing: newEval.isBrigadePairing,
+      showSingleResults: newEval.showSingleResults,
       public: newEval.public,
       publicTv: newEval.public_tv,
       displayDurationSeconds: newEval.displayDurationSeconds,

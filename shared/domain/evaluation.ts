@@ -177,7 +177,7 @@ function buildGroupCombinedResults(
       }
     } else if (showSingleResults && (isVal1 || isVal2)) {
       // Tier 2: 1 Valid result (and 0 DNF) when showSingleResults is enabled
-      const singleScore = isVal1 ? ev1.score! : ev2.score!;
+      const singleScore = isVal1 ? ev1!.score! : ev2!.score!;
       results.push({
         tier: 2,
         groupId,
@@ -392,7 +392,7 @@ function rankTiers(results: InternalResult[]): EvaluationResult[] {
     } else {
       currentTier2Rank = tier1Count + i + 1;
       item.rank = currentTier2Rank;
-      prevSingleScore = item.singleScoreHundredths;
+      prevSingleScore = item.singleScoreHundredths ?? null;
     }
   }
 

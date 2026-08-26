@@ -32,6 +32,7 @@ export const evaluationTypes = sqliteTable('evaluation_types', {
    * within each fire brigade, e.g. AKTIV vs JUGEND). See CONTEXT.md.
    */
   isBrigadePairing: integer('is_brigade_pairing', { mode: 'boolean' }).notNull().default(false),
+  showSingleResults: integer('show_single_results', { mode: 'boolean' }).notNull().default(false),
   public: integer('public', { mode: 'boolean' }).notNull().default(true),
   public_tv: integer('public_tv', { mode: 'boolean' }).notNull().default(true),
   displayDurationSeconds: integer('display_duration_seconds').notNull().default(10),

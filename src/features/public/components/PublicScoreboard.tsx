@@ -20,7 +20,7 @@ export interface RankedResultRow {
   secondaryGroupName?: string;
   fireBrigadeId: string;
   fireBrigadeName: string;
-  scoreHundredths: number;
+  scoreHundredths: number | null;
   primaryRun: RunResultRow;
   secondaryRun?: RunResultRow | null;
 }
@@ -50,6 +50,7 @@ export interface CategoryResultData {
   order: number;
   type: 'standard' | 'combined';
   isBrigadePairing?: boolean;
+  showSingleResults?: boolean;
   hasRelayRace1?: boolean;
   hasRelayRace2?: boolean;
   excludeRelayRace?: boolean;

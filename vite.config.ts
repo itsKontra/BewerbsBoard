@@ -200,6 +200,7 @@ function viteDevAdminMockPlugin(): Plugin {
             hasRelayRace2: cat2 ? cat2.hasRelayRace : false,
             excludeRelayRace: body.excludeRelayRace ?? false,
             isBrigadePairing: cat2 ? (body.isBrigadePairing ?? false) : false,
+            showSingleResults: cat2 ? (body.showSingleResults ?? false) : false,
             public: body.public ?? true,
             publicTv: body.publicTv ?? true,
             displayDurationSeconds: body.displayDurationSeconds ?? 10,
@@ -231,6 +232,8 @@ function viteDevAdminMockPlugin(): Plugin {
             evalItem.hasRelayRace2 = cat2 ? cat2.hasRelayRace : false
           }
           if (body.excludeRelayRace !== undefined) evalItem.excludeRelayRace = body.excludeRelayRace
+          if (body.isBrigadePairing !== undefined) evalItem.isBrigadePairing = body.isBrigadePairing
+          if (body.showSingleResults !== undefined) evalItem.showSingleResults = body.showSingleResults
           if (body.public !== undefined) evalItem.public = body.public
           if (body.publicTv !== undefined) evalItem.publicTv = body.publicTv
           if (body.displayDurationSeconds !== undefined) evalItem.displayDurationSeconds = body.displayDurationSeconds

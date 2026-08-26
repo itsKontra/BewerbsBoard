@@ -30,6 +30,7 @@ export interface EvaluationType {
   hasRelayRace2?: boolean;
   excludeRelayRace: boolean;
   isBrigadePairing: boolean;
+  showSingleResults?: boolean;
   public: boolean;
   publicTv: boolean;
   displayDurationSeconds: number;
