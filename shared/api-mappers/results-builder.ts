@@ -49,6 +49,7 @@ export interface EntryDetailView {
 
 export interface RunResultPayload {
   entryId: string;
+  runStatus: EntryDetailView['runStatus'] | null;
   attackTimeHundredths: number | null;
   attackTimeErrors: number | null;
   relayRaceHundredths: number | null;
@@ -178,6 +179,7 @@ export function buildCategoriesResultMap(
 
       const primaryRun: RunResultPayload = {
         entryId: result.entry1Id ?? '',
+        runStatus: e1?.runStatus ?? null,
         attackTimeHundredths: e1?.attackTimeHundredths ?? null,
         attackTimeErrors: e1?.attackTimeErrors ?? null,
         relayRaceHundredths: e1?.relayRaceHundredths ?? null,
@@ -189,6 +191,7 @@ export function buildCategoriesResultMap(
       if (isCombined) {
         secondaryRun = {
           entryId: result.entry2Id ?? '',
+          runStatus: e2?.runStatus ?? null,
           attackTimeHundredths: e2?.attackTimeHundredths ?? null,
           attackTimeErrors: e2?.attackTimeErrors ?? null,
           relayRaceHundredths: e2?.relayRaceHundredths ?? null,

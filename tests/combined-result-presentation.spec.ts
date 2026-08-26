@@ -70,8 +70,9 @@ const resultsData = {
           scoreHundredths: null,
           primaryRun: {
             entryId: 'dnf-bronze',
-            attackTimeHundredths: null,
-            attackTimeErrors: null,
+            runStatus: 'DNF',
+            attackTimeHundredths: 4700,
+            attackTimeErrors: 0,
             relayRaceHundredths: null,
             relayRaceErrors: null,
             scoreHundredths: null,
@@ -149,6 +150,8 @@ test('presents complete, single-result, and DNF competitors on TV and keeps DNF 
   await expect(dnfRow).not.toHaveAttribute('data-rank', /.+/);
   await expect(dnfRow.locator('td').first()).toHaveText('—');
   await expect(dnfRow.locator('td').last()).toHaveText('—');
+  await expect(dnfRow.getByText('DNF', { exact: true })).toBeVisible();
+  await expect(dnfRow.getByText('47,00 s', { exact: true })).toHaveCount(0);
 
   mode = 'WINNERS';
   await page.reload();
@@ -174,5 +177,6 @@ test('presents complete, single-result, and DNF competitors on the public mobile
   await expect(singleRow.locator(':scope > div').first()).toHaveText('2');
   await expect(singleRow.getByText('—', { exact: true })).toHaveCount(2);
   await expect(dnfRow.locator(':scope > div').first()).toHaveText('—');
-  await expect(dnfRow.getByText('—', { exact: true })).toHaveCount(3);
+  await expect(dnfRow.getByText('DNF', { exact: true })).toBeVisible();
+  await expect(dnfRow.getByText('47,00 s', { exact: true })).toHaveCount(0);
 });

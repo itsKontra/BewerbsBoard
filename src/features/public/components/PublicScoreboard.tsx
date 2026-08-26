@@ -6,6 +6,7 @@ import { uiText } from '../../../ui-text';
 
 export interface RunResultRow {
   entryId: string;
+  runStatus?: 'OPEN' | 'VALID' | 'DNF' | string | null;
   attackTimeHundredths: number | null;
   attackTimeErrors: number | null;
   relayRaceHundredths: number | null;
@@ -94,6 +95,7 @@ function Contribution({
   scoreHundredths,
   errors,
   mobileLabel,
+  runStatus,
 }: {
   label?: string;
   groupName?: string;
@@ -101,7 +103,9 @@ function Contribution({
   scoreHundredths?: number | null;
   errors?: number | null;
   mobileLabel?: string;
+  runStatus?: RunResultRow['runStatus'];
 }) {
+  const isDnf = runStatus === 'DNF';
   const hasAttackTime = typeof attackTimeHundredths === 'number';
   const penaltyHundredths = hasAttackTime && typeof scoreHundredths === 'number'
     ? Math.max(0, scoreHundredths - attackTimeHundredths)
@@ -124,8 +128,8 @@ function Contribution({
         </div>
       )}
       <div className={`${label || groupName || mobileLabel ? 'mt-1' : ''} flex items-baseline gap-1 whitespace-nowrap font-mono text-sm font-bold text-white`}>
-        <span>{displayedTime}</span>
-        {penaltyHundredths > 0 && (
+        <span>{isDnf ? uiText.publicScoreboard.dnf : displayedTime}</span>
+        {!isDnf && penaltyHundredths > 0 && (
           <span className="text-red-400">+ {formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}</span>
         )}
       </div>
@@ -264,10 +268,10 @@ function ResultsGrid({
                       </h4>
                       <div className="grid min-w-0 grid-cols-2 gap-3 landscape:max-lg:contents min-[1025px]:contents">
                         <div className="min-[1025px]:text-center">
-                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat1Name, uiText.publicScoreboard.attack)} attackTimeHundredths={item.primaryRun?.attackTimeHundredths} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attackShort} />
+                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat1Name, uiText.publicScoreboard.attack)} attackTimeHundredths={item.primaryRun?.attackTimeHundredths} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attackShort} runStatus={item.primaryRun?.runStatus} />
                         </div>
                         <div className="min-[1025px]:text-center">
-                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat1Name, uiText.publicScoreboard.relay)} attackTimeHundredths={item.primaryRun?.relayRaceHundredths} errors={item.primaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relayShort} />
+                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat1Name, uiText.publicScoreboard.relay)} attackTimeHundredths={item.primaryRun?.relayRaceHundredths} errors={item.primaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relayShort} runStatus={item.primaryRun?.runStatus} />
                         </div>
                       </div>
                     </div>
@@ -281,10 +285,10 @@ function ResultsGrid({
                       </h4>
                       <div className="grid min-w-0 grid-cols-2 gap-3 landscape:max-lg:contents min-[1025px]:contents">
                         <div className="min-[1025px]:text-center">
-                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat2Name, uiText.publicScoreboard.attack)} attackTimeHundredths={item.secondaryRun?.attackTimeHundredths} errors={item.secondaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attackShort} />
+                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat2Name, uiText.publicScoreboard.attack)} attackTimeHundredths={item.secondaryRun?.attackTimeHundredths} errors={item.secondaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attackShort} runStatus={item.secondaryRun?.runStatus} />
                         </div>
                         <div className="min-[1025px]:text-center">
-                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat2Name, uiText.publicScoreboard.relay)} attackTimeHundredths={item.secondaryRun?.relayRaceHundredths} errors={item.secondaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relayShort} />
+                          <Contribution label={uiText.publicScoreboard.disciplineLabel(cat2Name, uiText.publicScoreboard.relay)} attackTimeHundredths={item.secondaryRun?.relayRaceHundredths} errors={item.secondaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relayShort} runStatus={item.secondaryRun?.runStatus} />
                         </div>
                       </div>
                     </div>
@@ -307,6 +311,7 @@ function ResultsGrid({
                           scoreHundredths={item.primaryRun?.scoreHundredths}
                           errors={item.primaryRun?.attackTimeErrors}
                           mobileLabel={cat1Name}
+                          runStatus={item.primaryRun?.runStatus}
                         />
                       </div>
                     </div>
@@ -321,6 +326,7 @@ function ResultsGrid({
                           scoreHundredths={item.secondaryRun?.scoreHundredths}
                           errors={item.secondaryRun?.attackTimeErrors}
                           mobileLabel={cat2Name}
+                          runStatus={item.secondaryRun?.runStatus}
                         />
                       </div>
                     </div>
@@ -340,6 +346,7 @@ function ResultsGrid({
                         scoreHundredths={item.primaryRun?.scoreHundredths}
                         errors={item.primaryRun?.attackTimeErrors}
                         mobileLabel={cat1Name}
+                        runStatus={item.primaryRun?.runStatus}
                       />
                     </div>
                     <div className="min-[1025px]:text-center">
@@ -349,6 +356,7 @@ function ResultsGrid({
                         scoreHundredths={item.secondaryRun?.scoreHundredths}
                         errors={item.secondaryRun?.attackTimeErrors}
                         mobileLabel={cat2Name}
+                        runStatus={item.secondaryRun?.runStatus}
                       />
                     </div>
                     <div className="col-span-2 landscape:max-lg:col-span-1 min-[1025px]:col-span-1 min-[1025px]:text-right pt-3 landscape:max-lg:pt-0 mt-1 landscape:max-lg:mt-0 border-t landscape:max-lg:border-none border-neutral-800/80 min-[1025px]:border-none min-[1025px]:pt-0 min-[1025px]:mt-0 flex landscape:max-lg:flex-col landscape:max-lg:items-end justify-between min-[1025px]:justify-end items-center">
@@ -361,10 +369,10 @@ function ResultsGrid({
                 {!isCombined && isSingleRelay && (
                   <div className="col-span-2 landscape:max-lg:col-span-1 grid min-w-0 grid-cols-2 landscape:max-lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 bg-[#181818]/80 rounded-xl p-2 min-[1025px]:contents min-[1025px]:bg-transparent min-[1025px]:p-0">
                     <div className="min-[1025px]:text-center">
-                      <Contribution label={uiText.publicScoreboard.attack} attackTimeHundredths={item.primaryRun?.attackTimeHundredths} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attack} />
+                      <Contribution label={uiText.publicScoreboard.attack} attackTimeHundredths={item.primaryRun?.attackTimeHundredths} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attack} runStatus={item.primaryRun?.runStatus} />
                     </div>
                     <div className="min-[1025px]:text-center">
-                      <Contribution label={uiText.publicScoreboard.relay} attackTimeHundredths={item.primaryRun?.relayRaceHundredths} errors={item.primaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relay} />
+                      <Contribution label={uiText.publicScoreboard.relay} attackTimeHundredths={item.primaryRun?.relayRaceHundredths} errors={item.primaryRun?.relayRaceErrors} mobileLabel={uiText.publicScoreboard.relay} runStatus={item.primaryRun?.runStatus} />
                     </div>
                     <div className="col-span-2 landscape:max-lg:col-span-1 min-[1025px]:col-span-1 min-[1025px]:text-right pt-3 landscape:max-lg:pt-0 mt-1 landscape:max-lg:mt-0 border-t landscape:max-lg:border-none border-neutral-800/80 min-[1025px]:border-none min-[1025px]:pt-0 min-[1025px]:mt-0 flex landscape:max-lg:flex-col landscape:max-lg:items-end justify-between min-[1025px]:justify-end items-center">
                       <span className="text-neutral-500 font-oswald text-xs uppercase min-[1025px]:hidden">{uiText.publicScoreboard.totalTime}</span>
@@ -376,7 +384,7 @@ function ResultsGrid({
                 {!isCombined && !isSingleRelay && (
                   <div className="col-span-2 landscape:max-lg:col-span-1 grid min-w-0 grid-cols-2 gap-2 bg-[#181818]/80 rounded-xl p-2 min-[1025px]:contents min-[1025px]:bg-transparent min-[1025px]:p-0">
                     <div className="min-[1025px]:text-right">
-                      <Contribution label="" attackTimeHundredths={item.primaryRun?.attackTimeHundredths} scoreHundredths={totalScore} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attack} />
+                      <Contribution label="" attackTimeHundredths={item.primaryRun?.attackTimeHundredths} scoreHundredths={totalScore} errors={item.primaryRun?.attackTimeErrors} mobileLabel={uiText.publicScoreboard.attack} runStatus={item.primaryRun?.runStatus} />
                     </div>
                     <div className="hidden min-[1025px]:flex justify-center items-center font-mono text-lg font-bold text-neutral-600">=</div>
                     <div className="col-span-2 landscape:max-lg:col-span-1 min-[1025px]:col-span-1 min-[1025px]:text-right pt-3 landscape:max-lg:pt-0 mt-1 landscape:max-lg:mt-0 border-t landscape:max-lg:border-none border-neutral-800/80 min-[1025px]:border-none min-[1025px]:pt-0 min-[1025px]:mt-0 flex landscape:max-lg:flex-col landscape:max-lg:items-end justify-between min-[1025px]:justify-end items-center">

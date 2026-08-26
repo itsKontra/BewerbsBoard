@@ -15,6 +15,8 @@ export interface OverallRankingRowProps {
   score2Hundredths?: number | null;
   attackTimeHundredths1?: number | null;
   attackTimeHundredths2?: number | null;
+  runStatus1?: string | null;
+  runStatus2?: string | null;
   totalScoreHundredths?: number | null;
   showTotal?: boolean;
   isUpcoming?: boolean;
@@ -30,11 +32,13 @@ function PairingContribution({
   groupName,
   scoreHundredths,
   attackTimeHundredths,
+  runStatus,
   themeStyles,
 }: {
   groupName?: string;
   scoreHundredths?: number | null;
   attackTimeHundredths?: number | null;
+  runStatus?: string | null;
   themeStyles: (typeof TV_PRESENTATION_STYLES)[TvTheme];
 }) {
   return (
@@ -47,6 +51,7 @@ function PairingContribution({
       <TimeWithPenalty
         scoreHundredths={scoreHundredths}
         attackTimeHundredths={attackTimeHundredths}
+        runStatus={runStatus}
         themeStyles={themeStyles}
       />
     </div>
@@ -56,12 +61,15 @@ function PairingContribution({
 function TimeWithPenalty({
   scoreHundredths,
   attackTimeHundredths,
+  runStatus,
   themeStyles,
 }: {
   scoreHundredths?: number | null;
   attackTimeHundredths?: number | null;
+  runStatus?: string | null;
   themeStyles: (typeof TV_PRESENTATION_STYLES)[TvTheme];
 }) {
+  const isDnf = runStatus === 'DNF';
   const hasAttackTime = typeof attackTimeHundredths === 'number';
   const hasScore = typeof scoreHundredths === 'number';
   const penaltyHundredths = hasAttackTime && hasScore
@@ -71,10 +79,10 @@ function TimeWithPenalty({
   return (
     <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.1rem,1.6vw,1.9rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
-        {formatHundredthsToDisplayTime(hasAttackTime ? attackTimeHundredths : scoreHundredths)}
+        {isDnf ? uiText.tv.dnf : formatHundredthsToDisplayTime(hasAttackTime ? attackTimeHundredths : scoreHundredths)}
       </span>
       <span className="w-[5.5ch] text-left">
-        {penaltyHundredths > 0 && (
+        {!isDnf && penaltyHundredths > 0 && (
           <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
           </span>
@@ -94,6 +102,8 @@ export function OverallRankingRow({
   score2Hundredths,
   attackTimeHundredths1,
   attackTimeHundredths2,
+  runStatus1,
+  runStatus2,
   totalScoreHundredths,
   showTotal = true,
   isUpcoming = false,
@@ -157,12 +167,14 @@ export function OverallRankingRow({
             groupName={groupName}
             scoreHundredths={score1Hundredths}
             attackTimeHundredths={attackTimeHundredths1}
+            runStatus={runStatus1}
             themeStyles={themeStyles}
           />
         ) : (
           <TimeWithPenalty
             scoreHundredths={score1Hundredths}
             attackTimeHundredths={attackTimeHundredths1}
+            runStatus={runStatus1}
             themeStyles={themeStyles}
           />
         )}
@@ -175,12 +187,14 @@ export function OverallRankingRow({
             groupName={secondaryGroupName}
             scoreHundredths={score2Hundredths}
             attackTimeHundredths={attackTimeHundredths2}
+            runStatus={runStatus2}
             themeStyles={themeStyles}
           />
         ) : (
           <TimeWithPenalty
             scoreHundredths={score2Hundredths}
             attackTimeHundredths={attackTimeHundredths2}
+            runStatus={runStatus2}
             themeStyles={themeStyles}
           />
         )}
