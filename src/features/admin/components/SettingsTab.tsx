@@ -242,6 +242,7 @@ export function SettingsTab() {
               <div className={`p-5 flex items-center justify-between border-b ${selectedThemeStyle.identityRail} ${selectedThemeStyle.textColor}`}>
                 <div className="flex items-center space-x-4 truncate">
                   <img
+                    data-testid="admin-settings-logo-preview"
                     alt={uiText.admin.settings.logoPreviewAlt}
                     className="max-h-10 w-auto max-w-28 shrink-0 object-contain object-left"
                     src={config.tvPresentation.logoOverride || '/logo.png'}

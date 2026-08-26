@@ -194,4 +194,38 @@ describe('self-hosted configuration and TV routes', () => {
       expect(badUrlRes.status).toBe(400)
     } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
   })
+
+  it('exposes preset logo paths and custom logo endpoints in public tv-state', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-tv-state-logo-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+    try {
+      const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+
+      // 1. Preset logo
+      database.configuration.save({
+        ...database.configuration.read(),
+        tvPresentation: {
+          ...database.configuration.read().tvPresentation,
+          logoOverride: '/logo-options/logo_alt_3.png',
+        },
+      })
+      let tvStateRes = await app.request('/api/public/tv-state')
+      expect(tvStateRes.status).toBe(200)
+      let stateJson = await tvStateRes.json() as any
+      expect(stateJson.tvPresentation.logoUrl).toBe('/logo-options/logo_alt_3.png')
+
+      // 2. Custom logo
+      database.configuration.save({
+        ...database.configuration.read(),
+        tvPresentation: {
+          ...database.configuration.read().tvPresentation,
+          logoOverride: '/api/public/logo?v=1740000000000',
+        },
+      })
+      tvStateRes = await app.request('/api/public/tv-state')
+      expect(tvStateRes.status).toBe(200)
+      stateJson = await tvStateRes.json() as any
+      expect(stateJson.tvPresentation.logoUrl).toBe('/api/public/logo?v=1740000000000')
+    } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
+  })
 })

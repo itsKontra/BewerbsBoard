@@ -288,6 +288,36 @@ describe('TvScoreboard Component', () => {
     expect(logo).toHaveAttribute('src', '/logo.png');
   });
 
+  it('renders bundled preset logos and custom uploaded logo endpoints on the TV Scoreboard', async () => {
+    // 1. Bundled preset logo
+    mockTvMode('ROTATION', {
+      theme: 'broadcast',
+      logoUrl: '/logo-options/logo_alt_1.png',
+      headerLabel: 'Feuerwehr Leistungsbewerb',
+    });
+    const { unmount } = render(<TvScoreboard />);
+
+    let logo = await screen.findByTestId('tv-header-logo');
+    expect(logo).toHaveAttribute('src', '/logo-options/logo_alt_1.png');
+
+    unmount();
+
+    // 2. Custom uploaded logo endpoint with version
+    mockTvMode('ROTATION', {
+      theme: 'broadcast',
+      logoUrl: '/api/public/logo?v=1700000000000',
+      headerLabel: 'Feuerwehr Leistungsbewerb',
+    });
+    render(<TvScoreboard />);
+
+    logo = await screen.findByTestId('tv-header-logo');
+    expect(logo).toHaveAttribute('src', '/api/public/logo?v=1700000000000');
+
+    // 3. Fallback on load error for custom logo
+    fireEvent.error(logo);
+    expect(logo).toHaveAttribute('src', '/logo.png');
+  });
+
   it('places Upcoming Entries after Ranked Results without a separate status strip', async () => {
     render(<TvScoreboard />);
 
