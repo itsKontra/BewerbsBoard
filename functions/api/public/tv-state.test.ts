@@ -157,4 +157,28 @@ describe('Public TV state API (/api/public/tv-state)', () => {
       adminSplashEnabled: true,
     });
   });
+
+  it('projects bundled preset logo paths and custom uploaded logo endpoints', async () => {
+    // 1. Preset logo
+    kvData['tv:presentation'] = JSON.stringify({
+      theme: 'broadcast',
+      logoOverride: '/logo-options/logo_alt_2.png',
+      headerLabel: 'Bezirksbewerb',
+    });
+
+    let response = await onRequestGet(createContext());
+    let data = await response.json();
+    expect(data.tvPresentation.logoUrl).toBe('/logo-options/logo_alt_2.png');
+
+    // 2. Custom uploaded logo endpoint with version parameter
+    kvData['tv:presentation'] = JSON.stringify({
+      theme: 'ceremony',
+      logoOverride: '/api/public/logo?v=1740000000000',
+      headerLabel: 'Landesbewerb',
+    });
+
+    response = await onRequestGet(createContext());
+    data = await response.json();
+    expect(data.tvPresentation.logoUrl).toBe('/api/public/logo?v=1740000000000');
+  });
 });

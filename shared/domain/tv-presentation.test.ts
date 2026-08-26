@@ -2,10 +2,20 @@ import { describe, expect, it } from 'vitest';
 import {
   parseThemeParam,
   normalizeTvPresentation,
+  normalizeLogoOverride,
+  isAllowedLogoMimeType,
+  normalizeStoredCustomLogo,
   normalizeQrCodeEnabled,
   normalizeQrCodeAlwaysVisible,
   normalizeQrCodeIntervalSeconds,
   normalizeQrCodeDurationSeconds,
+  uint8ArrayToBase64,
+  base64ToUint8Array,
+  detectLogoMimeType,
+  sanitizeSvg,
+  validateAndProcessLogo,
+  BUNDLED_LOGO_PRESETS,
+  getLogoPresetId,
 } from './tv-presentation';
 import { getDemoTvState } from '../../src/mock/demo-scoreboard-data';
 
@@ -98,3 +108,182 @@ describe('QR code presentation normalization', () => {
     expect(normalizeTvPresentation({ adminSplashEnabled: true }).adminSplashEnabled).toBe(true);
   });
 });
+
+describe('Logo options and custom logo validation', () => {
+  it('validates allowed image MIME types', () => {
+    expect(isAllowedLogoMimeType('image/png')).toBe(true);
+    expect(isAllowedLogoMimeType('IMAGE/PNG')).toBe(true);
+    expect(isAllowedLogoMimeType('image/jpeg')).toBe(true);
+    expect(isAllowedLogoMimeType('image/webp')).toBe(true);
+    expect(isAllowedLogoMimeType('image/svg+xml')).toBe(true);
+    expect(isAllowedLogoMimeType('image/gif')).toBe(false);
+    expect(isAllowedLogoMimeType('application/pdf')).toBe(false);
+    expect(isAllowedLogoMimeType('text/html')).toBe(false);
+  });
+
+  it('normalizes stored custom logo payload', () => {
+    const valid = normalizeStoredCustomLogo({
+      mimeType: 'image/png',
+      base64Data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      updatedAt: 1700000000000,
+    });
+    expect(valid).toEqual({
+      mimeType: 'image/png',
+      base64Data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      updatedAt: 1700000000000,
+    });
+
+    expect(normalizeStoredCustomLogo(null)).toBeNull();
+    expect(normalizeStoredCustomLogo({})).toBeNull();
+    expect(normalizeStoredCustomLogo({ mimeType: 'image/bmp', base64Data: 'abc' })).toBeNull();
+    expect(normalizeStoredCustomLogo({ mimeType: 'image/png', base64Data: '' })).toBeNull();
+  });
+
+  it('normalizes logo override paths including custom logo endpoint and presets', () => {
+    expect(normalizeLogoOverride('/api/public/logo')).toBe('/api/public/logo');
+    expect(normalizeLogoOverride('/api/public/logo?v=1700000000')).toBe('/api/public/logo?v=1700000000');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_1.png')).toBe('/logo-options/logo_alt_1.png');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_2.png')).toBe('/logo-options/logo_alt_2.png');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_3.png')).toBe('/logo-options/logo_alt_3.png');
+    expect(normalizeLogoOverride('/logo.png')).toBe('/logo.png');
+    expect(normalizeLogoOverride('https://cdn.example.at/logo.png')).toBe('https://cdn.example.at/logo.png');
+    expect(normalizeLogoOverride('//evil.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('/\\evil.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('http://insecure.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('javascript:alert(1)')).toBe('');
+  });
+});
+
+describe('Logo MIME detection and Base64 conversion', () => {
+  it('converts Uint8Array to base64 and back', () => {
+    const original = new Uint8Array([72, 101, 108, 108, 111, 33]); // 'Hello!'
+    const base64 = uint8ArrayToBase64(original);
+    expect(base64).toBe('SGVsbG8h');
+    const back = base64ToUint8Array(base64);
+    expect(Array.from(back)).toEqual(Array.from(original));
+  });
+
+  it('detects MIME types from magic bytes and declared MIME', () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
+    expect(detectLogoMimeType(pngBytes)).toBe('image/png');
+
+    const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
+    expect(detectLogoMimeType(jpegBytes)).toBe('image/jpeg');
+
+    const webpBytes = new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, // RIFF
+      0, 0, 0, 0,
+      0x57, 0x45, 0x42, 0x50, // WEBP
+    ]);
+    expect(detectLogoMimeType(webpBytes)).toBe('image/webp');
+
+    const svgBytes = new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg"><circle/></svg>');
+    expect(detectLogoMimeType(svgBytes, 'image/svg+xml')).toBe('image/svg+xml');
+    expect(detectLogoMimeType(svgBytes)).toBe('image/svg+xml');
+
+    const invalidBytes = new Uint8Array([1, 2, 3, 4]);
+    expect(detectLogoMimeType(invalidBytes)).toBeNull();
+  });
+});
+
+describe('SVG Sanitization', () => {
+  it('strips script tags and inline event handlers from SVG', () => {
+    const maliciousSvg = `
+      <svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)">
+        <script>alert("xss")</script>
+        <circle cx="10" cy="10" r="5" onclick="evil()" />
+        <a xlink:href="javascript:alert(2)"><text>Click</text></a>
+        <foreignObject><body xmlns="http://www.w3.org/1999/xhtml"><script>alert(3)</script></body></foreignObject>
+      </svg>
+    `;
+
+    const clean = sanitizeSvg(maliciousSvg);
+    expect(clean).not.toContain('<script');
+    expect(clean).not.toContain('alert');
+    expect(clean).not.toContain('onload');
+    expect(clean).not.toContain('onclick');
+    expect(clean).not.toContain('foreignObject');
+    expect(clean).not.toContain('javascript:');
+    expect(clean).toContain('<circle');
+    expect(clean).toContain('<svg');
+  });
+
+  it('strips DOCTYPE and XML entities to prevent XXE', () => {
+    const xxeSvg = `<?xml version="1.0"?>
+      <!DOCTYPE svg [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+      <svg xmlns="http://www.w3.org/2000/svg"><text>&xxe;</text></svg>
+    `;
+    const clean = sanitizeSvg(xxeSvg);
+    expect(clean).not.toContain('!DOCTYPE');
+    expect(clean).not.toContain('!ENTITY');
+    expect(clean).toContain('<svg');
+  });
+});
+
+describe('validateAndProcessLogo', () => {
+  it('rejects empty payloads and files > 2MB', () => {
+    expect(validateAndProcessLogo(new Uint8Array([]))).toEqual({
+      success: false,
+      error: 'Die Datei ist leer.',
+    });
+
+    const tooLarge = new Uint8Array(2 * 1024 * 1024 + 1);
+    expect(validateAndProcessLogo(tooLarge)).toEqual({
+      success: false,
+      error: 'Die Datei überschreitet die maximale Größe von 2 MB.',
+    });
+  });
+
+  it('processes valid PNG image bytes', () => {
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
+    const result = validateAndProcessLogo(pngBytes, 'image/png');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.mimeType).toBe('image/png');
+      expect(result.base64Data).toBe(uint8ArrayToBase64(pngBytes));
+    }
+  });
+
+  it('sanitizes and processes SVG image bytes', () => {
+    const rawSvg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><circle cx="5" cy="5" r="5"/></svg>';
+    const svgBytes = new TextEncoder().encode(rawSvg);
+    const result = validateAndProcessLogo(svgBytes, 'image/svg+xml');
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.mimeType).toBe('image/svg+xml');
+      const decoded = new TextDecoder().decode(base64ToUint8Array(result.base64Data));
+      expect(decoded).not.toContain('onload');
+      expect(decoded).toContain('<circle');
+    }
+  });
+});
+
+describe('BUNDLED_LOGO_PRESETS and getLogoPresetId', () => {
+  it('contains standard default and 3 alternative preset paths', () => {
+    expect(BUNDLED_LOGO_PRESETS).toHaveLength(4);
+    expect(BUNDLED_LOGO_PRESETS[0]).toEqual({
+      id: 'default',
+      path: '/logo.png',
+      label: 'Standard',
+      subtitle: 'Offizielles Logo',
+      description: 'Bundesfeuerwehrverband-Wappen',
+    });
+    expect(BUNDLED_LOGO_PRESETS[1].path).toBe('/logo-options/logo_alt_1.png');
+    expect(BUNDLED_LOGO_PRESETS[2].path).toBe('/logo-options/logo_alt_2.png');
+    expect(BUNDLED_LOGO_PRESETS[3].path).toBe('/logo-options/logo_alt_3.png');
+  });
+
+  it('identifies preset id based on logoOverride string', () => {
+    expect(getLogoPresetId('')).toBe('default');
+    expect(getLogoPresetId('   ')).toBe('default');
+    expect(getLogoPresetId('/logo.png')).toBe('default');
+    expect(getLogoPresetId('/logo-options/logo_alt_1.png')).toBe('alt-1');
+    expect(getLogoPresetId('/logo-options/logo_alt_2.png')).toBe('alt-2');
+    expect(getLogoPresetId('/logo-options/logo_alt_3.png')).toBe('alt-3');
+    expect(getLogoPresetId('/api/public/logo')).toBe('custom');
+    expect(getLogoPresetId('/api/public/logo?v=1700000000')).toBe('custom');
+    expect(getLogoPresetId('https://example.com/logo.svg')).toBe('custom');
+    expect(getLogoPresetId('/branding/custom.png')).toBe('custom');
+  });
+});
+

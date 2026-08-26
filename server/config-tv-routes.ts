@@ -3,6 +3,12 @@ import type { SelfHostedDatabase } from './database.js'
 import type { SelfHostedAppEnvironment } from './app.js'
 import { getServerNetworkInfo } from './network-info.js'
 
+import { validateAndProcessLogo } from '../shared/domain/tv-presentation.js'
+import {
+  extractImageBytesFromRequest,
+  fetchAndProcessRemoteLogo,
+} from '../shared/transport/logo-transfer.js'
+
 const TV_MODES = ['ROTATION', 'FIXED', 'MESSAGE', 'WINNERS'] as const
 
 export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironment>, database: SelfHostedDatabase) {
@@ -23,6 +29,121 @@ export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironm
       database.audit.record({ id: crypto.randomUUID(), timestamp: Date.now(), user: actor, action: 'UPDATE', details: { entity: 'CONFIG' } })
     })
     return context.json(configurationPayload(database))
+  })
+  app.get('/api/public/logo', (context) => {
+    const logo = database.configuration.readCustomLogo()
+    if (!logo) {
+      return context.text('Not Found', 404)
+    }
+    const buffer = Buffer.from(logo.base64Data, 'base64')
+    return context.body(buffer, 200, {
+      'Content-Type': logo.mimeType,
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+    })
+  })
+  app.delete('/api/admin/logo', (context) => {
+    const actor = context.get('adminUser') ?? 'system'
+    database.transaction(() => {
+      database.configuration.deleteCustomLogo()
+      const current = database.configuration.read()
+      if (current.tvPresentation.logoOverride.startsWith('/api/public/logo')) {
+        database.configuration.save({
+          ...current,
+          tvPresentation: {
+            ...current.tvPresentation,
+            logoOverride: '',
+          },
+        })
+      }
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        user: actor,
+        action: 'DELETE',
+        details: { entity: 'CUSTOM_LOGO' },
+      })
+    })
+    return context.json({ success: true })
+  })
+  app.post('/api/admin/logo/upload', async (context) => {
+    const extracted = await extractImageBytesFromRequest(context.req.raw)
+    if (extracted.error || !extracted.bytes) {
+      return context.json({ error: extracted.error || 'Fehler beim Lesen der Bilddaten.' }, 400)
+    }
+
+    const processed = validateAndProcessLogo(extracted.bytes, extracted.declaredMime)
+    if (!processed.success) {
+      return context.json({ error: processed.error }, 400)
+    }
+
+    const timestamp = Date.now()
+    const logoUrl = `/api/public/logo?v=${timestamp}`
+    const actor = context.get('adminUser') ?? 'system'
+
+    database.transaction(() => {
+      database.configuration.saveCustomLogo({
+        mimeType: processed.mimeType,
+        base64Data: processed.base64Data,
+        updatedAt: timestamp,
+      })
+      const current = database.configuration.read()
+      database.configuration.save({
+        ...current,
+        tvPresentation: {
+          ...current.tvPresentation,
+          logoOverride: logoUrl,
+        },
+      })
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp,
+        user: actor,
+        action: 'UPDATE',
+        details: { entity: 'CUSTOM_LOGO', operation: 'UPLOAD', mimeType: processed.mimeType, logoUrl },
+      })
+    })
+
+    return context.json({ success: true, logoUrl })
+  })
+  app.post('/api/admin/logo/fetch-url', async (context) => {
+    const body = (await context.req.json().catch(() => null)) as { url?: string } | null
+    if (!body || typeof body.url !== 'string' || !body.url.trim()) {
+      return context.json({ error: 'URL ist erforderlich.' }, 400)
+    }
+
+    const processed = await fetchAndProcessRemoteLogo(body.url)
+    if (!processed.success) {
+      return context.json({ error: processed.error }, 400)
+    }
+
+    const timestamp = Date.now()
+    const logoUrl = `/api/public/logo?v=${timestamp}`
+    const actor = context.get('adminUser') ?? 'system'
+
+    database.transaction(() => {
+      database.configuration.saveCustomLogo({
+        mimeType: processed.mimeType,
+        base64Data: processed.base64Data,
+        updatedAt: timestamp,
+      })
+      const current = database.configuration.read()
+      database.configuration.save({
+        ...current,
+        tvPresentation: {
+          ...current.tvPresentation,
+          logoOverride: logoUrl,
+        },
+      })
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp,
+        user: actor,
+        action: 'UPDATE',
+        details: { entity: 'CUSTOM_LOGO', operation: 'FETCH_URL', sourceUrl: body.url, mimeType: processed.mimeType, logoUrl },
+      })
+    })
+
+    return context.json({ success: true, logoUrl })
   })
   app.get('/api/admin/tv-state', (context) => context.json(database.getTvRuntimeState()))
   app.put('/api/admin/tv-state', async (context) => {

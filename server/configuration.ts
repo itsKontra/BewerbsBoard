@@ -1,4 +1,11 @@
 import type Database from 'better-sqlite3'
+import {
+  type StoredCustomLogo,
+  normalizeStoredCustomLogo,
+  normalizeLogoOverride,
+} from '../shared/domain/tv-presentation.js'
+
+export type { StoredCustomLogo } from '../shared/domain/tv-presentation.js'
 
 export interface TvAnnouncement {
   headline: string
@@ -46,6 +53,9 @@ const DEFAULT_CONFIGURATION: ApplicationConfiguration = {
 export interface ConfigurationRepository {
   read(): ApplicationConfiguration
   save(configuration: ApplicationConfigurationInput): void
+  readCustomLogo(): StoredCustomLogo | null
+  saveCustomLogo(logo: StoredCustomLogo): void
+  deleteCustomLogo(): void
 }
 
 export function createConfigurationRepository(sqlite: Database.Database): ConfigurationRepository {
@@ -77,6 +87,32 @@ export function createConfigurationRepository(sqlite: Database.Database): Config
           upsert.run(key, JSON.stringify(value), updatedAt)
         }
       })()
+    },
+    readCustomLogo: (): StoredCustomLogo | null => {
+      const row = sqlite.prepare('SELECT value_json FROM app_config WHERE key = ?').get('tv:custom-logo') as { value_json: string } | undefined
+      if (!row) {
+        return null
+      }
+      try {
+        return normalizeStoredCustomLogo(JSON.parse(row.value_json))
+      } catch {
+        return null
+      }
+    },
+    saveCustomLogo: (logo: StoredCustomLogo) => {
+      const normalized = normalizeStoredCustomLogo(logo)
+      if (!normalized) {
+        throw new Error('Invalid custom logo payload')
+      }
+      const upsert = sqlite.prepare(`
+        INSERT INTO app_config (key, value_json, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at
+      `)
+      upsert.run('tv:custom-logo', JSON.stringify(normalized), normalized.updatedAt)
+    },
+    deleteCustomLogo: () => {
+      sqlite.prepare('DELETE FROM app_config WHERE key = ?').run('tv:custom-logo')
     },
   }
 }
@@ -140,21 +176,6 @@ function normalizeRankingPageDurationMs(value: unknown, defaultValue: number): n
   return typeof value === 'number' && Number.isInteger(value) && value >= 1000 && value <= 300_000
     ? value
     : defaultValue
-}
-
-function normalizeLogoOverride(value: unknown): string {
-  if (typeof value !== 'string') {
-    return ''
-  }
-  const candidate = value.trim()
-  if (candidate.startsWith('/') && !candidate.startsWith('//')) {
-    return candidate
-  }
-  try {
-    return new URL(candidate).protocol === 'https:' ? candidate : ''
-  } catch {
-    return ''
-  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

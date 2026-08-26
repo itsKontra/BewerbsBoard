@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/d1';
 import { eq } from 'drizzle-orm';
 import * as schema from '../../../shared/db/schema';
+import { normalizeTvPresentation, type StoredCustomLogo } from '../../../shared/domain/tv-presentation';
 import type { EventContext } from './_middleware';
 
 // Re-export EventContext for convenience
@@ -12,6 +13,72 @@ export function getDb(env: any) {
     throw new Error('D1 Database binding missing in environment (checked env.DB and env.bewerbsboard)');
   }
   return drizzle(d1, { schema });
+}
+
+export function getKvStore(env: any) {
+  return env?.KV || env?.APP_CONFIG || null;
+}
+
+export async function saveCustomLogoToEnv(
+  env: any,
+  storedLogo: StoredCustomLogo,
+  logoUrl: string,
+  adminUser: string,
+  auditDetails: Record<string, unknown>,
+  logAuditFn: typeof logAudit = logAudit
+) {
+  const kv = getKvStore(env);
+  if (kv && typeof kv.put === 'function') {
+    await kv.put('tv:custom-logo', JSON.stringify(storedLogo));
+    const storedPresentation = await kv.get('tv:presentation');
+    const presentation = normalizeTvPresentation(storedPresentation);
+    presentation.logoOverride = logoUrl;
+    await kv.put('tv:presentation', JSON.stringify(presentation));
+  }
+
+  let db;
+  try {
+    db = getDb(env);
+    await db
+      .insert(schema.appConfig)
+      .values({
+        key: 'tv:custom-logo',
+        valueJson: JSON.stringify(storedLogo),
+        updatedAt: storedLogo.updatedAt,
+      })
+      .onConflictDoUpdate({
+        target: schema.appConfig.key,
+        set: {
+          valueJson: JSON.stringify(storedLogo),
+          updatedAt: storedLogo.updatedAt,
+        },
+      });
+
+    const presRows = await db
+      .select()
+      .from(schema.appConfig)
+      .where(eq(schema.appConfig.key, 'tv:presentation'))
+      .limit(1);
+
+    if (presRows.length > 0) {
+      const pres = normalizeTvPresentation(JSON.parse(presRows[0].valueJson));
+      pres.logoOverride = logoUrl;
+      await db
+        .update(schema.appConfig)
+        .set({
+          valueJson: JSON.stringify(pres),
+          updatedAt: storedLogo.updatedAt,
+        })
+        .where(eq(schema.appConfig.key, 'tv:presentation'));
+    }
+  } catch {
+    // fallback if DB binding not available
+  }
+
+  if (db) {
+    const action = (auditDetails.action as string) || 'UPLOAD_CUSTOM_LOGO';
+    await logAuditFn(db, adminUser || 'system', action, auditDetails);
+  }
 }
 
 export function jsonResponse(data: any, status = 200) {

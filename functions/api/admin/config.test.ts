@@ -112,6 +112,12 @@ describe('Config API Endpoints & Helpers (/api/admin/config)', () => {
       expect(normalizeLogoOverride('https://cdn.example.at/event/logo.png')).toBe(
         'https://cdn.example.at/event/logo.png',
       );
+      expect(normalizeLogoOverride('/api/public/logo')).toBe('/api/public/logo');
+      expect(normalizeLogoOverride('/api/public/logo?v=1740000000000')).toBe('/api/public/logo?v=1740000000000');
+      expect(normalizeLogoOverride('/logo-options/logo_alt_1.png')).toBe('/logo-options/logo_alt_1.png');
+      expect(normalizeLogoOverride('/logo-options/logo_alt_2.png')).toBe('/logo-options/logo_alt_2.png');
+      expect(normalizeLogoOverride('/logo-options/logo_alt_3.png')).toBe('/logo-options/logo_alt_3.png');
+      expect(normalizeLogoOverride('/logo.png')).toBe('/logo.png');
       expect(normalizeLogoOverride('//cdn.example.at/logo.png')).toBe('');
       expect(normalizeLogoOverride('/\\evil.example/logo.png')).toBe('');
       expect(normalizeLogoOverride('http://cdn.example.at/logo.png')).toBe('');

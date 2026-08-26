@@ -29,6 +29,8 @@ export function ScoreboardHeader({
     >
       <div className="flex min-w-0 items-center gap-8">
         <img
+          key={logoUrl || '/logo.png'}
+          data-testid="tv-header-logo"
           alt={uiText.tv.eventLogoAlt}
           className="max-h-10 w-auto max-w-32 shrink-0 origin-left scale-150 object-contain object-left"
           src={logoUrl || '/logo.png'}
