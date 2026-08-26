@@ -65,4 +65,13 @@ _Avoid_: isBrigadeLevel (use `isBrigadePairing`)
 
 ### Brigade-Combined Pairing Rule
 
-Within a Brigade-Combined Evaluation, entries from each discipline are sorted ascending (lowest score = best), then paired positionally (rank-1 with rank-1, rank-2 with rank-2). Surplus entries when brigade sizes are unequal are dropped without warning.
+Within a Brigade-Combined Evaluation, entries from each discipline are sorted ascending (lowest score = best), then paired positionally (rank-1 with rank-1, rank-2 with rank-2). When Show Single Results is disabled, surplus entries when brigade sizes are unequal are dropped without warning. When Show Single Results is enabled, surplus entries participate in the 1-result tier.
+
+### Show Single Results Option
+
+A configuration toggle on two-discipline evaluations (`categoryTypeId2 !== null`).
+- When **disabled** (`false`): Only competitors with completed results (`VALID` or `DNF`) in both disciplines are visible. Competitors with at least 1 `DNF` receive a score of `-`, receive no numerical rank (`-`), and are positioned after all valid groups.
+- When **enabled** (`true`): Competitors with at least 1 result (`VALID` or `DNF`) in either discipline are visible.
+  1. Competitors with 2 `VALID` results are ranked first by combined score.
+  2. Competitors with 1 `VALID` result follow, ranked by their single discipline score, with a combined score display of `-`.
+  3. Competitors with at least 1 `DNF` are placed last with score `-` and rank `-`.
