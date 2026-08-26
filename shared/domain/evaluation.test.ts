@@ -417,8 +417,8 @@ describe('buildCategoriesResultMap — Integration', () => {
       categoryTypeId: 'cat-1',
       runStatus: 'DNF',
       startOrderPosition: 3,
-      attackTimeHundredths: null,
-      attackTimeErrors: null,
+      attackTimeHundredths: 4700,
+      attackTimeErrors: 0,
       relayRaceHundredths: null,
       relayRaceErrors: null,
       groupName: 'Gruppe 3',
@@ -460,6 +460,11 @@ describe('buildCategoriesResultMap — Integration', () => {
       groupName: 'Gruppe 3',
       scoreHundredths: null,
       rank: null,
+    });
+    expect(cat.rankedResults[2].primaryRun).toMatchObject({
+      runStatus: 'DNF',
+      attackTimeHundredths: 4700,
+      scoreHundredths: null,
     });
   });
 });

@@ -189,6 +189,8 @@ export function RankingCanvas({
                           attackTimeErrors2={row.secondaryRun?.attackTimeErrors ?? null}
                           relayRaceHundredths2={row.secondaryRun?.relayRaceHundredths ?? null}
                           relayRaceErrors2={row.secondaryRun?.relayRaceErrors ?? null}
+                          runStatus1={row.primaryRun?.runStatus}
+                          runStatus2={row.secondaryRun?.runStatus}
                           totalScoreHundredths={row.scoreHundredths}
                           theme={theme}
                           gridColumns={shape.gridColumns}
@@ -229,6 +231,8 @@ export function RankingCanvas({
                           score2Hundredths={row.secondaryRun?.scoreHundredths ?? null}
                           attackTimeHundredths1={row.primaryRun?.attackTimeHundredths ?? null}
                           attackTimeHundredths2={row.secondaryRun?.attackTimeHundredths ?? null}
+                          runStatus1={row.primaryRun?.runStatus}
+                          runStatus2={row.secondaryRun?.runStatus}
                           totalScoreHundredths={row.scoreHundredths}
                           showTotal={shape.isCombinedCategory}
                           theme={theme}

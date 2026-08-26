@@ -3,6 +3,7 @@ import { TV_PRESENTATION_STYLES } from '../../utils/tv-presentation-styles';
 import { formatHundredthsToDisplayTime } from '../../../../../shared/utils/time-parser';
 import { FittedCompetitorIdentity } from '../ui/FittedCompetitorIdentity';
 import { participantLabel } from '../../utils/tv-competitor-helpers';
+import { uiText } from '../../../../ui-text';
 
 export interface CombinedRelayRowProps {
   rank: number | null;
@@ -16,6 +17,8 @@ export interface CombinedRelayRowProps {
   attackTimeErrors2?: number | null;
   relayRaceHundredths2?: number | null;
   relayRaceErrors2?: number | null;
+  runStatus1?: string | null;
+  runStatus2?: string | null;
   totalScoreHundredths?: number | null;
   isUpcoming?: boolean;
   startsUpcomingSection?: boolean;
@@ -29,22 +32,25 @@ export interface CombinedRelayRowProps {
 function CompactTimePenalty({
   timeHundredths,
   errors = 0,
+  runStatus,
   themeStyles,
 }: {
   timeHundredths?: number | null;
   errors?: number | null;
+  runStatus?: string | null;
   themeStyles: (typeof TV_PRESENTATION_STYLES)[TvTheme];
 }) {
+  const isDnf = runStatus === 'DNF';
   const hasTime = typeof timeHundredths === 'number';
   const penalty = (errors ?? 0) * 100;
 
   return (
     <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.7vw,1.8rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
-        {hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '—'}
+        {isDnf ? uiText.tv.dnf : hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '—'}
       </span>
       <span className="w-[3.5ch] text-left">
-        {penalty > 0 && (
+        {!isDnf && penalty > 0 && (
           <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{errors}F
           </span>
@@ -66,6 +72,8 @@ export function CombinedRelayRow({
   attackTimeErrors2 = 0,
   relayRaceHundredths2,
   relayRaceErrors2 = 0,
+  runStatus1,
+  runStatus2,
   totalScoreHundredths,
   isUpcoming = false,
   startsUpcomingSection = false,
@@ -125,6 +133,7 @@ export function CombinedRelayRow({
         <CompactTimePenalty
           timeHundredths={attackTimeHundredths1}
           errors={attackTimeErrors1}
+          runStatus={runStatus1}
           themeStyles={themeStyles}
         />
       </td>
@@ -134,6 +143,7 @@ export function CombinedRelayRow({
         <CompactTimePenalty
           timeHundredths={relayRaceHundredths1}
           errors={relayRaceErrors1}
+          runStatus={runStatus1}
           themeStyles={themeStyles}
         />
       </td>
@@ -143,6 +153,7 @@ export function CombinedRelayRow({
         <CompactTimePenalty
           timeHundredths={attackTimeHundredths2}
           errors={attackTimeErrors2}
+          runStatus={runStatus2}
           themeStyles={themeStyles}
         />
       </td>
@@ -152,6 +163,7 @@ export function CombinedRelayRow({
         <CompactTimePenalty
           timeHundredths={relayRaceHundredths2}
           errors={relayRaceErrors2}
+          runStatus={runStatus2}
           themeStyles={themeStyles}
         />
       </td>

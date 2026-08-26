@@ -129,6 +129,7 @@ export const uiText = {
     relay: 'Staffellauf',
     relayShort: 'SL',
     total: 'Gesamt',
+    dnf: 'DNF',
     defaultDiscipline1: 'Disziplin 1',
     defaultDiscipline2: 'Disziplin 2',
     disciplineLabel: (categoryName: string, discipline: string) => `${categoryName} ${discipline}`,
