@@ -1,6 +1,6 @@
-import { getDb, getKvStore, jsonResponse, jsonError, logAudit, type EventContext } from './utils';
-import { normalizeTvPresentation } from '../../../shared/domain/tv-presentation';
-import * as schema from '../../../shared/db/schema';
+import { getDb, getKvStore, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
+import { normalizeTvPresentation } from '../../../../shared/domain/tv-presentation';
+import * as schema from '../../../../shared/db/schema';
 import { eq } from 'drizzle-orm';
 
 export async function onRequestDelete(context: EventContext) {
@@ -22,6 +22,25 @@ export async function onRequestDelete(context: EventContext) {
     try {
       db = getDb(context.env);
       await db.delete(schema.appConfig).where(eq(schema.appConfig.key, 'tv:custom-logo'));
+      const presRows = await db
+        .select()
+        .from(schema.appConfig)
+        .where(eq(schema.appConfig.key, 'tv:presentation'))
+        .limit(1);
+
+      if (presRows.length > 0) {
+        const pres = normalizeTvPresentation(JSON.parse(presRows[0].valueJson));
+        if (pres.logoOverride.startsWith('/api/public/logo')) {
+          pres.logoOverride = '';
+          await db
+            .update(schema.appConfig)
+            .set({
+              valueJson: JSON.stringify(pres),
+              updatedAt: Date.now(),
+            })
+            .where(eq(schema.appConfig.key, 'tv:presentation'));
+        }
+      }
     } catch {
       // ignore db error if db binding not present
     }

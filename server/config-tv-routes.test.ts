@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createSelfHostedApp } from './app.js'
 import { createDatabase } from './database.js'
 
@@ -96,6 +96,102 @@ describe('self-hosted configuration and TV routes', () => {
       expect(database.configuration.read().tvPresentation.logoOverride).toBe('')
       const deletedCheck = await app.request('/api/public/logo')
       expect(deletedCheck.status).toBe(404)
+    } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
+  })
+
+  it('handles logo upload with validation, sanitization, and persistence', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-upload-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+    try {
+      const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+
+      // 1. Upload valid PNG via multipart form data
+      const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0])
+      const formData = new FormData()
+      formData.append('file', new File([pngBytes], 'logo.png', { type: 'image/png' }))
+
+      const uploadRes = await app.request('/api/admin/logo/upload', {
+        method: 'POST',
+        headers: { 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+        body: formData,
+      })
+      expect(uploadRes.status).toBe(200)
+      const uploadJson = await uploadRes.json() as any
+      expect(uploadJson.success).toBe(true)
+      expect(uploadJson.logoUrl).toMatch(/^\/api\/public\/logo\?v=\d+$/)
+
+      // Verify custom logo is in database
+      const stored = database.configuration.readCustomLogo()
+      expect(stored).not.toBeNull()
+      expect(stored?.mimeType).toBe('image/png')
+      expect(database.configuration.read().tvPresentation.logoOverride).toBe(uploadJson.logoUrl)
+
+      // 2. Upload SVG with malicious tags and verify sanitization
+      const maliciousSvg = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><circle cx="5" cy="5" r="5"/></svg>'
+      const svgFormData = new FormData()
+      svgFormData.append('file', new File([maliciousSvg], 'logo.svg', { type: 'image/svg+xml' }))
+
+      const svgRes = await app.request('/api/admin/logo/upload', {
+        method: 'POST',
+        headers: { 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+        body: svgFormData,
+      })
+      expect(svgRes.status).toBe(200)
+      const svgStored = database.configuration.readCustomLogo()
+      expect(svgStored?.mimeType).toBe('image/svg+xml')
+      const decodedSvg = Buffer.from(svgStored!.base64Data, 'base64').toString('utf-8')
+      expect(decodedSvg).not.toContain('onload')
+      expect(decodedSvg).not.toContain('<script')
+      expect(decodedSvg).toContain('<circle')
+
+      // 3. Reject invalid format
+      const invalidFormData = new FormData()
+      invalidFormData.append('file', new File(['not an image'], 'bad.txt', { type: 'text/plain' }))
+      const invalidRes = await app.request('/api/admin/logo/upload', {
+        method: 'POST',
+        headers: { 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+        body: invalidFormData,
+      })
+      expect(invalidRes.status).toBe(400)
+    } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
+  })
+
+  it('handles remote logo URL fetch and caching', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-fetch-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+    try {
+      const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+
+      // Mock global fetch for remote image
+      const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0])
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'image/png' }),
+        arrayBuffer: () => Promise.resolve(pngBytes.buffer),
+      } as any)
+
+      const fetchRes = await app.request('/api/admin/logo/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+        body: JSON.stringify({ url: 'https://cdn.feuerwehr.at/remote-logo.png' }),
+      })
+      expect(fetchRes.status).toBe(200)
+      const fetchJson = await fetchRes.json() as any
+      expect(fetchJson.success).toBe(true)
+      expect(fetchJson.logoUrl).toMatch(/^\/api\/public\/logo\?v=\d+$/)
+
+      const stored = database.configuration.readCustomLogo()
+      expect(stored?.mimeType).toBe('image/png')
+      fetchSpy.mockRestore()
+
+      // Reject bad URL
+      const badUrlRes = await app.request('/api/admin/logo/fetch-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+        body: JSON.stringify({ url: 'ftp://invalid.com/logo.png' }),
+      })
+      expect(badUrlRes.status).toBe(400)
     } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
   })
 })

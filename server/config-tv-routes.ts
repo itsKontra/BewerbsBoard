@@ -3,6 +3,12 @@ import type { SelfHostedDatabase } from './database.js'
 import type { SelfHostedAppEnvironment } from './app.js'
 import { getServerNetworkInfo } from './network-info.js'
 
+import {
+  extractImageBytesFromRequest,
+  validateAndProcessLogo,
+  fetchAndProcessRemoteLogo,
+} from '../shared/domain/tv-presentation.js'
+
 const TV_MODES = ['ROTATION', 'FIXED', 'MESSAGE', 'WINNERS'] as const
 
 export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironment>, database: SelfHostedDatabase) {
@@ -58,6 +64,86 @@ export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironm
       })
     })
     return context.json({ success: true })
+  })
+  app.post('/api/admin/logo/upload', async (context) => {
+    const extracted = await extractImageBytesFromRequest(context.req.raw)
+    if (extracted.error || !extracted.bytes) {
+      return context.json({ error: extracted.error || 'Fehler beim Lesen der Bilddaten.' }, 400)
+    }
+
+    const processed = validateAndProcessLogo(extracted.bytes, extracted.declaredMime)
+    if (!processed.success) {
+      return context.json({ error: processed.error }, 400)
+    }
+
+    const timestamp = Date.now()
+    const logoUrl = `/api/public/logo?v=${timestamp}`
+    const actor = context.get('adminUser') ?? 'system'
+
+    database.transaction(() => {
+      database.configuration.saveCustomLogo({
+        mimeType: processed.mimeType,
+        base64Data: processed.base64Data,
+        updatedAt: timestamp,
+      })
+      const current = database.configuration.read()
+      database.configuration.save({
+        ...current,
+        tvPresentation: {
+          ...current.tvPresentation,
+          logoOverride: logoUrl,
+        },
+      })
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp,
+        user: actor,
+        action: 'UPDATE',
+        details: { entity: 'CUSTOM_LOGO', operation: 'UPLOAD', mimeType: processed.mimeType, logoUrl },
+      })
+    })
+
+    return context.json({ success: true, logoUrl })
+  })
+  app.post('/api/admin/logo/fetch-url', async (context) => {
+    const body = (await context.req.json().catch(() => null)) as { url?: string } | null
+    if (!body || typeof body.url !== 'string' || !body.url.trim()) {
+      return context.json({ error: 'URL ist erforderlich.' }, 400)
+    }
+
+    const processed = await fetchAndProcessRemoteLogo(body.url)
+    if (!processed.success) {
+      return context.json({ error: processed.error }, 400)
+    }
+
+    const timestamp = Date.now()
+    const logoUrl = `/api/public/logo?v=${timestamp}`
+    const actor = context.get('adminUser') ?? 'system'
+
+    database.transaction(() => {
+      database.configuration.saveCustomLogo({
+        mimeType: processed.mimeType,
+        base64Data: processed.base64Data,
+        updatedAt: timestamp,
+      })
+      const current = database.configuration.read()
+      database.configuration.save({
+        ...current,
+        tvPresentation: {
+          ...current.tvPresentation,
+          logoOverride: logoUrl,
+        },
+      })
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp,
+        user: actor,
+        action: 'UPDATE',
+        details: { entity: 'CUSTOM_LOGO', operation: 'FETCH_URL', sourceUrl: body.url, mimeType: processed.mimeType, logoUrl },
+      })
+    })
+
+    return context.json({ success: true, logoUrl })
   })
   app.get('/api/admin/tv-state', (context) => context.json(database.getTvRuntimeState()))
   app.put('/api/admin/tv-state', async (context) => {
