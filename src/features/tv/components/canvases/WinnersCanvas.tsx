@@ -44,7 +44,9 @@ export function WinnersCanvas({
     );
   }
 
-  const winners = Array.isArray(activeRankedResults) ? activeRankedResults.slice(0, 3) : [];
+  const winners = Array.isArray(activeRankedResults)
+    ? activeRankedResults.filter((result) => result.rank !== null).slice(0, 3)
+    : [];
   const podium = [
     { result: winners[1], fallbackPlace: 2 as const, slot: 'left' },
     { result: winners[0], fallbackPlace: 1 as const, slot: 'center' },

@@ -239,7 +239,7 @@ function ResultsGrid({
           )}
 
           {category.rankedResults.map((item, idx) => {
-            const totalScore = item.scoreHundredths ?? 0;
+            const totalScore = item.scoreHundredths;
             const identity = category.isBrigadePairing
               ? item.fireBrigadeName
               : participantLabel(item);

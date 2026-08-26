@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, act, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { PublicScoreboard, type PublicResultsApiResponse } from './PublicScoreboard';
 
@@ -484,5 +484,159 @@ describe('PublicScoreboard Component', () => {
     expect(screen.getAllByText('ANG')).toHaveLength(2);
     expect(screen.getAllByText('SL')).toHaveLength(2);
     expect(screen.getByText('192,00 s')).toBeInTheDocument();
+  });
+
+  it('renders — for secondary discipline in a Tier-2 combined entry (null secondaryRun)', async () => {
+    const tier2ApiResponse = {
+      ...mockApiResponse,
+      categories: {
+        'gesamt-aktiv': {
+          id: 'gesamt-aktiv',
+          displayName: 'Gesamtwertung Aktiv',
+          publicEnabled: true,
+          order: 1,
+          type: 'combined',
+          showSingleResults: true,
+          categoryTypeName1: 'Bronze',
+          categoryTypeName2: 'Silber',
+          rankedResults: [
+            {
+              rank: 1,
+              groupId: 'g1',
+              groupName: 'Gruppe 1',
+              fireBrigadeId: 'fb1',
+              fireBrigadeName: 'FF Vollstaendig',
+              scoreHundredths: 8738,
+              primaryRun: {
+                entryId: 'e1',
+                scoreHundredths: 4238,
+                attackTimeHundredths: 4238,
+                attackTimeErrors: 0,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+              secondaryRun: {
+                entryId: 'e2',
+                scoreHundredths: 4500,
+                attackTimeHundredths: 4500,
+                attackTimeErrors: 0,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+            },
+            {
+              rank: 2,
+              groupId: 'g2',
+              groupName: 'Gruppe 2',
+              fireBrigadeId: 'fb2',
+              fireBrigadeName: 'FF Einzel',
+              scoreHundredths: null,
+              primaryRun: {
+                entryId: 'e3',
+                scoreHundredths: 3800,
+                attackTimeHundredths: 3800,
+                attackTimeErrors: 0,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+              secondaryRun: null,
+            },
+          ],
+          openEntries: [],
+          dnfEntries: [],
+        },
+      },
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => tier2ApiResponse,
+    } as Response);
+
+    render(<PublicScoreboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('FF Einzel Gruppe 2')).toBeInTheDocument();
+    });
+
+    const einzelRow = screen.getByText('FF Einzel Gruppe 2').closest('[role="row"]');
+    expect(within(einzelRow as HTMLElement).getByText('38,00 s')).toBeInTheDocument();
+    expect(within(einzelRow as HTMLElement).getAllByText('—')).toHaveLength(2);
+  });
+
+  it('renders — in rank badge for a DNF entry with null rank in a combined category', async () => {
+    const dnfApiResponse = {
+      ...mockApiResponse,
+      categories: {
+        'gesamt-aktiv': {
+          id: 'gesamt-aktiv',
+          displayName: 'Gesamtwertung Aktiv',
+          publicEnabled: true,
+          order: 1,
+          type: 'combined',
+          showSingleResults: true,
+          categoryTypeName1: 'Bronze',
+          categoryTypeName2: 'Silber',
+          rankedResults: [
+            {
+              rank: 1,
+              groupId: 'g1',
+              groupName: 'Gruppe 1',
+              fireBrigadeId: 'fb1',
+              fireBrigadeName: 'FF Gut',
+              scoreHundredths: 8738,
+              primaryRun: {
+                entryId: 'e1',
+                scoreHundredths: 4238,
+                attackTimeHundredths: 4238,
+                attackTimeErrors: 0,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+              secondaryRun: {
+                entryId: 'e2',
+                scoreHundredths: 4500,
+                attackTimeHundredths: 4500,
+                attackTimeErrors: 0,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+            },
+            {
+              rank: null,
+              groupId: 'g-dnf',
+              groupName: 'Gruppe DNF',
+              fireBrigadeId: 'fb-dnf',
+              fireBrigadeName: 'FF Ausfall',
+              scoreHundredths: null,
+              primaryRun: {
+                entryId: 'e-dnf',
+                scoreHundredths: null,
+                attackTimeHundredths: null,
+                attackTimeErrors: null,
+                relayRaceHundredths: null,
+                relayRaceErrors: null,
+              },
+            },
+          ],
+          openEntries: [],
+          dnfEntries: [],
+        },
+      },
+    };
+
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => dnfApiResponse,
+    } as Response);
+
+    render(<PublicScoreboard />);
+
+    await waitFor(() => {
+      expect(screen.getByText('FF Ausfall Gruppe DNF')).toBeInTheDocument();
+    });
+
+    const ausfallRow = screen.getByText('FF Ausfall Gruppe DNF').closest('[role="row"]');
+    expect(ausfallRow?.firstElementChild).toHaveTextContent('—');
   });
 });
