@@ -74,20 +74,16 @@ export function LogoSection({
 
   const handleSelectPreset = (presetId: string) => {
     setError(null);
-    if (presetId === 'default') {
-      onChangeLogoOverride('');
-    } else if (presetId === 'alt-1') {
-      onChangeLogoOverride('/logo-options/logo_alt_1.png');
-    } else if (presetId === 'alt-2') {
-      onChangeLogoOverride('/logo-options/logo_alt_2.png');
-    } else if (presetId === 'alt-3') {
-      onChangeLogoOverride('/logo-options/logo_alt_3.png');
-    } else if (presetId === 'custom') {
+    if (presetId === 'custom') {
       if (customLogoPreviewUrl) {
         onChangeLogoOverride(customLogoPreviewUrl);
-      } else if (!logoOverride.startsWith('/api/public/logo') && !logoOverride.startsWith('http') && !logoOverride.startsWith('/')) {
-        // focus custom upload
       }
+      return;
+    }
+
+    const preset = BUNDLED_LOGO_PRESETS.find((p) => p.id === presetId);
+    if (preset) {
+      onChangeLogoOverride(preset.id === 'default' ? '' : preset.path);
     }
   };
 

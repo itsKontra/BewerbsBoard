@@ -3,11 +3,11 @@ import type { SelfHostedDatabase } from './database.js'
 import type { SelfHostedAppEnvironment } from './app.js'
 import { getServerNetworkInfo } from './network-info.js'
 
+import { validateAndProcessLogo } from '../shared/domain/tv-presentation.js'
 import {
   extractImageBytesFromRequest,
-  validateAndProcessLogo,
   fetchAndProcessRemoteLogo,
-} from '../shared/domain/tv-presentation.js'
+} from '../shared/transport/logo-transfer.js'
 
 const TV_MODES = ['ROTATION', 'FIXED', 'MESSAGE', 'WINNERS'] as const
 

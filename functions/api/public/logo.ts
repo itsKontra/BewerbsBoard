@@ -1,16 +1,7 @@
 import { getKvStore, getDb, type EventContext } from '../admin/utils';
-import { normalizeStoredCustomLogo } from '../../../shared/domain/tv-presentation';
+import { normalizeStoredCustomLogo, base64ToUint8Array } from '../../../shared/domain/tv-presentation';
 import * as schema from '../../../shared/db/schema';
 import { eq } from 'drizzle-orm';
-
-function base64ToUint8Array(base64: string): Uint8Array {
-  const binaryString = atob(base64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
-}
 
 export async function onRequestGet(context: EventContext) {
   try {

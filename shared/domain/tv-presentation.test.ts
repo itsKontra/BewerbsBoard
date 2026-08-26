@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   parseThemeParam,
   normalizeTvPresentation,
@@ -14,9 +14,6 @@ import {
   detectLogoMimeType,
   sanitizeSvg,
   validateAndProcessLogo,
-  validateRemoteLogoUrl,
-  fetchAndProcessRemoteLogo,
-  extractImageBytesFromRequest,
   BUNDLED_LOGO_PRESETS,
   getLogoPresetId,
 } from './tv-presentation';
@@ -257,105 +254,6 @@ describe('validateAndProcessLogo', () => {
       const decoded = new TextDecoder().decode(base64ToUint8Array(result.base64Data));
       expect(decoded).not.toContain('onload');
       expect(decoded).toContain('<circle');
-    }
-  });
-});
-
-describe('validateRemoteLogoUrl', () => {
-  it('validates HTTP and HTTPS URLs', () => {
-    expect(validateRemoteLogoUrl('https://example.com/logo.png').isValid).toBe(true);
-    expect(validateRemoteLogoUrl('http://example.com/logo.svg').isValid).toBe(true);
-  });
-
-  it('rejects invalid or dangerous URL protocols', () => {
-    expect(validateRemoteLogoUrl('').isValid).toBe(false);
-    expect(validateRemoteLogoUrl('ftp://example.com/logo.png').isValid).toBe(false);
-    expect(validateRemoteLogoUrl('javascript:alert(1)').isValid).toBe(false);
-    expect(validateRemoteLogoUrl('data:image/png;base64,...').isValid).toBe(false);
-    expect(validateRemoteLogoUrl('not a url').isValid).toBe(false);
-  });
-});
-
-describe('extractImageBytesFromRequest', () => {
-  it('extracts bytes from multipart/form-data', async () => {
-    const formData = new FormData();
-    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], 'logo.png', {
-      type: 'image/png',
-    });
-    formData.append('file', file);
-
-    const request = new Request('http://localhost/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const extracted = await extractImageBytesFromRequest(request);
-    expect(extracted.error).toBeUndefined();
-    expect(extracted.bytes).toBeDefined();
-    expect(extracted.declaredMime).toBe('image/png');
-  });
-
-  it('extracts bytes from JSON payload with base64 data', async () => {
-    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-    const request = new Request('http://localhost/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        base64Data: pngBase64,
-        mimeType: 'image/png',
-      }),
-    });
-
-    const extracted = await extractImageBytesFromRequest(request);
-    expect(extracted.error).toBeUndefined();
-    expect(extracted.bytes).toBeDefined();
-    expect(extracted.declaredMime).toBe('image/png');
-  });
-
-  it('extracts bytes from raw binary request', async () => {
-    const rawBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-    const request = new Request('http://localhost/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'image/png' },
-      body: rawBytes,
-    });
-
-    const extracted = await extractImageBytesFromRequest(request);
-    expect(extracted.error).toBeUndefined();
-    expect(extracted.bytes).toBeDefined();
-    expect(extracted.declaredMime).toBe('image/png');
-  });
-});
-
-describe('fetchAndProcessRemoteLogo', () => {
-  it('downloads, validates, and processes remote PNG logo', async () => {
-    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00]);
-    const mockFetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      headers: new Headers({ 'content-type': 'image/png' }),
-      arrayBuffer: () => Promise.resolve(pngBytes.buffer),
-    } as any);
-
-    const result = await fetchAndProcessRemoteLogo('https://feuerwehr.at/logo.png', mockFetch);
-    expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.mimeType).toBe('image/png');
-      expect(result.base64Data).toBe(uint8ArrayToBase64(pngBytes));
-    }
-  });
-
-  it('handles remote download errors and timeouts', async () => {
-    const notFoundFetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 404,
-      headers: new Headers(),
-    } as any);
-
-    const result = await fetchAndProcessRemoteLogo('https://feuerwehr.at/not-found.png', notFoundFetch);
-    expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.error).toContain('404');
     }
   });
 });
