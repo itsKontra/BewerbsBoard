@@ -17,6 +17,8 @@ import {
   validateRemoteLogoUrl,
   fetchAndProcessRemoteLogo,
   extractImageBytesFromRequest,
+  BUNDLED_LOGO_PRESETS,
+  getLogoPresetId,
 } from './tv-presentation';
 import { getDemoTvState } from '../../src/mock/demo-scoreboard-data';
 
@@ -357,3 +359,33 @@ describe('fetchAndProcessRemoteLogo', () => {
     }
   });
 });
+
+describe('BUNDLED_LOGO_PRESETS and getLogoPresetId', () => {
+  it('contains standard default and 3 alternative preset paths', () => {
+    expect(BUNDLED_LOGO_PRESETS).toHaveLength(4);
+    expect(BUNDLED_LOGO_PRESETS[0]).toEqual({
+      id: 'default',
+      path: '/logo.png',
+      label: 'Standard',
+      subtitle: 'Offizielles Logo',
+      description: 'Bundesfeuerwehrverband-Wappen',
+    });
+    expect(BUNDLED_LOGO_PRESETS[1].path).toBe('/logo-options/logo_alt_1.png');
+    expect(BUNDLED_LOGO_PRESETS[2].path).toBe('/logo-options/logo_alt_2.png');
+    expect(BUNDLED_LOGO_PRESETS[3].path).toBe('/logo-options/logo_alt_3.png');
+  });
+
+  it('identifies preset id based on logoOverride string', () => {
+    expect(getLogoPresetId('')).toBe('default');
+    expect(getLogoPresetId('   ')).toBe('default');
+    expect(getLogoPresetId('/logo.png')).toBe('default');
+    expect(getLogoPresetId('/logo-options/logo_alt_1.png')).toBe('alt-1');
+    expect(getLogoPresetId('/logo-options/logo_alt_2.png')).toBe('alt-2');
+    expect(getLogoPresetId('/logo-options/logo_alt_3.png')).toBe('alt-3');
+    expect(getLogoPresetId('/api/public/logo')).toBe('custom');
+    expect(getLogoPresetId('/api/public/logo?v=1700000000')).toBe('custom');
+    expect(getLogoPresetId('https://example.com/logo.svg')).toBe('custom');
+    expect(getLogoPresetId('/branding/custom.png')).toBe('custom');
+  });
+});
+

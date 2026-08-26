@@ -186,6 +186,27 @@ describe('SettingsTab Component', () => {
           } as Response;
         }
       }
+      if (url === '/api/public/logo') {
+        return { ok: false, status: 404 } as Response;
+      }
+      if (url === '/api/admin/logo/upload' && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({ success: true, logoUrl: '/api/public/logo?v=1700000000000' }),
+        } as Response;
+      }
+      if (url === '/api/admin/logo/fetch-url' && init?.method === 'POST') {
+        return {
+          ok: true,
+          json: async () => ({ success: true, logoUrl: '/api/public/logo?v=1700000000123' }),
+        } as Response;
+      }
+      if (url === '/api/admin/logo' && init?.method === 'DELETE') {
+        return {
+          ok: true,
+          json: async () => ({ success: true }),
+        } as Response;
+      }
       return { ok: false, status: 404 } as Response;
     });
   });
@@ -387,4 +408,83 @@ describe('SettingsTab Component', () => {
     expect(screen.getByText('Daten-Export & Import')).toBeInTheDocument();
     expect(screen.getByText('Bewerbsdaten exportieren (JSON)')).toBeInTheDocument();
   });
+
+  it('updates live header preview immediately when switching logo presets', async () => {
+    render(<SettingsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('FEUERWEHR LEISTUNGSBEWERB 2026')).toBeInTheDocument();
+    });
+
+    const livePreviewImg = screen.getByAltText('Veranstaltungslogo Vorschau');
+    expect(livePreviewImg).toHaveAttribute('src', '/logo.png');
+
+    // Click Alternative 1 preset
+    const alt1Radio = screen.getByRole('radio', { name: 'Alternative 1' });
+    fireEvent.click(alt1Radio);
+
+    expect(livePreviewImg).toHaveAttribute('src', '/logo-options/logo_alt_1.png');
+
+    // Click Alternative 2 preset
+    const alt2Radio = screen.getByRole('radio', { name: 'Alternative 2' });
+    fireEvent.click(alt2Radio);
+
+    expect(livePreviewImg).toHaveAttribute('src', '/logo-options/logo_alt_2.png');
+
+    // Save changes
+    const saveBtn = screen.getByRole('button', { name: /Änderungen speichern/i });
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      const putCall = vi.mocked(globalThis.fetch).mock.calls.find(([, init]) => init?.method === 'PUT');
+      expect(putCall).toBeDefined();
+      const body = JSON.parse(putCall?.[1]?.body as string);
+      expect(body.tvPresentation.logoOverride).toBe('/logo-options/logo_alt_2.png');
+    });
+  });
+
+  it('updates live header preview immediately upon uploading a custom logo', async () => {
+    render(<SettingsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('FEUERWEHR LEISTUNGSBEWERB 2026')).toBeInTheDocument();
+    });
+
+    const livePreviewImg = screen.getByAltText('Veranstaltungslogo Vorschau');
+    const file = new File(['image-bytes'], 'event-wappen.png', { type: 'image/png' });
+    const fileInput = screen.getByLabelText('Eigenes Logo hochladen');
+
+    fireEvent.change(fileInput, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(livePreviewImg).toHaveAttribute('src', '/api/public/logo?v=1700000000000');
+      expect(screen.getByText('Logo erfolgreich hochgeladen und aktiviert!')).toBeInTheDocument();
+    });
+  });
+
+  it('updates live header preview immediately upon fetching a remote logo URL', async () => {
+    render(<SettingsTab />);
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('FEUERWEHR LEISTUNGSBEWERB 2026')).toBeInTheDocument();
+    });
+
+    const livePreviewImg = screen.getByAltText('Veranstaltungslogo Vorschau');
+
+    // Switch to URL tab
+    const urlTabBtn = screen.getByRole('button', { name: /Von URL abrufen/i });
+    fireEvent.click(urlTabBtn);
+
+    const urlInput = screen.getByPlaceholderText('https://beispiel.feuerwehr.at/wappen.png');
+    fireEvent.change(urlInput, { target: { value: 'https://feuerwehr.at/logo.svg' } });
+
+    const fetchBtn = screen.getByRole('button', { name: /Herunterladen & Speichern/i });
+    fireEvent.click(fetchBtn);
+
+    await waitFor(() => {
+      expect(livePreviewImg).toHaveAttribute('src', '/api/public/logo?v=1700000000123');
+      expect(screen.getByText(/Logo erfolgreich von URL heruntergeladen/i)).toBeInTheDocument();
+    });
+  });
 });
+

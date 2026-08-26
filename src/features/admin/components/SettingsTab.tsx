@@ -3,6 +3,7 @@ import { DEFAULT_TV_PRESENTATION, TV_THEMES, type TvPresentationConfig } from '.
 import { TV_PRESENTATION_STYLES } from '../../tv/utils/tv-presentation-styles';
 import { uiText } from '../../../ui-text';
 import { DataManagementSection } from './settings/DataManagementSection';
+import { LogoSection } from './settings/LogoSection';
 import { AdminCard } from './AdminCard';
 import { Sliders, QrCode, Database, CheckCircle2, AlertTriangle, X, Loader2, Copy, ExternalLink, Eye, Tv } from 'lucide-react';
 
@@ -286,48 +287,48 @@ export function SettingsTab() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 @md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
-              <div>
-                <label htmlFor="tvHeaderLabel" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                  {uiText.admin.settings.tvHeader}
-                </label>
-                <input
-                  id="tvHeaderLabel"
-                  type="text"
-                  value={config.tvPresentation.headerLabel}
-                  onChange={(event) => setConfig({
-                    ...config,
-                    tvPresentation: { ...config.tvPresentation, headerLabel: event.target.value },
-                  })}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none shadow-sm"
-                  placeholder={uiText.admin.settings.tvHeaderPlaceholder}
-                />
-                <p className="mt-1.5 text-[11px] text-slate-400">
-                  {uiText.admin.settings.tvHeaderHelp}
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="tvLogoOverride" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
-                  {uiText.admin.settings.logoOverride}
-                </label>
-                <input
-                  id="tvLogoOverride"
-                  inputMode="url"
-                  type="text"
-                  value={config.tvPresentation.logoOverride}
-                  onChange={(event) => setConfig({
-                    ...config,
-                    tvPresentation: { ...config.tvPresentation, logoOverride: event.target.value },
-                  })}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none shadow-sm"
-                  placeholder={uiText.admin.settings.logoPlaceholder}
-                />
-                <p className="mt-1.5 text-[11px] text-slate-400">
-                  {uiText.admin.settings.logoHelp} <code className="text-slate-600 font-mono">/logo.png</code>.
-                </p>
-              </div>
+            <div className="pt-4 border-t border-slate-100">
+              <label htmlFor="tvHeaderLabel" className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-700">
+                {uiText.admin.settings.tvHeader}
+              </label>
+              <input
+                id="tvHeaderLabel"
+                type="text"
+                value={config.tvPresentation.headerLabel}
+                onChange={(event) => setConfig({
+                  ...config,
+                  tvPresentation: { ...config.tvPresentation, headerLabel: event.target.value },
+                })}
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-800 transition-all focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 focus:outline-none shadow-sm"
+                placeholder={uiText.admin.settings.tvHeaderPlaceholder}
+              />
+              <p className="mt-1.5 text-[11px] text-slate-400">
+                {uiText.admin.settings.tvHeaderHelp}
+              </p>
             </div>
+
+            {/* Event Logo & Branding Presets / Custom Upload */}
+            <LogoSection
+              logoOverride={config.tvPresentation.logoOverride}
+              onChangeLogoOverride={(newLogoOverride) =>
+                setConfig((prev) => ({
+                  ...prev,
+                  tvPresentation: {
+                    ...prev.tvPresentation,
+                    logoOverride: newLogoOverride,
+                  },
+                }))
+              }
+              onSyncSavedLogoOverride={(savedLogoOverride) =>
+                setSavedConfig((prev) => ({
+                  ...prev,
+                  tvPresentation: {
+                    ...prev.tvPresentation,
+                    logoOverride: savedLogoOverride,
+                  },
+                }))
+              }
+            />
 
             {/* Visual Theme Selection */}
             <fieldset className="pt-4 border-t border-slate-100">

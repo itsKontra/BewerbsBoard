@@ -24,6 +24,57 @@ export const DEFAULT_TV_PRESENTATION: TvPresentationConfig = {
   adminSplashEnabled: true,
 };
 
+export interface LogoPresetDefinition {
+  id: string;
+  path: string;
+  label: string;
+  subtitle: string;
+  description: string;
+}
+
+export const BUNDLED_LOGO_PRESETS: readonly LogoPresetDefinition[] = [
+  {
+    id: 'default',
+    path: '/logo.png',
+    label: 'Standard',
+    subtitle: 'Offizielles Logo',
+    description: 'Bundesfeuerwehrverband-Wappen',
+  },
+  {
+    id: 'alt-1',
+    path: '/logo-options/logo_alt_1.png',
+    label: 'Alternative 1',
+    subtitle: 'Design 1',
+    description: 'Korpsabzeichen Rot / Gold',
+  },
+  {
+    id: 'alt-2',
+    path: '/logo-options/logo_alt_2.png',
+    label: 'Alternative 2',
+    subtitle: 'Design 2',
+    description: 'Bundeswappen Emblem',
+  },
+  {
+    id: 'alt-3',
+    path: '/logo-options/logo_alt_3.png',
+    label: 'Alternative 3',
+    subtitle: 'Design 3',
+    description: 'Landesfeuerwehr Wappen',
+  },
+] as const;
+
+export function getLogoPresetId(logoOverride: string): string {
+  const trimmed = (logoOverride || '').trim();
+  if (!trimmed || trimmed === '/logo.png') {
+    return 'default';
+  }
+  const found = BUNDLED_LOGO_PRESETS.find((p) => p.path === trimmed);
+  if (found) {
+    return found.id;
+  }
+  return 'custom';
+}
+
 export const ALLOWED_LOGO_MIME_TYPES = [
   'image/png',
   'image/jpeg',
