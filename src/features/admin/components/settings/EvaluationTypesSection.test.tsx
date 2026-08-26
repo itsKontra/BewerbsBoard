@@ -24,6 +24,7 @@ describe('EvaluationTypesSection', () => {
       hasRelayRace2: false,
       excludeRelayRace: false,
       isBrigadePairing: false,
+      showSingleResults: false,
       public: true,
       publicTv: true,
       displayDurationSeconds: 10,
@@ -40,6 +41,7 @@ describe('EvaluationTypesSection', () => {
       hasRelayRace2: false,
       excludeRelayRace: false,
       isBrigadePairing: true,
+      showSingleResults: true,
       public: true,
       publicTv: false,
       displayDurationSeconds: 15,
@@ -190,6 +192,7 @@ describe('EvaluationTypesSection', () => {
           categoryTypeId2: 'cat-3',
           excludeRelayRace: false,
           isBrigadePairing: true,
+          showSingleResults: false,
           public: true,
           publicTv: true,
           displayDurationSeconds: 10,
@@ -199,5 +202,120 @@ describe('EvaluationTypesSection', () => {
     });
 
     expect(mockOnRefresh).toHaveBeenCalled();
+  });
+
+  it('disables Einzelergebnisse checkbox when Category 2 is not set', () => {
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    const checkbox = document.getElementById('newEvaluationShowSingleResults') as HTMLInputElement;
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('enables and resets Einzelergebnisse checkbox based on Category 2 selection', () => {
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    const cat2Select = screen.getByLabelText(/Kategorie 2/i) as HTMLSelectElement;
+    const checkbox = document.getElementById('newEvaluationShowSingleResults') as HTMLInputElement;
+
+    // Select cat-2 (same class) → enabled
+    fireEvent.change(cat2Select, { target: { value: 'cat-2' } });
+    expect(checkbox.disabled).toBe(false);
+
+    // Check it
+    fireEvent.click(checkbox);
+    expect(checkbox.checked).toBe(true);
+
+    // Clear Category 2 → disabled again and unchecked
+    fireEvent.change(cat2Select, { target: { value: '' } });
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+  });
+
+  it('submits showSingleResults=true in payload when checkbox is checked', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 'eval-4',
+        name: 'Kombiwertung Einzelresultate',
+        categoryTypeId1: 'cat-1',
+        categoryTypeId2: 'cat-2',
+        isBrigadePairing: false,
+        showSingleResults: true,
+        public: true,
+        publicTv: true,
+      }),
+    } as any);
+
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    const nameInput = screen.getByLabelText(/Wertungsname \*/i);
+    const cat2Select = screen.getByLabelText(/Kategorie 2/i);
+    const showSingleCheckbox = document.getElementById('newEvaluationShowSingleResults') as HTMLInputElement;
+    const submitBtn = screen.getByRole('button', { name: /\+ Wertung anlegen/i });
+
+    fireEvent.change(nameInput, { target: { value: 'Kombiwertung Einzelresultate' } });
+    fireEvent.change(cat2Select, { target: { value: 'cat-2' } });
+    fireEvent.click(showSingleCheckbox);
+    fireEvent.click(submitBtn);
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/admin/evaluation-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Kombiwertung Einzelresultate',
+          categoryTypeId1: 'cat-1',
+          categoryTypeId2: 'cat-2',
+          excludeRelayRace: false,
+          isBrigadePairing: false,
+          showSingleResults: true,
+          public: true,
+          publicTv: true,
+          displayDurationSeconds: 10,
+          order: 3,
+        }),
+      });
+    });
+  });
+
+  it('shows Einzelergebnisse badge in composition column for evaluations with showSingleResults=true', () => {
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    // eval-2 has showSingleResults: true and categoryTypeId2 set → badge shown
+    expect(screen.getAllByText('Einzelergebnisse').length).toBeGreaterThan(0);
+
+    // eval-1 has showSingleResults: false → badge NOT shown for that row
+    // Badge count should equal exactly 1 (only eval-2)
+    expect(screen.getAllByText('Einzelergebnisse')).toHaveLength(1);
   });
 });

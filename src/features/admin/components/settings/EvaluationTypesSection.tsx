@@ -19,6 +19,7 @@ interface EvaluationFormData {
   categoryTypeId2: string;
   excludeRelayRace: boolean;
   isBrigadePairing: boolean;
+  showSingleResults: boolean;
   displayDurationSeconds: number;
 }
 
@@ -28,6 +29,7 @@ const INITIAL_FORM_DATA: EvaluationFormData = {
   categoryTypeId2: '',
   excludeRelayRace: false,
   isBrigadePairing: false,
+  showSingleResults: false,
   displayDurationSeconds: 10,
 };
 
@@ -76,6 +78,7 @@ export function EvaluationTypesSection({
         categoryTypeId2?: string | null;
         excludeRelayRace: boolean;
         isBrigadePairing: boolean;
+        showSingleResults: boolean;
         public: boolean;
         publicTv: boolean;
         displayDurationSeconds: number;
@@ -87,6 +90,7 @@ export function EvaluationTypesSection({
         excludeRelayRace: formData.excludeRelayRace,
         // Force Wehr-Paarung when cross-class (Issue 04)
         isBrigadePairing: cat2Id ? (crossClass || formData.isBrigadePairing) : false,
+        showSingleResults: cat2Id ? formData.showSingleResults : false,
         public: true,
         publicTv: true,
         displayDurationSeconds: Number(formData.displayDurationSeconds) || 10,
@@ -314,6 +318,7 @@ export function EvaluationTypesSection({
                   ...prev,
                   categoryTypeId2: cat2Val,
                   isBrigadePairing: cat2Val.trim() ? prev.isBrigadePairing : false,
+                  showSingleResults: cat2Val.trim() ? prev.showSingleResults : false,
                 }));
               }}
               className="w-full bg-white border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2 text-sm text-slate-800 focus:outline-none shadow-sm transition-all"
@@ -380,6 +385,33 @@ export function EvaluationTypesSection({
                   {text.pairingRequired}
                 </span>
               )}
+            </label>
+
+            <label
+              className={`flex items-center space-x-2 select-none ${
+                formData.categoryTypeId2.trim() ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+              }`}
+            >
+              <input
+                id="newEvaluationShowSingleResults"
+                type="checkbox"
+                disabled={!formData.categoryTypeId2.trim()}
+                checked={formData.categoryTypeId2.trim() ? formData.showSingleResults : false}
+                onChange={(e) => {
+                  if (formData.categoryTypeId2.trim()) {
+                    setFormData((prev) => ({ ...prev, showSingleResults: e.target.checked }));
+                  }
+                }}
+                className="w-4 h-4 accent-sky-600 rounded bg-white border-slate-300 cursor-pointer disabled:cursor-not-allowed"
+              />
+              <span
+                className={`text-xs font-semibold ${
+                  formData.categoryTypeId2.trim() ? 'text-sky-800' : 'text-slate-400'
+                }`}
+                title={text.showSingleResultsTooltip}
+              >
+                {text.showSingleResults}
+              </span>
             </label>
 
             <div className="flex items-center space-x-2">
@@ -513,6 +545,11 @@ export function EvaluationTypesSection({
                         {Boolean(evalItem.isBrigadePairing) && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 border border-amber-300 text-amber-900" title={text.pairingTitle}>
                             {text.pairingBadge}
+                          </span>
+                        )}
+                        {Boolean(evalItem.showSingleResults) && evalItem.categoryTypeId2 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 border border-sky-300 text-sky-900" title={text.showSingleResultsTooltip}>
+                            {text.showSingleResultsBadge}
                           </span>
                         )}
                         {evalItem.excludeRelayRace ? (
