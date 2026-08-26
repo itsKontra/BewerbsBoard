@@ -15,6 +15,103 @@ function seedCatalog(database: ReturnType<typeof createDatabase>) {
 }
 
 describe('self-hosted scoring and public-results routes', () => {
+  it('normalizes Show Single Results across evaluation creation, update, and retrieval', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-evaluation-options-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+    seedCatalog(database)
+    const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+    const headers = { 'Content-Type': 'application/json', 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' }
+
+    try {
+      const invalidCreate = await app.request('/api/admin/evaluation-types', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          id: 'eval-single-results-invalid',
+          name: 'Invalid Single Results',
+          categoryTypeId1: 'ct-bronze-aktiv',
+          categoryTypeId2: null,
+          showSingleResults: true,
+        }),
+      })
+      expect(invalidCreate.status).toBe(201)
+      await expect(invalidCreate.json()).resolves.toMatchObject({
+        categoryTypeId2: null,
+        showSingleResults: false,
+      })
+
+      const combinedCreate = await app.request('/api/admin/evaluation-types', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          id: 'eval-single-results-combined',
+          name: 'Combined Single Results',
+          categoryTypeId1: 'ct-bronze-aktiv',
+          categoryTypeId2: 'ct-silber-aktiv',
+          showSingleResults: true,
+        }),
+      })
+      expect(combinedCreate.status).toBe(201)
+      await expect(combinedCreate.json()).resolves.toMatchObject({
+        categoryTypeId2: 'ct-silber-aktiv',
+        showSingleResults: true,
+      })
+
+      const disabled = await app.request('/api/admin/evaluation-types/eval-single-results-combined', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ showSingleResults: false }),
+      })
+      expect(disabled.status).toBe(200)
+      await expect(disabled.json()).resolves.toMatchObject({
+        categoryTypeId2: 'ct-silber-aktiv',
+        showSingleResults: false,
+      })
+
+      const enabled = await app.request('/api/admin/evaluation-types/eval-single-results-combined', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ showSingleResults: true }),
+      })
+      expect(enabled.status).toBe(200)
+      await expect(enabled.json()).resolves.toMatchObject({
+        categoryTypeId2: 'ct-silber-aktiv',
+        showSingleResults: true,
+      })
+
+      const listedBeforeUpdate = await app.request('/api/admin/evaluation-types', { headers })
+      await expect(listedBeforeUpdate.json()).resolves.toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          id: 'eval-single-results-combined',
+          showSingleResults: true,
+        }),
+      ]))
+
+      const cleared = await app.request('/api/admin/evaluation-types/eval-single-results-combined', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ categoryTypeId2: null, showSingleResults: true }),
+      })
+      expect(cleared.status).toBe(200)
+      await expect(cleared.json()).resolves.toMatchObject({
+        categoryTypeId2: null,
+        showSingleResults: false,
+      })
+
+      const listedAfterUpdate = await app.request('/api/admin/evaluation-types', { headers })
+      await expect(listedAfterUpdate.json()).resolves.toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          id: 'eval-single-results-combined',
+          categoryTypeId2: null,
+          showSingleResults: false,
+        }),
+      ]))
+    } finally {
+      database.close()
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   it('scores, compacts and ranks category entries while atomically auditing each mutation', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'scoreboard-scoring-'))
     const database = createDatabase(join(directory, 'scoreboard.sqlite'))

@@ -87,6 +87,7 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
       const id = (typeof body.id === 'string' && body.id.trim()) ? body.id.trim() : crypto.randomUUID()
       const excludeRelayRace = typeof body.excludeRelayRace === 'boolean' ? body.excludeRelayRace : false
       const isBrigadePairing = Boolean(categoryTypeId2) && typeof body.isBrigadePairing === 'boolean' ? body.isBrigadePairing : false
+      const showSingleResults = Boolean(categoryTypeId2) && typeof body.showSingleResults === 'boolean' ? body.showSingleResults : false
       const publicVisibility = typeof body.public === 'boolean' ? body.public : true
       const publicTvVisibility = typeof body.publicTv === 'boolean' ? body.publicTv : (typeof body.public_tv === 'boolean' ? body.public_tv : true)
       const displayDurationSeconds = typeof body.displayDurationSeconds === 'number' && Number.isInteger(body.displayDurationSeconds) && body.displayDurationSeconds > 0
@@ -95,7 +96,7 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
 
       const evaluationType = database.catalog.createEvaluationType({
         id, name, categoryTypeId1, categoryTypeId2,
-        excludeRelayRace, isBrigadePairing,
+        excludeRelayRace, isBrigadePairing, showSingleResults,
         public: publicVisibility, publicTv: publicTvVisibility,
         displayDurationSeconds, order,
       })
@@ -117,6 +118,8 @@ export function registerScoringRoutes(app: Hono<SelfHostedAppEnvironment>, datab
       if (typeof body.categoryTypeId1 === 'string' && body.categoryTypeId1.trim()) payload.categoryTypeId1 = body.categoryTypeId1.trim()
       if ('categoryTypeId2' in body) payload.categoryTypeId2 = nonEmpty(body.categoryTypeId2) ? body.categoryTypeId2 as string : null
       if (typeof body.excludeRelayRace === 'boolean') payload.excludeRelayRace = body.excludeRelayRace
+      if (typeof body.isBrigadePairing === 'boolean') payload.isBrigadePairing = body.isBrigadePairing
+      if (typeof body.showSingleResults === 'boolean') payload.showSingleResults = body.showSingleResults
       if (typeof body.public === 'boolean') payload.public = body.public
       if (typeof body.publicTv === 'boolean') payload.publicTv = body.publicTv
       if (typeof body.public_tv === 'boolean') payload.publicTv = body.public_tv

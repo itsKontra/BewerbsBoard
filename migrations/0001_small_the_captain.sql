@@ -1,0 +1,1 @@
+ALTER TABLE `evaluation_types` ADD `show_single_results` integer DEFAULT false NOT NULL;

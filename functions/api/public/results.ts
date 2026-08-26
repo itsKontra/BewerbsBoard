@@ -78,6 +78,7 @@ export async function onRequestGet(context: EventContext) {
         competitionClassId2: cat2?.competitionClassId ?? null,
         excludeRelayRace: Boolean(et.excludeRelayRace || (et as any).exclude_relay_race),
         isBrigadePairing: Boolean(et.isBrigadePairing || (et as any).is_brigade_pairing),
+        showSingleResults: Boolean((et as any).showSingleResults || (et as any).show_single_results),
         public: et.public ?? true,
         publicTv: et.public_tv ?? true,
         displayDurationSeconds: et.displayDurationSeconds ?? 10,

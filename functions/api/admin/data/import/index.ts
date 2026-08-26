@@ -94,6 +94,9 @@ export async function onRequestPost(context: EventContext) {
     // 5. evaluation_types
     for (const item of data.evaluationTypes) {
       const publicTv = item.publicTv !== undefined ? item.publicTv : item.public_tv;
+      const showSingleResults = item.showSingleResults !== undefined
+        ? item.showSingleResults
+        : Boolean(item.show_single_results);
       operations.push(
         db.insert(schema.evaluationTypes)
           .values({
@@ -103,6 +106,7 @@ export async function onRequestPost(context: EventContext) {
             categoryTypeId2: item.categoryTypeId2 ?? null,
             excludeRelayRace: item.excludeRelayRace,
             isBrigadePairing: item.isBrigadePairing,
+            showSingleResults,
             public: item.public !== false,
             public_tv: publicTv !== false,
             displayDurationSeconds: item.displayDurationSeconds ?? 10,
@@ -116,6 +120,7 @@ export async function onRequestPost(context: EventContext) {
               categoryTypeId2: item.categoryTypeId2 ?? null,
               excludeRelayRace: item.excludeRelayRace,
               isBrigadePairing: item.isBrigadePairing,
+              showSingleResults,
               public: item.public !== false,
               public_tv: publicTv !== false,
               displayDurationSeconds: item.displayDurationSeconds ?? 10,

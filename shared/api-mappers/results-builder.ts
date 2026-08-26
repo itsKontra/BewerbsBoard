@@ -21,6 +21,8 @@ export interface EvaluationTypeView {
   excludeRelayRace: boolean;
   /** Selects Brigade-Combined Evaluation mode. See CONTEXT.md. */
   isBrigadePairing: boolean;
+  /** When true, allows partial (1-result) and DNF competitors to be displayed in combined evaluations. */
+  showSingleResults?: boolean;
   public?: boolean;
   publicTv?: boolean;
   displayDurationSeconds?: number;
@@ -55,13 +57,13 @@ export interface RunResultPayload {
 }
 
 export interface RankedResultPayload {
-  rank?: number;
+  rank: number | null;
   groupId: string;
   groupName: string;
   secondaryGroupName?: string;
   fireBrigadeId: string;
   fireBrigadeName: string;
-  scoreHundredths: number;
+  scoreHundredths: number | null;
   primaryRun: RunResultPayload;
   secondaryRun?: RunResultPayload | null;
 }
@@ -91,6 +93,7 @@ export interface CategoryResultPayload {
   order: number;
   type: 'standard' | 'combined';
   isBrigadePairing: boolean;
+  showSingleResults?: boolean;
   hasRelayRace1: boolean;
   hasRelayRace2: boolean;
   excludeRelayRace: boolean;
@@ -133,6 +136,7 @@ export function buildCategoriesResultMap(
       hasRelayRace2,
       excludeRelayRace,
       isBrigadePairing: evalType.isBrigadePairing ?? false,
+      showSingleResults: evalType.showSingleResults ?? false,
     };
 
     // Maps view entries to the domain shape. scoreHundredths is intentionally omitted:
@@ -164,47 +168,47 @@ export function buildCategoriesResultMap(
 
     const rankedResults: RankedResultPayload[] = [];
     for (const result of evalResults) {
-      const e1 = byEntryId.get(result.entry1Id);
-      if (!e1) {
+      const e1 = result.entry1Id ? byEntryId.get(result.entry1Id) : undefined;
+      const e2 = result.entry2Id ? byEntryId.get(result.entry2Id) : undefined;
+      if (!e1 && !e2) {
         // Should never happen if allEntries is consistent with what was passed to toDomain.
-        console.error(`[results-builder] entry not found in map: id=${result.entry1Id} eval=${evalType.id}`);
+        console.error(`[results-builder] entry not found in map: id1=${result.entry1Id} id2=${result.entry2Id} eval=${evalType.id}`);
         continue;
       }
-      const e2 = result.entry2Id ? byEntryId.get(result.entry2Id) : undefined;
 
       const primaryRun: RunResultPayload = {
-        entryId: result.entry1Id,
-        attackTimeHundredths: e1.attackTimeHundredths ?? null,
-        attackTimeErrors: e1.attackTimeErrors ?? null,
-        relayRaceHundredths: e1.relayRaceHundredths ?? null,
-        relayRaceErrors: e1.relayRaceErrors ?? null,
+        entryId: result.entry1Id ?? '',
+        attackTimeHundredths: e1?.attackTimeHundredths ?? null,
+        attackTimeErrors: e1?.attackTimeErrors ?? null,
+        relayRaceHundredths: e1?.relayRaceHundredths ?? null,
+        relayRaceErrors: e1?.relayRaceErrors ?? null,
         scoreHundredths: result.score1Hundredths,
       };
 
       let secondaryRun: RunResultPayload | null = null;
-      if (result.entry2Id && e2) {
+      if (isCombined) {
         secondaryRun = {
-          entryId: result.entry2Id,
-          attackTimeHundredths: e2.attackTimeHundredths ?? null,
-          attackTimeErrors: e2.attackTimeErrors ?? null,
-          relayRaceHundredths: e2.relayRaceHundredths ?? null,
-          relayRaceErrors: e2.relayRaceErrors ?? null,
-          scoreHundredths: result.score2Hundredths ?? null,
+          entryId: result.entry2Id ?? '',
+          attackTimeHundredths: e2?.attackTimeHundredths ?? null,
+          attackTimeErrors: e2?.attackTimeErrors ?? null,
+          relayRaceHundredths: e2?.relayRaceHundredths ?? null,
+          relayRaceErrors: e2?.relayRaceErrors ?? null,
+          scoreHundredths: result.score2Hundredths,
         };
       }
 
       rankedResults.push({
-        rank: result.rank,
+        rank: result.rank ?? null,
         groupId: result.groupId,
-        groupName: e1.groupName,
+        groupName: e1?.groupName || e2?.groupName || '',
         ...(evalType.isBrigadePairing && e2
           ? { secondaryGroupName: e2.groupName }
           : {}),
         // fireBrigadeId is resolved by the evaluation engine (handles brigade-level pairing);
         // fall back to the view entry only if the engine did not resolve one.
-        fireBrigadeId: result.fireBrigadeId || e1.fireBrigadeId || '',
+        fireBrigadeId: result.fireBrigadeId || e1?.fireBrigadeId || e2?.fireBrigadeId || '',
         // fireBrigadeName is not part of the domain model — always read from the view layer.
-        fireBrigadeName: e1.fireBrigadeName || e2?.fireBrigadeName || '',
+        fireBrigadeName: e1?.fireBrigadeName || e2?.fireBrigadeName || '',
         scoreHundredths: result.combinedScoreHundredths,
         primaryRun,
         secondaryRun,
@@ -249,6 +253,7 @@ export function buildCategoriesResultMap(
       order: evalType.order ?? 99,
       type: isCombined ? 'combined' : 'standard',
       isBrigadePairing: evalType.isBrigadePairing,
+      showSingleResults: evalType.showSingleResults ?? false,
       hasRelayRace1,
       hasRelayRace2,
       excludeRelayRace,

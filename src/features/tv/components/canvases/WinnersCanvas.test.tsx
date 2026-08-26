@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { WinnersCanvas } from './WinnersCanvas';
 import type { CategoryResultData } from '../../../public/components/PublicScoreboard';
@@ -104,5 +104,40 @@ describe('WinnersCanvas', () => {
     );
 
     expect(screen.getByText('Noch keine Ergebnisse in dieser Kategorie')).toBeInTheDocument();
+  });
+
+  it('shows only 2 podium entries when 3rd slot is a DNF result with null rank', () => {
+    const twoRankedPlusDnf: CategoryResultData['rankedResults'] = [
+      mockCategory.rankedResults[0],
+      mockCategory.rankedResults[1],
+      {
+        rank: null,
+        groupId: 'g-dnf',
+        fireBrigadeId: 'fb-dnf',
+        fireBrigadeName: 'FF Ausfall',
+        groupName: 'Gr DNF',
+        scoreHundredths: null,
+        primaryRun: {
+          entryId: 'e-dnf',
+          attackTimeHundredths: null,
+          attackTimeErrors: null,
+          relayRaceHundredths: null,
+          relayRaceErrors: null,
+          scoreHundredths: null,
+        },
+      },
+    ];
+
+    const { container } = render(
+      <WinnersCanvas
+        activeCategory={mockCategory}
+        activeRankedResults={twoRankedPlusDnf}
+        theme="ceremony"
+      />
+    );
+
+    expect(within(container).getByText('FF Gold')).toBeInTheDocument();
+    expect(within(container).getByText('FF Silver')).toBeInTheDocument();
+    expect(within(container).queryByText('FF Ausfall')).not.toBeInTheDocument();
   });
 });

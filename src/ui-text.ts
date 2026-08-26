@@ -276,6 +276,11 @@ export const uiText = {
         webVisibilityTitle: 'In Zuschauer-Webansicht anzeigen', tvVisibility: (name: string) => `TV-Sichtbarkeit für ${name}`,
         tvVisibilityTitle: 'In automatischer TV Rotation berücksichtigen', tvDurationFor: (name: string) => `TV Anzeigedauer für ${name}`,
         delete: (name: string) => `Wertung ${name} löschen`, deleting: '…', deleteButton: '🗑️ Löschen',
+        showSingleResults: 'Einzelergebnisse anzeigen',
+        showSingleResultsTooltip: 'Zeigt auch Gruppen mit nur einem Teilergebnis an (nach vollständigen Wertungen gereiht)',
+        showSingleResultsBadge: 'Einzelergebnisse',
+        category2For: (name: string) => `Kategorie 2 für ${name}`,
+        showSingleResultsFor: (name: string) => `Einzelergebnisse für ${name}`,
       },
     },
     settings: {

@@ -139,7 +139,7 @@ export function OverallRankingRow({
       {/* Rank */}
       <td className="px-4 py-1.5 text-center">
         <span className={`inline-flex items-center justify-center font-oswald font-black ${rankClass} ${rankTextClass}`}>
-          {rank}
+          {rank ?? '—'}
         </span>
       </td>
 

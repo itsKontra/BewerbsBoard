@@ -12,6 +12,7 @@ import type {
   EntityImportCount,
 } from '../shared/domain/data-management.js'
 import { validateDataExportEnvelope } from '../shared/domain/data-management.js'
+import { normalizeShowSingleResults } from '../shared/domain/evaluation.js'
 
 // ---------------------------------------------------------------------------
 // Catalog constraint errors — thrown by catalog mutation methods; callers
@@ -119,6 +120,7 @@ export interface EvaluationType {
   competitionClassId2: string | null
   excludeRelayRace: boolean
   isBrigadePairing: boolean
+  showSingleResults: boolean
   public: boolean
   publicTv: boolean
   displayDurationSeconds: number
@@ -130,14 +132,16 @@ export type EvaluationTypeWrite = Pick<
   | 'id'
   | 'name'
   | 'categoryTypeId1'
-  | 'categoryTypeId2'
   | 'excludeRelayRace'
-  | 'isBrigadePairing'
   | 'public'
   | 'publicTv'
-  | 'displayDurationSeconds'
-  | 'order'
->
+> & {
+  categoryTypeId2?: string | null
+  isBrigadePairing?: boolean
+  showSingleResults?: boolean
+  displayDurationSeconds?: number
+  order?: number
+}
 
 export interface CategoryEntry {
   id: string
@@ -239,6 +243,7 @@ export interface SelfHostedDatabase {
       categoryTypeId2: string | null
       excludeRelayRace: boolean
       isBrigadePairing: boolean
+      showSingleResults: boolean
       public: boolean
       publicTv: boolean
       displayDurationSeconds: number
@@ -287,6 +292,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
       competitionClassId2: c2?.competitionClassId ?? null,
       excludeRelayRace: Boolean(et.excludeRelayRace),
       isBrigadePairing: Boolean(et.isBrigadePairing),
+      showSingleResults: Boolean(et.showSingleResults),
       public: Boolean(et.public),
       publicTv: Boolean(et.public_tv),
       displayDurationSeconds: Number(et.displayDurationSeconds ?? 10),
@@ -708,7 +714,8 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
             categoryTypeId1: et.categoryTypeId1,
             categoryTypeId2: et.categoryTypeId2 ?? null,
             excludeRelayRace: et.excludeRelayRace,
-            isBrigadePairing: et.isBrigadePairing,
+            isBrigadePairing: et.isBrigadePairing ?? false,
+            showSingleResults: normalizeShowSingleResults(et.categoryTypeId2, et.showSingleResults),
             public: et.public,
             public_tv: et.publicTv,
             displayDurationSeconds: et.displayDurationSeconds ?? 10,
@@ -732,10 +739,15 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         if ('categoryTypeId2' in data) updateValues.categoryTypeId2 = data.categoryTypeId2
         if (data.excludeRelayRace !== undefined) updateValues.excludeRelayRace = data.excludeRelayRace
         if (data.isBrigadePairing !== undefined) updateValues.isBrigadePairing = data.isBrigadePairing
+        if (data.showSingleResults !== undefined) updateValues.showSingleResults = data.showSingleResults
         if (data.public !== undefined) updateValues.public = data.public
         if (data.publicTv !== undefined) updateValues.public_tv = data.publicTv
         if (data.displayDurationSeconds !== undefined) updateValues.displayDurationSeconds = data.displayDurationSeconds
         if (data.order !== undefined) updateValues.order = data.order
+        const categoryTypeId2 = 'categoryTypeId2' in data ? data.categoryTypeId2 : current.categoryTypeId2
+        if ('showSingleResults' in updateValues || !categoryTypeId2) {
+          updateValues.showSingleResults = normalizeShowSingleResults(categoryTypeId2, updateValues.showSingleResults)
+        }
         if (Object.keys(updateValues).length > 0) {
           sqlite.transaction(() => {
             database.update(schema.evaluationTypes).set(updateValues).where(eq(schema.evaluationTypes.id, id)).run()
@@ -764,6 +776,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
           categoryTypeId2: et.categoryTypeId2,
           excludeRelayRace: et.excludeRelayRace,
           isBrigadePairing: et.isBrigadePairing,
+          showSingleResults: et.showSingleResults,
           public: et.public,
           publicTv: et.public_tv,
           displayDurationSeconds: et.displayDurationSeconds,
@@ -923,6 +936,9 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
           // 5. evaluation_types
           for (const item of data.evaluationTypes) {
             const publicTv = item.publicTv !== undefined ? item.publicTv : item.public_tv
+            const showSingleResults = item.showSingleResults !== undefined
+              ? item.showSingleResults
+              : Boolean(item.show_single_results)
             database.insert(schema.evaluationTypes).values({
               id: item.id,
               name: item.name,
@@ -930,6 +946,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
               categoryTypeId2: item.categoryTypeId2 ?? null,
               excludeRelayRace: item.excludeRelayRace,
               isBrigadePairing: item.isBrigadePairing,
+              showSingleResults,
               public: item.public !== false,
               public_tv: publicTv !== false,
               displayDurationSeconds: item.displayDurationSeconds ?? 10,
@@ -942,6 +959,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
                 categoryTypeId2: item.categoryTypeId2 ?? null,
                 excludeRelayRace: item.excludeRelayRace,
                 isBrigadePairing: item.isBrigadePairing,
+                showSingleResults,
                 public: item.public !== false,
                 public_tv: publicTv !== false,
                 displayDurationSeconds: item.displayDurationSeconds ?? 10,

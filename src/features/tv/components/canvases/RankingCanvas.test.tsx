@@ -136,4 +136,102 @@ describe('RankingCanvas', () => {
     expect(screen.getByRole('table', { name: 'Gesamtwertung Aktiv Wertung' }))
       .toHaveClass('grid-rows-[4.5rem_minmax(0,1fr)]');
   });
+
+  it('renders — in combined total column for a Tier-2 entry with no secondary run', () => {
+    const tier2Result: CategoryResultData['rankedResults'][number] = {
+      rank: 3,
+      groupId: 'g-tier2',
+      fireBrigadeId: 'fb-tier2',
+      fireBrigadeName: 'FF Einzel',
+      groupName: 'Gr 99',
+      scoreHundredths: null,
+      primaryRun: {
+        entryId: 'e-tier2',
+        attackTimeHundredths: 3200,
+        attackTimeErrors: 0,
+        relayRaceHundredths: null,
+        relayRaceErrors: null,
+        scoreHundredths: 3200,
+      },
+      secondaryRun: null,
+    };
+
+    const combinedCategory: CategoryResultData = {
+      ...standardCategory,
+      id: 'gesamt-aktiv',
+      displayName: 'Gesamt Aktiv',
+      type: 'combined',
+      categoryTypeName1: 'Bronze Aktiv',
+      categoryTypeName2: 'Silber Aktiv',
+      rankedResults: [tier2Result],
+      openEntries: [],
+    };
+
+    const visibleRows: RankingPresentationRow[] = [
+      { kind: 'ranked', entry: tier2Result },
+    ];
+
+    const { container } = render(
+      <RankingCanvas
+        activeCategory={combinedCategory}
+        visibleRankingRows={visibleRows}
+        rankingPresentationRowsCount={1}
+        theme="broadcast"
+      />
+    );
+
+    expect(screen.getByText('FF Einzel Gr 99')).toBeInTheDocument();
+    const rankedRow = container.querySelector('tr[data-row-kind="ranked"]');
+    const cells = rankedRow?.querySelectorAll('td');
+    expect(cells?.[3]).toHaveTextContent('—');
+    expect(cells?.[4]).toHaveTextContent('—');
+  });
+
+  it('renders — in rank cell for a DNF entry with null rank in a combined category', () => {
+    const dnfResult: CategoryResultData['rankedResults'][number] = {
+      rank: null,
+      groupId: 'g-dnf',
+      fireBrigadeId: 'fb-dnf',
+      fireBrigadeName: 'FF DNF',
+      groupName: 'Gr DNF',
+      scoreHundredths: null,
+      primaryRun: {
+        entryId: 'e-dnf',
+        attackTimeHundredths: null,
+        attackTimeErrors: null,
+        relayRaceHundredths: null,
+        relayRaceErrors: null,
+        scoreHundredths: null,
+      },
+    };
+
+    const combinedCategory: CategoryResultData = {
+      ...standardCategory,
+      id: 'gesamt-aktiv',
+      displayName: 'Gesamt Aktiv',
+      type: 'combined',
+      categoryTypeName1: 'Bronze Aktiv',
+      categoryTypeName2: 'Silber Aktiv',
+      rankedResults: [dnfResult],
+      openEntries: [],
+    };
+
+    const visibleRows: RankingPresentationRow[] = [
+      { kind: 'ranked', entry: dnfResult },
+    ];
+
+    const { container } = render(
+      <RankingCanvas
+        activeCategory={combinedCategory}
+        visibleRankingRows={visibleRows}
+        rankingPresentationRowsCount={1}
+        theme="broadcast"
+      />
+    );
+
+    const rankedRow = container.querySelector('tr[data-row-kind="ranked"]');
+    expect(rankedRow).not.toBeNull();
+    const rankSpan = rankedRow?.querySelector('td:first-child span');
+    expect(rankSpan).toHaveTextContent('—');
+  });
 });

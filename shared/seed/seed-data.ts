@@ -22,6 +22,7 @@ export interface EvaluationTypeSeed {
   categoryTypeId2: string | null;
   excludeRelayRace: boolean;
   isBrigadePairing: boolean;
+  showSingleResults?: boolean;
   public: boolean;
   publicTv: boolean;
   displayDurationSeconds: number;
