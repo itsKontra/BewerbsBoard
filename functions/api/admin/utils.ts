@@ -14,6 +14,10 @@ export function getDb(env: any) {
   return drizzle(d1, { schema });
 }
 
+export function getKvStore(env: any) {
+  return env?.KV || env?.APP_CONFIG || null;
+}
+
 export function jsonResponse(data: any, status = 200) {
   return new Response(JSON.stringify(data), {
     status,

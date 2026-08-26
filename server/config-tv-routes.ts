@@ -24,6 +24,41 @@ export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironm
     })
     return context.json(configurationPayload(database))
   })
+  app.get('/api/public/logo', (context) => {
+    const logo = database.configuration.readCustomLogo()
+    if (!logo) {
+      return context.text('Not Found', 404)
+    }
+    const buffer = Buffer.from(logo.base64Data, 'base64')
+    return context.body(buffer, 200, {
+      'Content-Type': logo.mimeType,
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+    })
+  })
+  app.delete('/api/admin/logo', (context) => {
+    const actor = context.get('adminUser') ?? 'system'
+    database.transaction(() => {
+      database.configuration.deleteCustomLogo()
+      const current = database.configuration.read()
+      if (current.tvPresentation.logoOverride.startsWith('/api/public/logo')) {
+        database.configuration.save({
+          ...current,
+          tvPresentation: {
+            ...current.tvPresentation,
+            logoOverride: '',
+          },
+        })
+      }
+      database.audit.record({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        user: actor,
+        action: 'DELETE',
+        details: { entity: 'CUSTOM_LOGO' },
+      })
+    })
+    return context.json({ success: true })
+  })
   app.get('/api/admin/tv-state', (context) => context.json(database.getTvRuntimeState()))
   app.put('/api/admin/tv-state', async (context) => {
     const body = await context.req.json() as Record<string, unknown>

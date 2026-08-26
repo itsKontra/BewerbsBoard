@@ -49,4 +49,53 @@ describe('self-hosted configuration and TV routes', () => {
       })
     } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
   })
+
+  it('serves and deletes stored custom logo via /api/public/logo and /api/admin/logo', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'scoreboard-logo-'))
+    const database = createDatabase(join(directory, 'scoreboard.sqlite'))
+    try {
+      const app = createSelfHostedApp({ publicDirectory: 'not-used', database })
+
+      // Initially 404 when no custom logo
+      const initial = await app.request('/api/public/logo')
+      expect(initial.status).toBe(404)
+
+      // Store a custom logo in SQLite
+      const samplePngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+      database.configuration.saveCustomLogo({
+        mimeType: 'image/png',
+        base64Data: samplePngBase64,
+        updatedAt: 1700000000000,
+      })
+
+      // Set logoOverride to custom logo
+      const current = database.configuration.read()
+      database.configuration.save({
+        ...current,
+        tvPresentation: { ...current.tvPresentation, logoOverride: '/api/public/logo?v=1700000000000' },
+      })
+
+      // GET /api/public/logo
+      const response = await app.request('/api/public/logo')
+      expect(response.status).toBe(200)
+      expect(response.headers.get('Content-Type')).toBe('image/png')
+      expect(response.headers.get('Cache-Control')).toContain('public')
+      const buffer = await response.arrayBuffer()
+      expect(buffer.byteLength).toBeGreaterThan(0)
+
+      // DELETE /api/admin/logo
+      const deleteRes = await app.request('/api/admin/logo', {
+        method: 'DELETE',
+        headers: { 'X-Auth-Request-Email': 'admin@feuerwehr.at', 'X-Auth-Request-Roles': 'admin' },
+      })
+      expect(deleteRes.status).toBe(200)
+      expect(await deleteRes.json()).toEqual({ success: true })
+
+      // Verify custom logo deleted
+      expect(database.configuration.readCustomLogo()).toBeNull()
+      expect(database.configuration.read().tvPresentation.logoOverride).toBe('')
+      const deletedCheck = await app.request('/api/public/logo')
+      expect(deletedCheck.status).toBe(404)
+    } finally { database.close(); await rm(directory, { recursive: true, force: true }) }
+  })
 })

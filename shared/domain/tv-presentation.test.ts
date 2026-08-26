@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   parseThemeParam,
   normalizeTvPresentation,
+  normalizeLogoOverride,
+  isAllowedLogoMimeType,
+  normalizeStoredCustomLogo,
   normalizeQrCodeEnabled,
   normalizeQrCodeAlwaysVisible,
   normalizeQrCodeIntervalSeconds,
@@ -96,5 +99,50 @@ describe('QR code presentation normalization', () => {
     expect(normalizeTvPresentation({ adminSplashEnabled: 'false' }).adminSplashEnabled).toBe(false);
     expect(normalizeTvPresentation({ adminSplashEnabled: 'true' }).adminSplashEnabled).toBe(true);
     expect(normalizeTvPresentation({ adminSplashEnabled: true }).adminSplashEnabled).toBe(true);
+  });
+});
+
+describe('Logo options and custom logo validation', () => {
+  it('validates allowed image MIME types', () => {
+    expect(isAllowedLogoMimeType('image/png')).toBe(true);
+    expect(isAllowedLogoMimeType('IMAGE/PNG')).toBe(true);
+    expect(isAllowedLogoMimeType('image/jpeg')).toBe(true);
+    expect(isAllowedLogoMimeType('image/webp')).toBe(true);
+    expect(isAllowedLogoMimeType('image/svg+xml')).toBe(true);
+    expect(isAllowedLogoMimeType('image/gif')).toBe(false);
+    expect(isAllowedLogoMimeType('application/pdf')).toBe(false);
+    expect(isAllowedLogoMimeType('text/html')).toBe(false);
+  });
+
+  it('normalizes stored custom logo payload', () => {
+    const valid = normalizeStoredCustomLogo({
+      mimeType: 'image/png',
+      base64Data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      updatedAt: 1700000000000,
+    });
+    expect(valid).toEqual({
+      mimeType: 'image/png',
+      base64Data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+      updatedAt: 1700000000000,
+    });
+
+    expect(normalizeStoredCustomLogo(null)).toBeNull();
+    expect(normalizeStoredCustomLogo({})).toBeNull();
+    expect(normalizeStoredCustomLogo({ mimeType: 'image/bmp', base64Data: 'abc' })).toBeNull();
+    expect(normalizeStoredCustomLogo({ mimeType: 'image/png', base64Data: '' })).toBeNull();
+  });
+
+  it('normalizes logo override paths including custom logo endpoint and presets', () => {
+    expect(normalizeLogoOverride('/api/public/logo')).toBe('/api/public/logo');
+    expect(normalizeLogoOverride('/api/public/logo?v=1700000000')).toBe('/api/public/logo?v=1700000000');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_1.png')).toBe('/logo-options/logo_alt_1.png');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_2.png')).toBe('/logo-options/logo_alt_2.png');
+    expect(normalizeLogoOverride('/logo-options/logo_alt_3.png')).toBe('/logo-options/logo_alt_3.png');
+    expect(normalizeLogoOverride('/logo.png')).toBe('/logo.png');
+    expect(normalizeLogoOverride('https://cdn.example.at/logo.png')).toBe('https://cdn.example.at/logo.png');
+    expect(normalizeLogoOverride('//evil.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('/\\evil.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('http://insecure.example/logo.png')).toBe('');
+    expect(normalizeLogoOverride('javascript:alert(1)')).toBe('');
   });
 });

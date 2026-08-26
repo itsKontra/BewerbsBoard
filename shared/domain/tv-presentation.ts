@@ -24,6 +24,47 @@ export const DEFAULT_TV_PRESENTATION: TvPresentationConfig = {
   adminSplashEnabled: true,
 };
 
+export const ALLOWED_LOGO_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/svg+xml',
+] as const;
+
+export type AllowedLogoMimeType = typeof ALLOWED_LOGO_MIME_TYPES[number];
+
+export interface StoredCustomLogo {
+  mimeType: AllowedLogoMimeType;
+  base64Data: string;
+  updatedAt: number;
+}
+
+export function isAllowedLogoMimeType(mime: string): mime is AllowedLogoMimeType {
+  return (ALLOWED_LOGO_MIME_TYPES as readonly string[]).includes(mime.toLowerCase());
+}
+
+export function normalizeStoredCustomLogo(input: unknown): StoredCustomLogo | null {
+  if (!input || typeof input !== 'object') return null;
+  const candidate = input as Record<string, unknown>;
+  if (
+    typeof candidate.mimeType !== 'string' ||
+    !isAllowedLogoMimeType(candidate.mimeType) ||
+    typeof candidate.base64Data !== 'string' ||
+    !candidate.base64Data.trim()
+  ) {
+    return null;
+  }
+  const updatedAt = typeof candidate.updatedAt === 'number' && Number.isFinite(candidate.updatedAt)
+    ? candidate.updatedAt
+    : Date.now();
+
+  return {
+    mimeType: candidate.mimeType.toLowerCase() as AllowedLogoMimeType,
+    base64Data: candidate.base64Data.trim(),
+    updatedAt,
+  };
+}
+
 const SAME_ORIGIN_VALIDATION_BASE = 'https://same-origin.invalid';
 
 export function normalizeLogoOverride(input: unknown): string {
