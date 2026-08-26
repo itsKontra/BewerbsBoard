@@ -459,7 +459,7 @@ describe('buildCategoriesResultMap — Integration', () => {
       groupId: 'g3',
       groupName: 'Gruppe 3',
       scoreHundredths: null,
-      rank: undefined,
+      rank: null,
     });
   });
 });

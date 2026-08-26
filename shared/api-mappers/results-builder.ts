@@ -57,7 +57,7 @@ export interface RunResultPayload {
 }
 
 export interface RankedResultPayload {
-  rank?: number;
+  rank: number | null;
   groupId: string;
   groupName: string;
   secondaryGroupName?: string;
@@ -198,7 +198,7 @@ export function buildCategoriesResultMap(
       }
 
       rankedResults.push({
-        rank: result.rank ?? undefined,
+        rank: result.rank ?? null,
         groupId: result.groupId,
         groupName: e1?.groupName || e2?.groupName || '',
         ...(evalType.isBrigadePairing && e2

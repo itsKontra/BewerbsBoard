@@ -14,7 +14,7 @@ export interface RunResultRow {
 }
 
 export interface RankedResultRow {
-  rank?: number | null;
+  rank: number | null;
   groupId: string;
   groupName: string;
   secondaryGroupName?: string;
@@ -73,7 +73,7 @@ const FALLBACK_CATEGORY_KEYS = [...DEFAULT_CATALOG_SEED.evaluationTypes]
   .sort((left, right) => left.order - right.order)
   .map((evaluation) => evaluation.id);
 
-function RankBadge({ rank }: { rank?: number | null }) {
+function RankBadge({ rank }: { rank: number | null }) {
   if (rank === 1) return <span className="bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)] inline-flex items-center justify-center w-8 h-8 rounded-full font-oswald font-extrabold text-sm border-2">1</span>;
   if (rank === 2) return <span className="bg-slate-300/20 text-slate-200 border-slate-400/50 shadow-[0_0_15px_rgba(148,163,184,0.2)] inline-flex items-center justify-center w-8 h-8 rounded-full font-oswald font-extrabold text-sm border-2">2</span>;
   if (rank === 3) return <span className="bg-amber-700/20 text-amber-400 border-amber-700/50 shadow-[0_0_15px_rgba(180,83,9,0.2)] inline-flex items-center justify-center w-8 h-8 rounded-full font-oswald font-extrabold text-sm border-2">3</span>;

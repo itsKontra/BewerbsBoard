@@ -2,6 +2,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, act, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import {
+  buildCategoriesResultMap,
+  type EntryDetailView,
+  type EvaluationTypeView,
+} from '../../../../shared/api-mappers/results-builder';
 import { TvScoreboard } from './TvScoreboard';
 
 const mockResultsData = {
@@ -1046,6 +1051,76 @@ describe('TvScoreboard Component', () => {
     expect(screen.getByTestId('tv-qr-code')).toBeInTheDocument();
   });
 
+  it('uses mapped numerical ranks to keep DNF results off the podium', async () => {
+    const evaluationTypes: EvaluationTypeView[] = [
+      {
+        id: 'combined',
+        name: 'Gesamt',
+        categoryTypeId1: 'bronze',
+        categoryTypeName1: 'Bronze',
+        hasRelayRace1: false,
+        categoryTypeId2: 'silver',
+        categoryTypeName2: 'Silber',
+        hasRelayRace2: false,
+        excludeRelayRace: false,
+        isBrigadePairing: false,
+        showSingleResults: true,
+        publicTv: true,
+        order: 1,
+      },
+    ];
+    const entries: EntryDetailView[] = [
+      {
+        id: 'complete-bronze', groupId: 'complete', categoryTypeId: 'bronze', runStatus: 'VALID',
+        startOrderPosition: 1, attackTimeHundredths: 4000, attackTimeErrors: 0,
+        relayRaceHundredths: null, relayRaceErrors: null, groupName: 'Gruppe Komplett',
+        fireBrigadeId: 'complete-brigade', fireBrigadeName: 'FF Komplett',
+      },
+      {
+        id: 'complete-silver', groupId: 'complete', categoryTypeId: 'silver', runStatus: 'VALID',
+        startOrderPosition: 1, attackTimeHundredths: 4100, attackTimeErrors: 0,
+        relayRaceHundredths: null, relayRaceErrors: null, groupName: 'Gruppe Komplett',
+        fireBrigadeId: 'complete-brigade', fireBrigadeName: 'FF Komplett',
+      },
+      {
+        id: 'single-bronze', groupId: 'single', categoryTypeId: 'bronze', runStatus: 'VALID',
+        startOrderPosition: 2, attackTimeHundredths: 3900, attackTimeErrors: 0,
+        relayRaceHundredths: null, relayRaceErrors: null, groupName: 'Gruppe Einzel',
+        fireBrigadeId: 'single-brigade', fireBrigadeName: 'FF Einzel',
+      },
+      {
+        id: 'dnf-bronze', groupId: 'dnf', categoryTypeId: 'bronze', runStatus: 'DNF',
+        startOrderPosition: 3, attackTimeHundredths: null, attackTimeErrors: null,
+        relayRaceHundredths: null, relayRaceErrors: null, groupName: 'Gruppe Ausfall',
+        fireBrigadeId: 'dnf-brigade', fireBrigadeName: 'FF Ausfall',
+      },
+      {
+        id: 'dnf-silver', groupId: 'dnf', categoryTypeId: 'silver', runStatus: 'VALID',
+        startOrderPosition: 3, attackTimeHundredths: 4200, attackTimeErrors: 0,
+        relayRaceHundredths: null, relayRaceErrors: null, groupName: 'Gruppe Ausfall',
+        fireBrigadeId: 'dnf-brigade', fireBrigadeName: 'FF Ausfall',
+      },
+    ];
+    const categories = buildCategoriesResultMap(evaluationTypes, entries);
+
+    mockTvScenario({
+      mode: 'WINNERS',
+      selectedCategoryId: 'combined',
+      categoriesConfig: {
+        combined: { name: 'Gesamt', tvEnabled: true, order: 1, displayDuration: 10 },
+      },
+      resultsData: { ...mockResultsData, categories },
+    });
+
+    render(<TvScoreboard />);
+
+    const canvas = await screen.findByTestId('tv-mode-canvas');
+    expect(within(canvas).getByRole('heading', { name: 'FF Komplett' })).toBeInTheDocument();
+    expect(within(canvas).getByRole('heading', { name: 'FF Einzel' })).toBeInTheDocument();
+    expect(within(canvas).queryByRole('heading', { name: 'FF Ausfall' })).not.toBeInTheDocument();
+    expect(within(canvas).getAllByRole('heading', { level: 3 })).toHaveLength(2);
+  });
+
   it('uses the ranked place for tied podium results', async () => {
     mockTvScenario({
       mode: 'WINNERS',
@@ -1312,4 +1387,3 @@ describe('TvScoreboard Component', () => {
     expect(screen.queryByTestId('tv-qr-popup')).not.toBeInTheDocument();
   });
 });
-
