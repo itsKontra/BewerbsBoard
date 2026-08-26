@@ -24,6 +24,13 @@ export interface EvaluationDescriptor {
   showSingleResults?: boolean;
 }
 
+export function normalizeShowSingleResults(
+  categoryTypeId2: string | null | undefined,
+  showSingleResults: unknown,
+): boolean {
+  return Boolean(categoryTypeId2 && showSingleResults);
+}
+
 export interface EvaluationResult {
   groupId: string;
   fireBrigadeId?: string;

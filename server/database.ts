@@ -12,6 +12,7 @@ import type {
   EntityImportCount,
 } from '../shared/domain/data-management.js'
 import { validateDataExportEnvelope } from '../shared/domain/data-management.js'
+import { normalizeShowSingleResults } from '../shared/domain/evaluation.js'
 
 // ---------------------------------------------------------------------------
 // Catalog constraint errors — thrown by catalog mutation methods; callers
@@ -714,7 +715,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
             categoryTypeId2: et.categoryTypeId2 ?? null,
             excludeRelayRace: et.excludeRelayRace,
             isBrigadePairing: et.isBrigadePairing ?? false,
-            showSingleResults: et.showSingleResults ?? false,
+            showSingleResults: normalizeShowSingleResults(et.categoryTypeId2, et.showSingleResults),
             public: et.public,
             public_tv: et.publicTv,
             displayDurationSeconds: et.displayDurationSeconds ?? 10,
@@ -743,6 +744,10 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         if (data.publicTv !== undefined) updateValues.public_tv = data.publicTv
         if (data.displayDurationSeconds !== undefined) updateValues.displayDurationSeconds = data.displayDurationSeconds
         if (data.order !== undefined) updateValues.order = data.order
+        const categoryTypeId2 = 'categoryTypeId2' in data ? data.categoryTypeId2 : current.categoryTypeId2
+        if ('showSingleResults' in updateValues || !categoryTypeId2) {
+          updateValues.showSingleResults = normalizeShowSingleResults(categoryTypeId2, updateValues.showSingleResults)
+        }
         if (Object.keys(updateValues).length > 0) {
           sqlite.transaction(() => {
             database.update(schema.evaluationTypes).set(updateValues).where(eq(schema.evaluationTypes.id, id)).run()

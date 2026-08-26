@@ -1,5 +1,6 @@
 import { getDb, jsonResponse, jsonError, logAudit, getCategoryTypeName, type EventContext } from '../utils';
 import { evaluationTypes, categoryTypes } from '../../../../shared/db/schema';
+import { normalizeShowSingleResults } from '../../../../shared/domain/evaluation';
 import { eq } from 'drizzle-orm';
 
 export async function onRequestPut(context: EventContext) {
@@ -40,6 +41,13 @@ export async function onRequestPut(context: EventContext) {
       updateValues.displayDurationSeconds = data.displayDurationSeconds;
     }
     if (typeof data.order === 'number' && Number.isInteger(data.order)) updateValues.order = data.order;
+
+    const categoryTypeId2 = 'categoryTypeId2' in updateValues
+      ? updateValues.categoryTypeId2
+      : existing[0].categoryTypeId2;
+    if ('showSingleResults' in updateValues || !categoryTypeId2) {
+      updateValues.showSingleResults = normalizeShowSingleResults(categoryTypeId2, updateValues.showSingleResults);
+    }
 
     const updated = await db
       .update(evaluationTypes)

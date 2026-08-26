@@ -1,5 +1,6 @@
 import { getDb, jsonResponse, jsonError, logAudit, type EventContext } from '../utils';
 import { evaluationTypes, categoryTypes } from '../../../../shared/db/schema';
+import { normalizeShowSingleResults } from '../../../../shared/domain/evaluation';
 import { eq } from 'drizzle-orm';
 
 export async function onRequestGet(context: EventContext) {
@@ -80,7 +81,7 @@ export async function onRequestPost(context: EventContext) {
       categoryTypeId2: data.categoryTypeId2 || null,
       excludeRelayRace: Boolean(data.excludeRelayRace),
       isBrigadePairing: Boolean(data.categoryTypeId2 && data.isBrigadePairing),
-      showSingleResults: Boolean(data.categoryTypeId2 && data.showSingleResults),
+      showSingleResults: normalizeShowSingleResults(data.categoryTypeId2, data.showSingleResults),
       public: data.public !== undefined ? Boolean(data.public) : true,
       public_tv: data.publicTv !== undefined ? Boolean(data.publicTv) : (data.public_tv !== undefined ? Boolean(data.public_tv) : true),
       displayDurationSeconds: typeof data.displayDurationSeconds === 'number' && Number.isInteger(data.displayDurationSeconds) && data.displayDurationSeconds > 0

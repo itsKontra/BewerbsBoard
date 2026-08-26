@@ -23,6 +23,18 @@ interface EvaluationFormData {
   displayDurationSeconds: number;
 }
 
+interface EvaluationEditDraft {
+  name: string;
+  categoryTypeId2: string;
+  showSingleResults: boolean;
+}
+
+const EMPTY_EDIT_DRAFT: EvaluationEditDraft = {
+  name: '',
+  categoryTypeId2: '',
+  showSingleResults: false,
+};
+
 const INITIAL_FORM_DATA: EvaluationFormData = {
   name: '',
   categoryTypeId1: '',
@@ -47,7 +59,7 @@ export function EvaluationTypesSection({
 
   // Inline editing state
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState<string>('');
+  const [editDraft, setEditDraft] = useState<EvaluationEditDraft>(EMPTY_EDIT_DRAFT);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const handleCreateEvaluationType = async (e?: React.FormEvent | React.MouseEvent | React.KeyboardEvent) => {
@@ -122,17 +134,21 @@ export function EvaluationTypesSection({
 
   const handleStartEdit = (evalItem: EvaluationType) => {
     setEditingId(evalItem.id);
-    setEditingName(evalItem.name);
+    setEditDraft({
+      name: evalItem.name,
+      categoryTypeId2: evalItem.categoryTypeId2 ?? '',
+      showSingleResults: Boolean(evalItem.categoryTypeId2 && evalItem.showSingleResults),
+    });
     setActionError(null);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setEditingName('');
+    setEditDraft(EMPTY_EDIT_DRAFT);
   };
 
   const handleSaveEdit = async (id: string) => {
-    const trimmed = editingName.trim();
+    const trimmed = editDraft.name.trim();
     if (!trimmed) {
       setActionError(text.emptyName);
       return;
@@ -143,9 +159,14 @@ export function EvaluationTypesSection({
     setActionSuccess(null);
 
     try {
-      await onUpdateEvaluationType(id, { name: trimmed });
+      const categoryTypeId2 = editDraft.categoryTypeId2.trim() || null;
+      await onUpdateEvaluationType(id, {
+        name: trimmed,
+        categoryTypeId2,
+        showSingleResults: Boolean(categoryTypeId2 && editDraft.showSingleResults),
+      });
       setEditingId(null);
-      setEditingName('');
+      setEditDraft(EMPTY_EDIT_DRAFT);
       setActionSuccess(text.updated(trimmed));
       setTimeout(() => setActionSuccess(null), 4000);
     } catch (err: any) {
@@ -481,8 +502,8 @@ export function EvaluationTypesSection({
                           <input
                             type="text"
                             aria-label={text.evaluationNameFor(evalItem.name)}
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
+                            value={editDraft.name}
+                            onChange={(event) => setEditDraft((draft) => ({ ...draft, name: event.target.value }))}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
@@ -497,7 +518,7 @@ export function EvaluationTypesSection({
                           <button
                             type="button"
                             onClick={() => handleSaveEdit(evalItem.id)}
-                            disabled={isSavingEdit || !editingName.trim()}
+                            disabled={isSavingEdit || !editDraft.name.trim()}
                             className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold transition-colors cursor-pointer"
                             title={text.save}
                           >
@@ -530,7 +551,42 @@ export function EvaluationTypesSection({
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                      {isEditing ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <select
+                            aria-label={text.category2For(evalItem.name)}
+                            value={editDraft.categoryTypeId2}
+                            onChange={(event) => {
+                              const categoryTypeId2 = event.target.value;
+                              setEditDraft((draft) => ({
+                                ...draft,
+                                categoryTypeId2,
+                                showSingleResults: categoryTypeId2 ? draft.showSingleResults : false,
+                              }));
+                            }}
+                            className="bg-white border border-indigo-300 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:outline-none"
+                          >
+                            <option value="">{text.noSecondCategory}</option>
+                            {categoryTypes.map((categoryType) => (
+                              <option key={categoryType.id} value={categoryType.id}>
+                                {categoryType.name}
+                              </option>
+                            ))}
+                          </select>
+                          <label className={`flex items-center gap-1.5 text-xs font-semibold ${editDraft.categoryTypeId2 ? 'text-sky-800' : 'text-slate-400'}`}>
+                            <input
+                              type="checkbox"
+                              aria-label={text.showSingleResultsFor(evalItem.name)}
+                              disabled={!editDraft.categoryTypeId2}
+                              checked={Boolean(editDraft.categoryTypeId2 && editDraft.showSingleResults)}
+                              onChange={(event) => setEditDraft((draft) => ({ ...draft, showSingleResults: event.target.checked }))}
+                              className="w-4 h-4 accent-sky-600 rounded bg-white border-slate-300 cursor-pointer disabled:cursor-not-allowed"
+                            />
+                            {text.showSingleResults}
+                          </label>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap items-center gap-1.5">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
                           {evalItem.categoryTypeName1 || evalItem.categoryTypeId1}
                         </span>
@@ -561,7 +617,8 @@ export function EvaluationTypesSection({
                             {text.withRelay}
                           </span>
                         )}
-                      </div>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-center">

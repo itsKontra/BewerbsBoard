@@ -318,4 +318,85 @@ describe('EvaluationTypesSection', () => {
     // Badge count should equal exactly 1 (only eval-2)
     expect(screen.getAllByText('Einzelergebnisse')).toHaveLength(1);
   });
+
+  it('enables Show Single Results while editing an existing combined evaluation', async () => {
+    const combinedEvaluation = { ...mockEvaluationTypes[1], showSingleResults: false };
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={[combinedEvaluation]}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText('Wertung Gesamtwertung Wehr bearbeiten'));
+
+    const checkbox = screen.getByLabelText('Einzelergebnisse für Gesamtwertung Wehr') as HTMLInputElement;
+    expect(checkbox.checked).toBe(false);
+
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByTitle('Speichern'));
+
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith('eval-2', expect.objectContaining({
+        categoryTypeId2: 'cat-3',
+        showSingleResults: true,
+      }));
+    });
+  });
+
+  it('disables Show Single Results while editing an existing combined evaluation', async () => {
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText('Wertung Gesamtwertung Wehr bearbeiten'));
+
+    const checkbox = screen.getByLabelText('Einzelergebnisse für Gesamtwertung Wehr') as HTMLInputElement;
+    expect(checkbox.checked).toBe(true);
+
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByTitle('Speichern'));
+
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith('eval-2', expect.objectContaining({
+        showSingleResults: false,
+      }));
+    });
+  });
+
+  it('clearing the second discipline resets Show Single Results before saving an edit', async () => {
+    render(
+      <EvaluationTypesSection
+        evaluationTypes={mockEvaluationTypes}
+        categoryTypes={mockCategoryTypes}
+        onUpdateEvaluationType={mockOnUpdate}
+        onRefresh={mockOnRefresh}
+      />
+    );
+
+    fireEvent.click(screen.getByLabelText('Wertung Gesamtwertung Wehr bearbeiten'));
+
+    const category2 = screen.getByLabelText('Kategorie 2 für Gesamtwertung Wehr') as HTMLSelectElement;
+    const checkbox = screen.getByLabelText('Einzelergebnisse für Gesamtwertung Wehr') as HTMLInputElement;
+    fireEvent.change(category2, { target: { value: '' } });
+
+    expect(checkbox.disabled).toBe(true);
+    expect(checkbox.checked).toBe(false);
+
+    fireEvent.click(screen.getByTitle('Speichern'));
+
+    await waitFor(() => {
+      expect(mockOnUpdate).toHaveBeenCalledWith('eval-2', expect.objectContaining({
+        categoryTypeId2: null,
+        showSingleResults: false,
+      }));
+    });
+  });
 });

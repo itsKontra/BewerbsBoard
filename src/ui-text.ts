@@ -279,6 +279,8 @@ export const uiText = {
         showSingleResults: 'Einzelergebnisse anzeigen',
         showSingleResultsTooltip: 'Zeigt auch Gruppen mit nur einem Teilergebnis an (nach vollständigen Wertungen gereiht)',
         showSingleResultsBadge: 'Einzelergebnisse',
+        category2For: (name: string) => `Kategorie 2 für ${name}`,
+        showSingleResultsFor: (name: string) => `Einzelergebnisse für ${name}`,
       },
     },
     settings: {

@@ -55,11 +55,20 @@ describe('Evaluation Types API Endpoints', () => {
   it('GET /evaluation-types returns list of evaluation types', async () => {
     // 1st all(): evaluationTypes
     mockDb.all.mockResolvedValueOnce([
-      { id: 'eval-1', name: 'Bronze Aktiv', categoryTypeId1: 'cat-1', displayDurationSeconds: 12, order: 1 },
+      {
+        id: 'eval-1',
+        name: 'Gesamtwertung',
+        categoryTypeId1: 'cat-1',
+        categoryTypeId2: 'cat-2',
+        showSingleResults: true,
+        displayDurationSeconds: 12,
+        order: 1,
+      },
     ]);
     // 2nd all(): categoryTypes
     mockDb.all.mockResolvedValueOnce([
       { id: 'cat-1', name: 'Bronze Aktiv', hasRelayRace: true },
+      { id: 'cat-2', name: 'Silber Aktiv', hasRelayRace: true },
     ]);
 
     const ctx = createMockContext('GET');
@@ -69,10 +78,12 @@ describe('Evaluation Types API Endpoints', () => {
     expect(data).toEqual([
       expect.objectContaining({
         id: 'eval-1',
-        name: 'Bronze Aktiv',
+        name: 'Gesamtwertung',
         categoryTypeId1: 'cat-1',
         categoryTypeName1: 'Bronze Aktiv',
         hasRelayRace1: true,
+        categoryTypeId2: 'cat-2',
+        showSingleResults: true,
         displayDurationSeconds: 12,
         order: 1,
       }),
@@ -87,6 +98,7 @@ describe('Evaluation Types API Endpoints', () => {
       name: 'Bronze Wertung Neu',
       categoryTypeId1: 'cat-1',
       isBrigadePairing: true, // Should be forced to false because categoryTypeId2 is not set
+      showSingleResults: true,
       displayDurationSeconds: 15,
       order: 3,
     });
@@ -98,6 +110,7 @@ describe('Evaluation Types API Endpoints', () => {
       name: 'Bronze Wertung Neu',
       categoryTypeId1: 'cat-1',
       isBrigadePairing: false,
+      showSingleResults: false,
       displayDurationSeconds: 15,
       order: 3,
     }));
@@ -115,6 +128,7 @@ describe('Evaluation Types API Endpoints', () => {
       categoryTypeId1: 'cat-1',
       categoryTypeId2: 'cat-2',
       isBrigadePairing: true,
+      showSingleResults: true,
       displayDurationSeconds: 10,
     });
 
@@ -126,6 +140,7 @@ describe('Evaluation Types API Endpoints', () => {
       categoryTypeId1: 'cat-1',
       categoryTypeId2: 'cat-2',
       isBrigadePairing: true,
+      showSingleResults: true,
     }));
   });
 
@@ -161,6 +176,83 @@ describe('Evaluation Types API Endpoints', () => {
       publicTv: false,
     });
     expect(utils.logAudit).toHaveBeenCalled();
+  });
+
+  it.each([true, false])('PUT /evaluation-types/[id] persists showSingleResults=%s for a combined evaluation', async (showSingleResults) => {
+    mockDb.limit.mockResolvedValueOnce([{
+      id: 'eval-1',
+      name: 'Gesamtwertung',
+      categoryTypeId1: 'cat-1',
+      categoryTypeId2: 'cat-2',
+      showSingleResults: !showSingleResults,
+    }]);
+    mockDb.returning.mockResolvedValueOnce([{
+      id: 'eval-1',
+      name: 'Gesamtwertung',
+      categoryTypeId1: 'cat-1',
+      categoryTypeId2: 'cat-2',
+      excludeRelayRace: false,
+      isBrigadePairing: false,
+      showSingleResults,
+      public: true,
+      public_tv: true,
+      displayDurationSeconds: 10,
+      order: 1,
+    }]);
+    mockDb.all.mockResolvedValueOnce([
+      { id: 'cat-1', name: 'Bronze Aktiv', hasRelayRace: true },
+      { id: 'cat-2', name: 'Silber Aktiv', hasRelayRace: true },
+    ]);
+
+    const ctx = createMockContext('PUT', { showSingleResults }, { id: 'eval-1' });
+    const res = await onRequestPut(ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({ showSingleResults }));
+    await expect(res.json()).resolves.toMatchObject({
+      categoryTypeId2: 'cat-2',
+      showSingleResults,
+    });
+  });
+
+  it('PUT /evaluation-types/[id] clears Show Single Results when the second discipline is removed', async () => {
+    mockDb.limit.mockResolvedValueOnce([{
+      id: 'eval-1',
+      name: 'Gesamtwertung',
+      categoryTypeId1: 'cat-1',
+      categoryTypeId2: 'cat-2',
+      showSingleResults: true,
+    }]);
+    mockDb.returning.mockResolvedValueOnce([{
+      id: 'eval-1',
+      name: 'Gesamtwertung',
+      categoryTypeId1: 'cat-1',
+      categoryTypeId2: null,
+      excludeRelayRace: false,
+      isBrigadePairing: false,
+      showSingleResults: false,
+      public: true,
+      public_tv: true,
+      displayDurationSeconds: 10,
+      order: 1,
+    }]);
+    mockDb.all.mockResolvedValueOnce([{ id: 'cat-1', name: 'Bronze Aktiv', hasRelayRace: true }]);
+
+    const ctx = createMockContext('PUT', {
+      categoryTypeId2: null,
+      showSingleResults: true,
+    }, { id: 'eval-1' });
+    const res = await onRequestPut(ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockDb.set).toHaveBeenCalledWith(expect.objectContaining({
+      categoryTypeId2: null,
+      showSingleResults: false,
+    }));
+    await expect(res.json()).resolves.toMatchObject({
+      categoryTypeId2: null,
+      showSingleResults: false,
+    });
   });
 
   it('DELETE /evaluation-types/[id] deletes an evaluation type', async () => {
