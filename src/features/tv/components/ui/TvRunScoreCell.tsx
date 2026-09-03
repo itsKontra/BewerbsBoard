@@ -1,5 +1,6 @@
 import { formatHundredthsToDisplayTime } from '../../../../../shared/utils/time-parser';
 import { parseRunPenalty } from '../../utils/tv-competitor-helpers';
+import { uiText } from '../../../../ui-text';
 
 export interface TvRunScoreCellProps {
   rawTimeHundredths?: number | null;
@@ -7,6 +8,7 @@ export interface TvRunScoreCellProps {
   scoreHundredths?: number | null;
   runStatus?: string | null;
   groupLabel?: string;
+  groupLabelClass?: string;
   disciplineLabel?: string;
   timeClass?: string;
   align?: 'left' | 'center' | 'right';
@@ -21,7 +23,7 @@ export function TvPenaltyTag({
 
   return (
     <span
-      aria-label={`${penalties} Fehler`}
+      aria-label={uiText.tv.telemetry.errorsCount(penalties)}
       className="inline-block rounded-md bg-red-600 px-2 py-0.5 text-[0.85em] font-black leading-none text-white shadow-sm ring-1 ring-red-700/80 drop-shadow-[0_2px_8px_rgba(239,68,68,0.4)] whitespace-nowrap align-middle select-none"
     >
       +{penalties}
@@ -35,6 +37,7 @@ export function TvRunScoreCell({
   scoreHundredths,
   runStatus,
   groupLabel,
+  groupLabelClass = 'text-slate-300 font-black',
   disciplineLabel,
   timeClass = 'text-white',
   align = 'center',
@@ -55,20 +58,20 @@ export function TvRunScoreCell({
 
   return (
     <div className={`flex flex-col ${alignClass} min-w-0`}>
-      {/* Optional sub-discipline or group tag for combined boards */}
+      {/* Sub-discipline or group tag for combined boards (Prominent font size for distant legibility) */}
       {(groupLabel || disciplineLabel) && (
-        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">
-          {groupLabel && <span>{groupLabel}</span>}
+        <div className={`flex items-center gap-1.5 text-sm sm:text-base font-black uppercase tracking-wide mb-1 ${alignClass}`}>
+          {groupLabel && <span className={groupLabelClass}>{groupLabel}</span>}
           {disciplineLabel && <span className="text-cyan-400/90">{disciplineLabel}</span>}
         </div>
       )}
 
-      {/* Raw Time + Red Penalty Tag (Reverted to original perfect font size clamp) */}
+      {/* Raw Time + Red Penalty Tag */}
       <div className={`inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums ${alignClass}`}>
         <span className={timeClass}>
           {isDnf ? (
             <span className="rounded bg-red-950/80 px-2 py-0.5 text-[0.85em] font-black text-red-400 border border-red-600/40">
-              DNF
+              {uiText.tv.dnf}
             </span>
           ) : displayTimeHundredths !== null ? (
             formatHundredthsToDisplayTime(displayTimeHundredths)

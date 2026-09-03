@@ -151,6 +151,13 @@ export function TvScoreboard({
     );
   }
 
+  // Demo mode detection: switcher is only visible when demo mode is active (or explicitly enabled via prop)
+  const isDemoMode =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('demo') === 'true';
+
+  const shouldShowSwitcher = _showSwitcher ?? isDemoMode;
+
   // Primary Scoreboard Display with Dynamic Theme Support & Prototyping Theme Switcher
   return (
     <>
@@ -165,7 +172,7 @@ export function TvScoreboard({
         isDisconnected={isDisconnected}
         theme={activeTheme}
       />
-      {_showSwitcher !== false && (
+      {shouldShowSwitcher && (
         <TvThemeSwitcher
           currentTheme={activeTheme}
           onSelectTheme={handleSelectTheme}

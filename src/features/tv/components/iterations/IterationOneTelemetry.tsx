@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { TvStateApiResponse } from '../../hooks/useTvDataFeed';
 import type { PublicResultsApiResponse, CategoryResultData } from '../../../public/components/PublicScoreboard';
 import type { RankingPresentationRow } from '../canvases/RankingCanvas';
@@ -59,6 +60,7 @@ interface TelemetryThemeTokens {
   rankOtherNumberClasses: string;
   leaderBadgeClasses: string;
   competitorNameClasses: string;
+  groupLabelClass: string;
   timeClass: string;
   combinedScoreClasses: string;
   footerContainerClasses: string;
@@ -102,7 +104,7 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
     badgeContainerClasses: 'border border-cyan-500/40 bg-cyan-950/80 text-cyan-300 shadow-[0_0_8px_rgba(0,229,255,0.2)]',
     badgeDotPingClasses: 'bg-cyan-400',
     badgeDotClasses: 'bg-cyan-400',
-    badgeText: 'LIVE TELEMETRY',
+    badgeText: uiText.tv.telemetry.liveBadge,
     headerSublabelClasses: 'text-slate-400',
     titleClasses: 'text-white',
     categoryContainerClasses: 'border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 to-slate-900/80 shadow-[0_0_15px_rgba(0,229,255,0.15)]',
@@ -127,6 +129,7 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
     rankOtherNumberClasses: 'text-white/70',
     leaderBadgeClasses: 'bg-amber-500/20 text-amber-300 border border-amber-500/40',
     competitorNameClasses: 'text-white',
+    groupLabelClass: 'text-cyan-300 font-black',
     timeClass: 'text-white',
     combinedScoreClasses: 'text-amber-300',
     footerContainerClasses: 'text-slate-400',
@@ -168,7 +171,7 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
     badgeContainerClasses: 'border border-amber-500/50 bg-amber-950/90 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
     badgeDotPingClasses: 'bg-amber-400',
     badgeDotClasses: 'bg-amber-400',
-    badgeText: 'FESTGALA & SIEGEREHRUNG',
+    badgeText: uiText.tv.telemetry.galaBadge,
     headerSublabelClasses: 'text-amber-300/80',
     titleClasses: 'text-[#fffbeb]',
     categoryContainerClasses: 'border border-amber-500/50 bg-gradient-to-r from-amber-950/90 to-[#1c1224]/90 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
@@ -193,6 +196,7 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
     rankOtherNumberClasses: 'text-amber-100/70',
     leaderBadgeClasses: 'bg-amber-500/30 text-amber-300 border border-amber-400/60 shadow-[0_0_8px_rgba(245,158,11,0.3)]',
     competitorNameClasses: 'text-[#fffbeb]',
+    groupLabelClass: 'text-amber-300 font-black',
     timeClass: 'text-amber-100',
     combinedScoreClasses: 'text-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]',
     footerContainerClasses: 'text-amber-300/60',
@@ -220,21 +224,17 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
   },
   outdoor: {
     frameClasses: 'fixed inset-0 flex h-screen h-dvh w-screen w-full flex-col overflow-hidden select-none bg-slate-100 text-slate-950 font-sans',
-    gridOverlayStyle: {
-      backgroundImage:
-        'linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px)',
-      backgroundSize: '40px 40px',
-    },
-    gridOverlayClasses: 'pointer-events-none absolute inset-0 opacity-100',
-    ambientTopClasses: 'pointer-events-none absolute -top-40 left-1/4 h-80 w-1/2 rounded-full bg-orange-400/10 blur-[120px]',
-    ambientBottomClasses: 'pointer-events-none absolute -bottom-40 right-1/4 h-80 w-1/2 rounded-full bg-amber-400/10 blur-[120px]',
+    gridOverlayStyle: {},
+    gridOverlayClasses: 'hidden',
+    ambientTopClasses: 'hidden',
+    ambientBottomClasses: 'hidden',
     headerClasses: 'relative z-10 flex h-20 shrink-0 items-center justify-between border-b-2 border-orange-500 bg-slate-900 px-6 sm:px-8 text-white shadow-xl',
     headerLogoDropShadow: 'drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]',
     headerDividerClasses: 'bg-slate-700',
     badgeContainerClasses: 'border border-orange-500/50 bg-orange-500/20 text-orange-400 shadow-sm',
     badgeDotPingClasses: 'bg-orange-400',
     badgeDotClasses: 'bg-orange-500',
-    badgeText: 'TAGESLICHT STADION',
+    badgeText: uiText.tv.telemetry.stadiumBadge,
     headerSublabelClasses: 'text-slate-300 font-bold',
     titleClasses: 'text-white font-black',
     categoryContainerClasses: 'border-2 border-orange-500 bg-gradient-to-r from-orange-600 to-amber-600 shadow-lg text-white',
@@ -259,6 +259,7 @@ const TELEMETRY_THEME_TOKENS: Record<TvTheme, TelemetryThemeTokens> = {
     rankOtherNumberClasses: 'text-slate-900 font-black',
     leaderBadgeClasses: 'bg-amber-500 text-slate-950 font-black border border-amber-600 shadow-sm',
     competitorNameClasses: 'text-slate-950 font-black',
+    groupLabelClass: 'text-slate-900 font-black',
     timeClass: 'text-slate-950 font-black',
     combinedScoreClasses: 'text-orange-600 font-black',
     footerContainerClasses: 'text-slate-700 font-bold',
@@ -321,6 +322,10 @@ export function IterationOneTelemetry({
   };
 
   const isAdminSplashActive = tvPresentation.adminSplashEnabled ?? false;
+  const isQrInitiallyVisible =
+    !isAdminSplashActive &&
+    Boolean(tvPresentation.qrCodeEnabled ?? true);
+  const [isQrVisible, setIsQrVisible] = useState(isQrInitiallyVisible);
 
   // Determine category layout
   const isCombined = activeCategory?.type === 'combined';
@@ -357,7 +362,7 @@ export function IterationOneTelemetry({
       data-theme={activeTheme}
       data-testid="tv-shared-frame"
     >
-      {/* Background technical telemetry grid / ambient glow */}
+      {/* Background technical telemetry grid / ambient glow (Hidden on outdoor high-sun theme) */}
       <div
         className={tokens.gridOverlayClasses}
         style={tokens.gridOverlayStyle}
@@ -374,6 +379,7 @@ export function IterationOneTelemetry({
           alwaysVisible={tvPresentation.qrCodeAlwaysVisible ?? false}
           intervalSeconds={tvPresentation.qrCodeIntervalSeconds ?? 30}
           durationSeconds={tvPresentation.qrCodeDurationSeconds ?? 10}
+          onVisibilityChange={setIsQrVisible}
         />
       )}
 
@@ -404,7 +410,7 @@ export function IterationOneTelemetry({
                 <span>{tokens.badgeText}</span>
               </span>
               <span className={`text-[11px] font-bold uppercase tracking-[0.2em] ${tokens.headerSublabelClasses}`}>
-                {tvPresentation.headerLabel || 'BewerbsBoard Engine'}
+                {tvPresentation.headerLabel || uiText.tv.telemetry.defaultEngineLabel}
               </span>
             </div>
             <h1 className={`mt-0.5 truncate font-barlow-condensed text-2xl sm:text-3xl font-black uppercase tracking-wider ${tokens.titleClasses}`}>
@@ -413,8 +419,8 @@ export function IterationOneTelemetry({
           </div>
         </div>
 
-        {/* Current Board Title with substantial margin-right so the QR overlay popup never hides the title */}
-        <div className="flex items-center gap-4 shrink-0 mr-80 lg:mr-[380px] xl:mr-[420px]">
+        {/* Current Board Title with QR overlay clearance ONLY when QR is visible */}
+        <div className={`flex items-center gap-4 shrink-0 transition-all duration-500 ${isQrVisible ? 'mr-80 lg:mr-[380px] xl:mr-[420px]' : 'mr-0'}`}>
           {activeCategory && (
             <div className={`flex items-center gap-2 rounded-xl px-4 py-2 ${tokens.categoryContainerClasses}`}>
               {tokens.categoryIcon === 'sparkles' ? (
@@ -447,7 +453,7 @@ export function IterationOneTelemetry({
           <div className={`max-w-4xl rounded-3xl p-12 backdrop-blur-2xl ${tokens.messageCardClasses}`}>
             <div className={`mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-[0.25em] ${tokens.messageBadgeClasses}`}>
               <Activity className="h-3.5 w-3.5 animate-spin" />
-              OFFIZIELLE DURCHSAGE
+              {uiText.tv.telemetry.officialAnnouncement}
             </div>
             <h2 className={`font-barlow-condensed text-5xl sm:text-6xl font-black uppercase tracking-wide ${tokens.messageHeadlineClasses}`}>
               {announcementHeadline || uiText.tv.noAnnouncement}
@@ -481,12 +487,14 @@ export function IterationOneTelemetry({
               {rankedWinners[1] && (
                 <div className="flex w-1/3 flex-col items-center">
                   <div className={`mb-2 rounded-xl px-4 py-2 text-center w-full ${tokens.winnersP2CardClasses}`}>
-                    <span className="font-mono text-xs font-black uppercase text-slate-400">2. PLATZ</span>
+                    <span className="font-mono text-xs font-black uppercase text-slate-400">
+                      {uiText.tv.telemetry.placeRank(2)}
+                    </span>
                     <h3 className={`truncate font-barlow-condensed text-2xl font-black ${tokens.titleClasses}`}>
                       {rankedWinners[1].fireBrigadeName}
                     </h3>
                     {rankedWinners[1].groupName && (
-                      <p className="text-sm font-semibold opacity-70">{rankedWinners[1].groupName}</p>
+                      <p className="text-base sm:text-lg font-black opacity-80">{rankedWinners[1].groupName}</p>
                     )}
                     <p className={`mt-1 font-mono text-[clamp(1.4rem,2.5vw,2.75rem)] font-black tabular-nums ${tokens.winnersP2ScoreClasses}`}>
                       {formatHundredthsToDisplayTime(rankedWinners[1].scoreHundredths)}
@@ -504,13 +512,13 @@ export function IterationOneTelemetry({
                   <div className={`mb-2 rounded-xl px-5 py-3 text-center w-full ${tokens.winnersP1CardClasses}`}>
                     <div className="inline-flex items-center gap-1 text-xs font-black uppercase text-amber-300">
                       <Trophy className="h-3.5 w-3.5" />
-                      SIEGER / 1. PLATZ
+                      {uiText.tv.telemetry.winnerP1}
                     </div>
                     <h3 className={`truncate font-barlow-condensed text-3xl font-black ${tokens.titleClasses}`}>
                       {rankedWinners[0].fireBrigadeName}
                     </h3>
                     {rankedWinners[0].groupName && (
-                      <p className="text-base font-bold text-amber-200">{rankedWinners[0].groupName}</p>
+                      <p className="text-lg sm:text-xl font-black text-amber-200">{rankedWinners[0].groupName}</p>
                     )}
                     <p className={`mt-1 font-mono text-[clamp(1.6rem,2.8vw,3rem)] font-black tabular-nums ${tokens.winnersP1ScoreClasses}`}>
                       {formatHundredthsToDisplayTime(rankedWinners[0].scoreHundredths)}
@@ -526,12 +534,14 @@ export function IterationOneTelemetry({
               {rankedWinners[2] && (
                 <div className="flex w-1/3 flex-col items-center">
                   <div className={`mb-2 rounded-xl px-4 py-2 text-center w-full ${tokens.winnersP3CardClasses}`}>
-                    <span className="font-mono text-xs font-black uppercase text-amber-600">3. PLATZ</span>
+                    <span className="font-mono text-xs font-black uppercase text-amber-600">
+                      {uiText.tv.telemetry.placeRank(3)}
+                    </span>
                     <h3 className={`truncate font-barlow-condensed text-2xl font-black ${tokens.titleClasses}`}>
                       {rankedWinners[2].fireBrigadeName}
                     </h3>
                     {rankedWinners[2].groupName && (
-                      <p className="text-sm font-semibold opacity-70">{rankedWinners[2].groupName}</p>
+                      <p className="text-base sm:text-lg font-black opacity-80">{rankedWinners[2].groupName}</p>
                     )}
                     <p className={`mt-1 font-mono text-[clamp(1.4rem,2.5vw,2.75rem)] font-black tabular-nums ${tokens.winnersP3ScoreClasses}`}>
                       {formatHundredthsToDisplayTime(rankedWinners[2].scoreHundredths)}
@@ -565,32 +575,32 @@ export function IterationOneTelemetry({
                       - Combined results: "ANG" and "SL" */}
                   <thead className={`grid h-full items-center font-barlow-condensed text-base sm:text-lg uppercase tracking-wider ${tokens.theadClasses}`}>
                     <tr className={`grid h-full items-center ${gridColumns}`}>
-                      <th className="px-4 py-2 text-center">RANG</th>
+                      <th className="px-4 py-2 text-center">{uiText.tv.telemetry.rankHeader}</th>
                       <th className="px-4 py-2 text-left">
                         {isBrigadePairing ? uiText.tv.fireBrigade : uiText.tv.participant}
                       </th>
 
                       {layoutKind === 'combined-relay' ? (
                         <>
-                          <th className="px-2 py-2 text-center">{cat1Name} ANG</th>
-                          <th className="px-2 py-2 text-center">{cat1Name} SL</th>
-                          <th className="px-2 py-2 text-center">{cat2Name} ANG</th>
-                          <th className="px-2 py-2 text-center">{cat2Name} SL</th>
-                          <th className={`px-4 py-2 text-right ${tokens.gesamtThClasses}`}>GESAMT</th>
+                          <th className="px-2 py-2 text-center">{cat1Name} {uiText.tv.telemetry.attackShortHeader}</th>
+                          <th className="px-2 py-2 text-center">{cat1Name} {uiText.tv.telemetry.relayShortHeader}</th>
+                          <th className="px-2 py-2 text-center">{cat2Name} {uiText.tv.telemetry.attackShortHeader}</th>
+                          <th className="px-2 py-2 text-center">{cat2Name} {uiText.tv.telemetry.relayShortHeader}</th>
+                          <th className={`px-4 py-2 text-right ${tokens.gesamtThClasses}`}>{uiText.tv.telemetry.totalHeader}</th>
                         </>
                       ) : layoutKind === 'combined' ? (
                         <>
                           <th className="px-4 py-2 text-center">{cat1Name}</th>
                           <th className="px-4 py-2 text-center">{cat2Name}</th>
-                          <th className={`px-4 py-2 text-right ${tokens.gesamtThClasses}`}>GESAMT</th>
+                          <th className={`px-4 py-2 text-right ${tokens.gesamtThClasses}`}>{uiText.tv.telemetry.totalHeader}</th>
                         </>
                       ) : layoutKind === 'single-relay' ? (
                         <>
-                          <th className="px-4 py-2 text-center">ANGRIFF</th>
-                          <th className="px-4 py-2 text-center">STAFFELLAUF</th>
+                          <th className="px-4 py-2 text-center">{uiText.tv.telemetry.attackHeader}</th>
+                          <th className="px-4 py-2 text-center">{uiText.tv.telemetry.relayHeader}</th>
                         </>
                       ) : (
-                        <th className="px-4 py-2 text-right">ANGRIFF</th>
+                        <th className="px-4 py-2 text-right">{uiText.tv.telemetry.attackHeader}</th>
                       )}
                     </tr>
                   </thead>
@@ -617,7 +627,7 @@ export function IterationOneTelemetry({
                             >
                               <td className="px-4 py-1.5 text-center">
                                 <span className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-bold ${tokens.upcomingBadgeClasses}`}>
-                                  BEREIT
+                                  {uiText.tv.telemetry.ready}
                                 </span>
                               </td>
                               <td className="min-w-0 px-4 py-1.5">
@@ -626,7 +636,7 @@ export function IterationOneTelemetry({
                                 </div>
                               </td>
                               <td className={`px-4 py-1.5 text-sm font-mono ${tokens.upcomingMetaClasses}`} colSpan={5}>
-                                Startreihenfolge #{upcoming.startOrderPosition ?? '—'}
+                                {uiText.tv.telemetry.startOrderPosition(upcoming.startOrderPosition ?? '—')}
                               </td>
                             </tr>
                           );
@@ -689,7 +699,7 @@ export function IterationOneTelemetry({
                                     aria-hidden="true"
                                     className={`hidden sm:inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wider ${tokens.leaderBadgeClasses}`}
                                   >
-                                    LEADER
+                                    {uiText.tv.telemetry.leaderBadge}
                                   </span>
                                 )}
                                 <span
@@ -713,6 +723,7 @@ export function IterationOneTelemetry({
                                     scoreHundredths={primary?.scoreHundredths}
                                     runStatus={primary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Cat 1 Relay */}
@@ -722,6 +733,7 @@ export function IterationOneTelemetry({
                                     errors={primary?.relayRaceErrors}
                                     runStatus={primary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Cat 2 Attack */}
@@ -732,6 +744,7 @@ export function IterationOneTelemetry({
                                     scoreHundredths={secondary?.scoreHundredths}
                                     runStatus={secondary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Cat 2 Relay */}
@@ -741,6 +754,7 @@ export function IterationOneTelemetry({
                                     errors={secondary?.relayRaceErrors}
                                     runStatus={secondary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Combined Score */}
@@ -759,6 +773,7 @@ export function IterationOneTelemetry({
                                     runStatus={primary?.runStatus}
                                     timeClass={tokens.timeClass}
                                     groupLabel={isBrigadePairing && result.groupName ? `Gr. ${result.groupName}` : undefined}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Group 2 */}
@@ -770,6 +785,7 @@ export function IterationOneTelemetry({
                                     runStatus={secondary?.runStatus}
                                     timeClass={tokens.timeClass}
                                     groupLabel={isBrigadePairing && result.secondaryGroupName ? `Gr. ${result.secondaryGroupName}` : undefined}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Combined Score */}
@@ -787,6 +803,7 @@ export function IterationOneTelemetry({
                                     scoreHundredths={primary?.scoreHundredths}
                                     runStatus={primary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                                 {/* Staffellauf */}
@@ -796,6 +813,7 @@ export function IterationOneTelemetry({
                                     errors={primary?.relayRaceErrors}
                                     runStatus={primary?.runStatus}
                                     timeClass={tokens.timeClass}
+                                    groupLabelClass={tokens.groupLabelClass}
                                   />
                                 </td>
                               </>
@@ -809,6 +827,7 @@ export function IterationOneTelemetry({
                                   runStatus={primary?.runStatus}
                                   align="right"
                                   timeClass={tokens.timeClass}
+                                  groupLabelClass={tokens.groupLabelClass}
                                 />
                               </td>
                             )}
@@ -824,15 +843,15 @@ export function IterationOneTelemetry({
               <footer className={`mt-3 flex shrink-0 items-center justify-between px-2 text-xs font-semibold ${tokens.footerContainerClasses}`}>
                 <div className="flex items-center gap-4">
                   <span className={tokens.footerPageClasses}>
-                    SEITE {rankingPageIndex + 1} / {rankingPageCount}
+                    {uiText.tv.telemetry.page(rankingPageIndex + 1, rankingPageCount)}
                   </span>
                   <span className={tokens.footerBulletClasses}>•</span>
-                  <span>{rankingPresentationRowsCount} TEILNEHMER IN DIESER KATEGORIE</span>
+                  <span>{uiText.tv.telemetry.participantsCount(rankingPresentationRowsCount)}</span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <span className={`text-[11px] ${tokens.footerEngineClasses}`}>
-                    BEWERBSBOARD TELEMETRY ENGINE 2.0
+                    {uiText.tv.telemetry.engineFooter}
                   </span>
                 </div>
               </footer>

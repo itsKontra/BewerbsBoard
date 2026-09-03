@@ -5,8 +5,10 @@ import '@testing-library/jest-dom/vitest';
 import { IterationOneTelemetry } from './iterations/IterationOneTelemetry';
 import { TvThemeSwitcher } from './switcher/TvThemeSwitcher';
 import { TvScoreboard } from './TvScoreboard';
+import { TvRunScoreCell } from './ui/TvRunScoreCell';
 import type { TvStateApiResponse } from '../hooks/useTvDataFeed';
 import type { PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
+import { uiText } from '../../../ui-text';
 
 const mockTvState: TvStateApiResponse = {
   mode: 'FIXED',
@@ -68,24 +70,24 @@ const mockResultsData: PublicResultsApiResponse = {
 describe('TvThemeSwitcher Component', () => {
   afterEach(() => cleanup());
 
-  it('renders all three themes with shortcut indicators', () => {
+  it('renders all three themes with shortcut indicators from uiText', () => {
     const onSelect = vi.fn();
     render(<TvThemeSwitcher currentTheme="broadcast" onSelectTheme={onSelect} />);
 
     expect(screen.getByTestId('tv-theme-switcher')).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Broadcast/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Ceremony/i })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: /Outdoor/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.broadcast.name, 'i') })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.ceremony.name, 'i') })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.outdoor.name, 'i') })).toBeInTheDocument();
   });
 
   it('calls onSelectTheme when clicking theme buttons', () => {
     const onSelect = vi.fn();
     render(<TvThemeSwitcher currentTheme="broadcast" onSelectTheme={onSelect} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: /Ceremony/i }));
+    fireEvent.click(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.ceremony.name, 'i') }));
     expect(onSelect).toHaveBeenCalledWith('ceremony');
 
-    fireEvent.click(screen.getByRole('tab', { name: /Outdoor/i }));
+    fireEvent.click(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.outdoor.name, 'i') }));
     expect(onSelect).toHaveBeenCalledWith('outdoor');
   });
 
@@ -107,14 +109,14 @@ describe('TvThemeSwitcher Component', () => {
     const onSelect = vi.fn();
     render(<TvThemeSwitcher currentTheme="broadcast" onSelectTheme={onSelect} />);
 
-    const minimizeBtn = screen.getByRole('button', { name: 'Themen-Umschalter minimieren' });
+    const minimizeBtn = screen.getByRole('button', { name: uiText.tv.switcher.minimizeButton });
     fireEvent.click(minimizeBtn);
 
-    const openBtn = screen.getByRole('button', { name: 'Themen-Umschalter öffnen' });
+    const openBtn = screen.getByRole('button', { name: uiText.tv.switcher.openButton });
     expect(openBtn).toBeInTheDocument();
 
     fireEvent.click(openBtn);
-    expect(screen.getByRole('tab', { name: /Ceremony/i })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: new RegExp(uiText.tv.switcher.themes.ceremony.name, 'i') })).toBeInTheDocument();
   });
 });
 
@@ -144,18 +146,18 @@ describe('Overhauled Themes in Scoreboard Layout', () => {
     const frame = screen.getByTestId('tv-shared-frame');
     expect(frame).toHaveAttribute('data-theme', 'ceremony');
     expect(frame).toHaveClass('bg-[#0a070e]');
-    expect(screen.getByText('FESTGALA & SIEGEREHRUNG')).toBeInTheDocument();
+    expect(screen.getByText(uiText.tv.telemetry.galaBadge)).toBeInTheDocument();
     expect(screen.getByText('FF Alpha Gruppe 1')).toHaveClass('text-[#fffbeb]');
   });
 
-  it('renders outdoor theme with high-sun daylight stadium styling and carbon text', () => {
+  it('renders outdoor theme without gradient caro grid and with high-sun daylight styling', () => {
     const activeCategory = mockResultsData.categories['bronze-aktiv'];
     const rows = [
       { kind: 'ranked' as const, entry: activeCategory.rankedResults[0] },
       { kind: 'upcoming' as const, entry: activeCategory.openEntries[0] },
     ];
 
-    render(
+    const { container } = render(
       <IterationOneTelemetry
         tvState={mockTvState}
         resultsData={mockResultsData}
@@ -171,11 +173,31 @@ describe('Overhauled Themes in Scoreboard Layout', () => {
     const frame = screen.getByTestId('tv-shared-frame');
     expect(frame).toHaveAttribute('data-theme', 'outdoor');
     expect(frame).toHaveClass('bg-slate-100', 'text-slate-950');
-    expect(screen.getByText('TAGESLICHT STADION')).toBeInTheDocument();
+    expect(screen.getByText(uiText.tv.telemetry.stadiumBadge)).toBeInTheDocument();
     expect(screen.getByText('FF Alpha Gruppe 1')).toHaveClass('text-slate-950');
+
+    // Verify gradient caro background grid is removed (marked hidden)
+    const hiddenOverlay = container.querySelector('.hidden');
+    expect(hiddenOverlay).toBeInTheDocument();
   });
 
-  it('renders TvThemeSwitcher inside TvScoreboard when showSwitcher is enabled', async () => {
+  it('renders TvRunScoreCell with prominent groupLabel font size', () => {
+    render(
+      <TvRunScoreCell
+        rawTimeHundredths={3160}
+        groupLabel="Gr. 1"
+        groupLabelClass="text-slate-900 font-black"
+      />
+    );
+
+    const groupLabel = screen.getByText('Gr. 1');
+    expect(groupLabel).toBeInTheDocument();
+    expect(groupLabel.parentElement).toHaveClass('text-sm', 'sm:text-base', 'font-black');
+    expect(groupLabel).toHaveClass('text-slate-900');
+  });
+
+  it('hides TvThemeSwitcher when demo mode is not active', async () => {
+    window.history.pushState({}, '', '/tv');
     globalThis.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/api/public/tv-state')) {
         return Promise.resolve({ ok: true, json: async () => mockTvState });
@@ -183,7 +205,22 @@ describe('Overhauled Themes in Scoreboard Layout', () => {
       return Promise.resolve({ ok: true, json: async () => mockResultsData });
     });
 
-    render(<TvScoreboard initialIteration={1} showSwitcher={true} />);
+    render(<TvScoreboard initialIteration={1} />);
+
+    // Switcher should not be rendered on normal production /tv
+    expect(screen.queryByTestId('tv-theme-switcher')).not.toBeInTheDocument();
+  });
+
+  it('shows TvThemeSwitcher when ?demo=true is active', async () => {
+    window.history.pushState({}, '', '/tv?demo=true');
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/api/public/tv-state')) {
+        return Promise.resolve({ ok: true, json: async () => mockTvState });
+      }
+      return Promise.resolve({ ok: true, json: async () => mockResultsData });
+    });
+
+    render(<TvScoreboard initialIteration={1} />);
 
     expect(await screen.findByTestId('tv-theme-switcher')).toBeInTheDocument();
   });

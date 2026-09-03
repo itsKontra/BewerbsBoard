@@ -12,6 +12,7 @@ export interface TvQrPopupCardProps {
   intervalSeconds?: number;
   durationSeconds?: number;
   initialVisible?: boolean;
+  onVisibilityChange?: (visible: boolean) => void;
 }
 
 interface QrThemeStyle {
@@ -70,8 +71,14 @@ export function TvQrPopupCard({
   intervalSeconds = 30,
   durationSeconds = 10,
   initialVisible = true,
+  onVisibilityChange,
 }: TvQrPopupCardProps) {
   const [isVisible, setIsVisible] = useState(enabled && (alwaysVisible || initialVisible));
+
+  useEffect(() => {
+    onVisibilityChange?.(enabled && isVisible);
+    return () => onVisibilityChange?.(false);
+  }, [enabled, isVisible, onVisibilityChange]);
 
   useEffect(() => {
     if (!enabled) {
