@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import type { TvStateApiResponse } from '../../hooks/useTvDataFeed';
 import type { PublicResultsApiResponse, CategoryResultData } from '../../../public/components/PublicScoreboard';
 import type { RankingPresentationRow } from '../canvases/RankingCanvas';
@@ -7,7 +6,7 @@ import { participantLabel } from '../../utils/tv-competitor-helpers';
 import { TvQrPopupCard } from '../ui/TvQrPopupCard';
 import { AdminAccessSplashCanvas } from '../canvases/AdminAccessSplashCanvas';
 import { TvRunScoreCell } from '../ui/TvRunScoreCell';
-import { Trophy, Activity, Clock, Flame } from 'lucide-react';
+import { Trophy, Activity, Flame } from 'lucide-react';
 import { uiText } from '../../../../ui-text';
 
 export interface IterationOneTelemetryProps {
@@ -31,24 +30,6 @@ export function IterationOneTelemetry({
   rankingPageCount,
   isDisconnected,
 }: IterationOneTelemetryProps) {
-  const [currentTime, setCurrentTime] = useState('');
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(
-        now.toLocaleTimeString('de-AT', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        })
-      );
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const { eventTitle, mode } = tvState;
   const announcementHeadline = tvState.tvAnnouncement?.headline?.trim() ?? '';
   const announcementMessage = tvState.tvAnnouncement?.message?.trim() ?? '';
@@ -160,11 +141,12 @@ export function IterationOneTelemetry({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
+        {/* Current Board Title with substantial margin-right so the QR overlay popup never hides the title */}
+        <div className="flex items-center gap-4 shrink-0 mr-80 lg:mr-[380px] xl:mr-[420px]">
           {activeCategory && (
-            <div className="flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 to-slate-900/80 px-4 py-1.5 shadow-[0_0_15px_rgba(0,229,255,0.15)]">
+            <div className="flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-gradient-to-r from-cyan-950/60 to-slate-900/80 px-4 py-2 shadow-[0_0_15px_rgba(0,229,255,0.15)]">
               <Flame className="h-4 w-4 text-cyan-400 animate-pulse" />
-              <span className="font-barlow-condensed text-lg sm:text-xl font-black uppercase tracking-wide text-cyan-200">
+              <span className="font-barlow-condensed text-xl sm:text-2xl font-black uppercase tracking-wide text-cyan-200">
                 {activeCategory.displayName}
               </span>
             </div>
@@ -175,11 +157,6 @@ export function IterationOneTelemetry({
               {uiText.tv.disconnected}
             </span>
           )}
-
-          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-3.5 py-1.5 font-mono text-base sm:text-lg font-black text-white/90 tabular-nums">
-            <Clock className="h-4 w-4 text-cyan-400" />
-            <span>{currentTime || '00:00:00'}</span>
-          </div>
         </div>
       </header>
 
@@ -235,7 +212,7 @@ export function IterationOneTelemetry({
                     {rankedWinners[1].groupName && (
                       <p className="text-sm font-semibold text-slate-400">{rankedWinners[1].groupName}</p>
                     )}
-                    <p className="mt-1 font-mono text-xl font-black text-slate-200 tabular-nums">
+                    <p className="mt-1 font-mono text-[clamp(1.4rem,2.5vw,2.75rem)] font-black text-slate-200 tabular-nums">
                       {formatHundredthsToDisplayTime(rankedWinners[1].scoreHundredths)}
                     </p>
                   </div>
@@ -259,7 +236,7 @@ export function IterationOneTelemetry({
                     {rankedWinners[0].groupName && (
                       <p className="text-base font-bold text-amber-200">{rankedWinners[0].groupName}</p>
                     )}
-                    <p className="mt-1 font-mono text-3xl font-black text-amber-300 tabular-nums">
+                    <p className="mt-1 font-mono text-[clamp(1.6rem,2.8vw,3rem)] font-black text-amber-300 tabular-nums">
                       {formatHundredthsToDisplayTime(rankedWinners[0].scoreHundredths)}
                     </p>
                   </div>
@@ -280,7 +257,7 @@ export function IterationOneTelemetry({
                     {rankedWinners[2].groupName && (
                       <p className="text-sm font-semibold text-amber-600/80">{rankedWinners[2].groupName}</p>
                     )}
-                    <p className="mt-1 font-mono text-xl font-black text-amber-500 tabular-nums">
+                    <p className="mt-1 font-mono text-[clamp(1.4rem,2.5vw,2.75rem)] font-black text-amber-500 tabular-nums">
                       {formatHundredthsToDisplayTime(rankedWinners[2].scoreHundredths)}
                     </p>
                   </div>
@@ -307,7 +284,9 @@ export function IterationOneTelemetry({
                   className="grid h-full w-full grid-rows-[3.5rem_minmax(0,1fr)] text-left"
                   data-density="full"
                 >
-                  {/* Table Header */}
+                  {/* Table Header:
+                      - Single results: "Angriff" and "Staffellauf"
+                      - Combined results: "ANG" and "SL" */}
                   <thead className="grid h-full items-center border-b-2 border-cyan-500/30 bg-slate-900/90 font-barlow-condensed text-base sm:text-lg uppercase tracking-wider text-cyan-300/90">
                     <tr className={`grid h-full items-center ${gridColumns}`}>
                       <th className="px-4 py-2 text-center">RANG</th>
@@ -331,11 +310,11 @@ export function IterationOneTelemetry({
                         </>
                       ) : layoutKind === 'single-relay' ? (
                         <>
-                          <th className="px-4 py-2 text-center">ANGRIFF (ANG)</th>
-                          <th className="px-4 py-2 text-center">STAFFELLAUF (SL)</th>
+                          <th className="px-4 py-2 text-center">ANGRIFF</th>
+                          <th className="px-4 py-2 text-center">STAFFELLAUF</th>
                         </>
                       ) : (
-                        <th className="px-4 py-2 text-right">ANGRIFF (ANG)</th>
+                        <th className="px-4 py-2 text-right">ANGRIFF</th>
                       )}
                     </tr>
                   </thead>
@@ -457,7 +436,6 @@ export function IterationOneTelemetry({
                                     errors={primary?.attackTimeErrors}
                                     scoreHundredths={primary?.scoreHundredths}
                                     runStatus={primary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
                                 {/* Cat 1 Relay */}
@@ -466,7 +444,6 @@ export function IterationOneTelemetry({
                                     rawTimeHundredths={primary?.relayRaceHundredths}
                                     errors={primary?.relayRaceErrors}
                                     runStatus={primary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
                                 {/* Cat 2 Attack */}
@@ -476,7 +453,6 @@ export function IterationOneTelemetry({
                                     errors={secondary?.attackTimeErrors}
                                     scoreHundredths={secondary?.scoreHundredths}
                                     runStatus={secondary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
                                 {/* Cat 2 Relay */}
@@ -485,11 +461,10 @@ export function IterationOneTelemetry({
                                     rawTimeHundredths={secondary?.relayRaceHundredths}
                                     errors={secondary?.relayRaceErrors}
                                     runStatus={secondary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
-                                {/* Combined Score */}
-                                <td className="px-4 py-1 text-right font-mono font-black text-[clamp(1.25rem,1.9vw,2rem)] text-amber-300 tabular-nums">
+                                {/* Combined Score - Reverted to clamp(1.4rem, 2.5vw, 2.75rem) */}
+                                <td className="px-4 py-1 text-right font-mono font-black text-[clamp(1.4rem,2.5vw,2.75rem)] text-amber-300 tabular-nums">
                                   {formatHundredthsToDisplayTime(result.scoreHundredths)}
                                 </td>
                               </>
@@ -503,7 +478,6 @@ export function IterationOneTelemetry({
                                     scoreHundredths={primary?.scoreHundredths}
                                     runStatus={primary?.runStatus}
                                     groupLabel={isBrigadePairing && result.groupName ? `Gr. ${result.groupName}` : undefined}
-                                    variant="broadcast"
                                   />
                                 </td>
                                 {/* Group 2 */}
@@ -514,38 +488,35 @@ export function IterationOneTelemetry({
                                     scoreHundredths={secondary?.scoreHundredths}
                                     runStatus={secondary?.runStatus}
                                     groupLabel={isBrigadePairing && result.secondaryGroupName ? `Gr. ${result.secondaryGroupName}` : undefined}
-                                    variant="broadcast"
                                   />
                                 </td>
-                                {/* Combined Score */}
-                                <td className="px-4 py-1 text-right font-mono font-black text-[clamp(1.25rem,1.9vw,2rem)] text-amber-300 tabular-nums">
+                                {/* Combined Score - Reverted to clamp(1.4rem, 2.5vw, 2.75rem) */}
+                                <td className="px-4 py-1 text-right font-mono font-black text-[clamp(1.4rem,2.5vw,2.75rem)] text-amber-300 tabular-nums">
                                   {formatHundredthsToDisplayTime(result.scoreHundredths)}
                                 </td>
                               </>
                             ) : layoutKind === 'single-relay' ? (
                               <>
-                                {/* Attack (ANG) */}
+                                {/* Angriff */}
                                 <td className="px-4 py-1 text-center">
                                   <TvRunScoreCell
                                     rawTimeHundredths={primary?.attackTimeHundredths}
                                     errors={primary?.attackTimeErrors}
                                     scoreHundredths={primary?.scoreHundredths}
                                     runStatus={primary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
-                                {/* Relay (SL) */}
+                                {/* Staffellauf */}
                                 <td className="px-4 py-1 text-center">
                                   <TvRunScoreCell
                                     rawTimeHundredths={primary?.relayRaceHundredths}
                                     errors={primary?.relayRaceErrors}
                                     runStatus={primary?.runStatus}
-                                    variant="broadcast"
                                   />
                                 </td>
                               </>
                             ) : (
-                              /* Standard: Only Angriff (ANG) time + penalties. Never hide in summed time! */
+                              /* Standard: Only Angriff time + penalties. Never hide in summed time! */
                               <td className="px-4 py-1 text-right">
                                 <TvRunScoreCell
                                   rawTimeHundredths={primary?.attackTimeHundredths}
@@ -553,7 +524,6 @@ export function IterationOneTelemetry({
                                   scoreHundredths={primary?.scoreHundredths}
                                   runStatus={primary?.runStatus}
                                   align="right"
-                                  variant="broadcast"
                                 />
                               </td>
                             )}
