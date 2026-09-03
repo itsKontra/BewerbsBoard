@@ -1,0 +1,13 @@
+{
+  "host": "0.0.0.0",
+  "port": 8080,
+  "auth_enabled": false,
+  "username": "admin",
+  "password": "changeme_to_secure_password",
+  "default_delay_seconds": 5,
+  "allow_cancel": true,
+  "dry_run": true,
+  "reboot_command": "systemctl reboot",
+  "shutdown_command": "systemctl poweroff",
+  "cancel_command": "shutdown -c"
+}

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host Power Control</title>
+  <meta name="description" content="Manage and control host restart and shutdown commands with live system telemetry.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+        </div>
+        <div>
+          <h1 id="page-title">Host Power Control</h1>
+          <p class="subtitle" id="host-subtitle">Loading host information...</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <div id="dry-run-badge" class="badge badge-warning hidden">
+          <span class="badge-dot"></span>
+          <span>Dry Run Mode</span>
+        </div>
+        <div id="connection-badge" class="badge badge-online">
+          <span class="badge-pulse"></span>
+          <span id="connection-status-text">Connected</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Active Scheduled Action Banner -->
+    <section id="active-banner" class="active-banner hidden" aria-live="polite">
+      <div class="banner-content">
+        <div class="banner-icon-wrapper pulse-animation" id="banner-icon-container">
+          <svg class="banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+          </svg>
+        </div>
+        <div class="banner-text">
+          <h2 id="banner-title" class="banner-heading">Action Scheduled</h2>
+          <p id="banner-desc" class="banner-subtext">The host will restart in <strong id="banner-timer">0</strong> seconds.</p>
+        </div>
+      </div>
+      <div class="banner-actions">
+        <button id="btn-cancel-action" class="btn btn-secondary btn-cancel" type="button">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Cancel Action
+        </button>
+      </div>
+    </section>
+
+    <!-- Main Grid -->
+    <main class="dashboard-grid">
+      <!-- System Telemetry Card -->
+      <section class="card telemetry-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+            <h2>System Telemetry</h2>
+          </div>
+          <button id="btn-refresh-stats" class="btn-icon" title="Refresh metrics" aria-label="Refresh metrics">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">Hostname</span>
+            <span class="metric-value font-mono" id="stat-hostname">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Operating System</span>
+            <span class="metric-value" id="stat-os">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Kernel</span>
+            <span class="metric-value font-mono" id="stat-kernel">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">System Uptime</span>
+            <span class="metric-value font-mono" id="stat-uptime">-</span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">CPU Cores & Load (1m, 5m, 15m)</span>
+            <span class="metric-value font-mono" id="stat-cpu">-</span>
+          </div>
+          <div class="metric-item">
+            <div class="metric-label-row">
+              <span class="metric-label">Memory Utilization</span>
+              <span class="metric-subval font-mono" id="stat-mem-text">-</span>
+            </div>
+            <div class="progress-bar-container">
+              <div id="stat-mem-bar" class="progress-bar" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Cards Section -->
+      <section class="actions-section">
+        <!-- Restart Card -->
+        <article class="card action-card restart-card">
+          <div class="action-card-glow restart-glow"></div>
+          <div class="card-body">
+            <div class="action-icon-circle restart-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M8 16H3v5"/>
+              </svg>
+            </div>
+            <h3 class="action-title">Restart Host</h3>
+            <p class="action-desc">
+              Reboot the operating system and bring all background services back online.
+            </p>
+
+            <div class="delay-selector-wrapper">
+              <span class="delay-label">Execution Delay:</span>
+              <div class="delay-pill-group" id="restart-delay-group" role="radiogroup" aria-label="Restart delay options">
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="0">Now</button>
+                <button type="button" role="radio" aria-checked="true" class="delay-pill active" data-delay="5">5s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="10">10s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="30">30s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="60">60s</button>
+              </div>
+            </div>
+
+            <button id="btn-restart" class="btn btn-action btn-restart" type="button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M8 16H3v5"/>
+              </svg>
+              Restart Host
+            </button>
+          </div>
+        </article>
+
+        <!-- Shutdown Card -->
+        <article class="card action-card shutdown-card">
+          <div class="action-card-glow shutdown-glow"></div>
+          <div class="card-body">
+            <div class="action-icon-circle shutdown-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                <line x1="12" y1="2" x2="12" y2="12"/>
+              </svg>
+            </div>
+            <h3 class="action-title">Shutdown Host</h3>
+            <p class="action-desc">
+              Gracefully terminate running processes, unmount filesystems, and power down.
+            </p>
+
+            <div class="delay-selector-wrapper">
+              <span class="delay-label">Execution Delay:</span>
+              <div class="delay-pill-group" id="shutdown-delay-group" role="radiogroup" aria-label="Shutdown delay options">
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="0">Now</button>
+                <button type="button" role="radio" aria-checked="true" class="delay-pill active" data-delay="5">5s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="10">10s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="30">30s</button>
+                <button type="button" role="radio" aria-checked="false" class="delay-pill" data-delay="60">60s</button>
+              </div>
+            </div>
+
+            <button id="btn-shutdown" class="btn btn-action btn-shutdown" type="button">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
+                <line x1="12" y1="2" x2="12" y2="12"/>
+              </svg>
+              Shutdown Host
+            </button>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <span>Restart & Shutdown Service</span>
+      <span class="footer-separator">•</span>
+      <span id="footer-service-uptime">Service running</span>
+      <span class="footer-separator">•</span>
+      <span id="footer-endpoint-info">Port: <span id="stat-port">8080</span></span>
+    </footer>
+  </div>
+
+  <!-- Confirmation Dialog -->
+  <dialog id="confirm-modal" class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div id="modal-icon-badge" class="modal-icon-badge">
+          <svg id="modal-icon-svg" viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <h2 id="modal-title" class="modal-heading">Confirm Action</h2>
+          <p id="modal-subtitle" class="modal-subheading">Please confirm host operation.</p>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <p id="modal-prompt-text">
+          Are you sure you want to trigger this action on host <strong id="modal-hostname-placeholder">localhost</strong>?
+        </p>
+        <div class="modal-info-box">
+          <div class="info-row">
+            <span>Target Action:</span>
+            <strong id="modal-action-text" class="font-mono text-uppercase">RESTART</strong>
+          </div>
+          <div class="info-row">
+            <span>Grace Period:</span>
+            <strong id="modal-delay-text" class="font-mono">5 seconds</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="modal-btn-cancel" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="modal-btn-confirm" class="btn btn-danger" type="button">Execute Now</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Reconnection / Offline Notification Overlay -->
+  <div id="reconnect-overlay" class="reconnect-overlay hidden">
+    <div class="reconnect-card">
+      <div class="spinner"></div>
+      <h2 id="reconnect-title">Host Reconnecting</h2>
+      <p id="reconnect-message">Waiting for server response. Checking connection status...</p>
+      <div class="reconnect-attempts font-mono" id="reconnect-status">Attempting ping...</div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
