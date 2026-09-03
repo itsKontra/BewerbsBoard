@@ -7,6 +7,7 @@ It replaces traditional paper or simple spreadsheet scoreboards with a modern, c
 ## Table of contents
 
 - [Features](#features)
+  - [Visual Preview & Screenshots](docs/PREVIEW.md)
 - [Quick Start (The Easy Way)](#quick-start-the-easy-way)
 - [For Developers and Advanced Users](#for-developers-and-advanced-users)
   - [Manual Deployment](#manual-deployment)
@@ -26,7 +27,14 @@ The application provides three separate views, each designed for a specific purp
 ### Software preview
 
 <p align="center">
-  <img src="docs/images/bewerbsboard-overview.png" alt="BewerbsBoard preview showing the public, administration, and TV interfaces" width="800">
+  <a href="docs/PREVIEW.md">
+    <img src="docs/images/bewerbsboard-overview.png" alt="BewerbsBoard preview showing the public, administration, and TV interfaces" width="800">
+  </a>
+</p>
+
+<p align="center">
+  📸 <b><a href="docs/PREVIEW.md">View Full Screenshot Gallery & Theme Previews &rarr;</a></b><br>
+  <sub>High-resolution walkthroughs of TV display themes (Broadcast, Ceremony, Outdoor), mobile spectator view, and admin dashboard.</sub>
 </p>
 
 ## Quick Start (The Easy Way)

@@ -7,7 +7,6 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createDatabase,
-  CatalogItemHasEntriesError,
   CatalogItemHasEvaluationsError,
   DuplicateCatalogItemError,
 } from './database.js'

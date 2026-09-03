@@ -1,11 +1,19 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { AdminLayout } from './AdminLayout';
 import { ADMIN_TABS } from './admin-tabs';
 
 describe('AdminLayout Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ user: 'admin@feuerwehr.at' }),
+    } as Response);
+  });
+
   afterEach(() => {
     cleanup();
   });

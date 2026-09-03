@@ -91,6 +91,7 @@ export function ParticipantsTab() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchData = async () => {
@@ -384,10 +385,10 @@ export function ParticipantsTab() {
   }
 
   return (
-    <div className="space-y-6 @container">
+    <div className="space-y-4">
       {/* Sub-Tab Bar */}
-      <AdminCard className="!p-2">
-        <div className="flex flex-wrap sm:flex-nowrap gap-2">
+      <AdminCard className="!p-1.5 sm:!p-2">
+        <div className="flex flex-wrap sm:flex-nowrap gap-1.5">
           {PARTICIPANTS_SUB_TABS.map((tab) => {
             const isActive = activeSubTab === tab.id;
             const Icon = tab.icon;
@@ -396,13 +397,13 @@ export function ParticipantsTab() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex-1 min-w-[140px] px-4 py-2.5 rounded-xl text-xs @sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+                className={`flex-1 min-w-[130px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                    ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
+                <Icon size={15} className={isActive ? 'text-white' : 'text-slate-400'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -411,17 +412,17 @@ export function ParticipantsTab() {
       </AdminCard>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="font-bold">{uiText.admin.participants.errorPrefix}</span>
+        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2 font-semibold">
+            <span>{uiText.admin.participants.errorPrefix}</span>
             <span>{error}</span>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-700 font-bold p-1 transition-colors"
+            className="text-red-400 hover:text-red-700 font-bold p-1 cursor-pointer transition-colors"
             title={uiText.admin.participants.close}
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
       )}
@@ -429,33 +430,33 @@ export function ParticipantsTab() {
       {/* ========================================================================= */}
       {/* 1. SUB-TAB: STARTREIHENFOLGE                                              */}
       {/* ========================================================================= */}
-      <div className={activeSubTab === 'startreihenfolge' ? 'space-y-6' : 'hidden'}>
+      <div className={activeSubTab === 'startreihenfolge' ? 'space-y-4' : 'hidden'}>
         {categoryTypes.length > 0 ? (
           <>
             {/* Category Selection Tabs */}
-            <AdminCard className="!p-4">
-              <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
+            <AdminCard className="!p-2.5 sm:!p-3">
+              <div className="flex space-x-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
                 {categoryTypes.map((cat) => {
                   const isSelected = selectedCategoryId === cat.id;
                   return (
                     <button
                       key={cat.id}
                       onClick={() => setSelectedCategoryId(cat.id)}
-                      className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap flex items-center space-x-2 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center space-x-2 cursor-pointer ${
                         isSelected
-                          ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 border border-indigo-500'
+                          ? 'bg-indigo-600 text-white shadow-xs border border-indigo-500'
                           : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                       }`}
                     >
                       <span>{cat.name}</span>
                       {cat.hasRelayRace ? (
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
                           isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-emerald-50 text-emerald-900 border border-emerald-200'
                         }`}>
                           {uiText.admin.participants.relay}
                         </span>
                       ) : (
-                        <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-medium ${
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold ${
                           isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-100 text-slate-700 border border-slate-200'
                         }`}>
                           {uiText.admin.participants.withoutRelay}
@@ -468,17 +469,17 @@ export function ParticipantsTab() {
             </AdminCard>
 
             {currentCategory && (
-              <AdminCard>
-                <div className="flex flex-col @sm:flex-row @sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-100">
-                  <h3 className="text-lg font-bold text-slate-800">{uiText.admin.participants.groupsInCategory(currentCategory.name)}</h3>
+              <AdminCard className="!p-4 sm:!p-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pb-2.5 border-b border-slate-100">
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">{uiText.admin.participants.groupsInCategory(currentCategory.name)}</h3>
                   <div className="flex items-center space-x-2 text-xs">
-                    <span className="text-slate-500">{uiText.admin.participants.relayRace}</span>
+                    <span className="text-slate-500 text-[11px]">{uiText.admin.participants.relayRace}</span>
                     {currentCategory.hasRelayRace ? (
-                      <span className="px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-900 font-semibold">
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-semibold">
                         {uiText.admin.participants.available}
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-semibold">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold">
                         {uiText.admin.participants.noRelayRace}
                       </span>
                     )}
@@ -486,11 +487,11 @@ export function ParticipantsTab() {
                 </div>
 
                 {/* Add Group Form */}
-                <form onSubmit={handleAddGroup} className="flex flex-col @sm:flex-row space-y-3 @sm:space-y-0 @sm:space-x-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <form onSubmit={handleAddGroup} className="flex flex-col sm:flex-row gap-2 mb-3.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
-                    className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 shadow-sm transition-all"
+                    className="flex-1 bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-2xs transition-all"
                     disabled={loading || availableGroups.length === 0}
                   >
                     <option value="">
@@ -509,22 +510,22 @@ export function ParticipantsTab() {
                   <button
                     type="submit"
                     disabled={!selectedGroupId || isAdding}
-                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm shadow-indigo-200 transition-all flex items-center justify-center space-x-2"
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-md shadow-2xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
                   >
-                    <Plus size={16} />
-                    <span>{isAdding ? uiText.admin.participants.adding : uiText.admin.participants.add}</span>
+                    <Plus size={14} />
+                    {isAdding ? uiText.admin.participants.adding : uiText.admin.participants.add}
                   </button>
                 </form>
 
                 {/* Entries List */}
                 {loading && entries.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400">{uiText.admin.participants.loadingStartList}</div>
+                  <div className="text-center py-6 text-slate-400 text-xs">{uiText.admin.participants.loadingStartList}</div>
                 ) : currentCategoryEntries.length === 0 ? (
-                  <div className="text-center py-12 text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="text-center py-8 text-slate-400 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-xs">
                     {uiText.admin.participants.noGroupsRegistered}
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-1.5">
                     {currentCategoryEntries.map((entry) => {
                       const isOpen = entry.runStatus === 'OPEN';
                       const openIndex = isOpen ? openEntries.indexOf(entry) : -1;
@@ -532,53 +533,53 @@ export function ParticipantsTab() {
                       return (
                         <div
                           key={entry.id}
-                          className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                            isOpen ? 'bg-white border-slate-200 shadow-sm hover:border-indigo-200' : 'bg-slate-50 border-slate-200/60 opacity-60'
+                          className={`flex items-center justify-between p-2 sm:p-2.5 rounded-lg border transition-all ${
+                            isOpen ? 'bg-white border-slate-200 shadow-2xs hover:border-slate-300' : 'bg-slate-50 border-slate-200/60 opacity-60'
                           }`}
                         >
-                          <div className="flex items-center space-x-4">
-                            <div className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold font-mono ${
-                              isOpen ? 'bg-indigo-50 text-indigo-700 border border-indigo-100' : 'bg-slate-100 text-slate-400'
+                          <div className="flex items-center space-x-2.5 min-w-0">
+                            <div className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold font-mono shrink-0 ${
+                              isOpen ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'
                             }`}>
                               {isOpen ? entry.startOrderPosition : '-'}
                             </div>
-                            <div>
-                              <div className="font-bold text-slate-800 text-sm">
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
                                 {entry.fireBrigadeName ? `${entry.fireBrigadeName} - ` : ''}{entry.groupName}
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5">
+                              <div className="text-[10px] text-slate-500 mt-0.5">
                                 {uiText.admin.participants.status} <span className={isOpen ? 'text-indigo-600 font-semibold' : 'text-slate-400'}>{entry.runStatus}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center space-x-1 shrink-0 ml-2">
                             {isOpen && (
                               <>
                                 <button
                                   onClick={() => handleMove(openEntries, openIndex, 'up')}
                                   disabled={openIndex === 0}
-                                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md disabled:opacity-20 transition-colors cursor-pointer"
                                   title={uiText.admin.participants.moveUp}
                                 >
-                                  <ChevronUp size={16} />
+                                  <ChevronUp size={15} />
                                 </button>
                                 <button
                                   onClick={() => handleMove(openEntries, openIndex, 'down')}
                                   disabled={openIndex === openEntries.length - 1}
-                                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors"
+                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md disabled:opacity-20 transition-colors cursor-pointer"
                                   title={uiText.admin.participants.moveDown}
                                 >
-                                  <ChevronDown size={16} />
+                                  <ChevronDown size={15} />
                                 </button>
                                 <button
                                   onClick={() => handleRemove(entry.id)}
                                   disabled={removingId === entry.id}
-                                  className="ml-2 p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg disabled:opacity-30 transition-colors cursor-pointer"
+                                  className="ml-1 p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none rounded-md disabled:opacity-30 transition-colors cursor-pointer"
                                   title={uiText.admin.participants.removeEntry}
                                   aria-label={uiText.admin.participants.removeEntry}
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={15} />
                                 </button>
                               </>
                             )}
@@ -592,7 +593,7 @@ export function ParticipantsTab() {
             )}
           </>
         ) : (
-          <div className="text-center py-12 text-slate-400">
+          <div className="text-center py-8 text-slate-400 text-xs">
             {uiText.admin.participants.noSetup}
           </div>
         )}
@@ -601,48 +602,48 @@ export function ParticipantsTab() {
       {/* ========================================================================= */}
       {/* 2. SUB-TAB: STAMMDATEN                                                    */}
       {/* ========================================================================= */}
-      <div className={activeSubTab === 'stammdaten' ? 'space-y-6' : 'hidden'}>
+      <div className={activeSubTab === 'stammdaten' ? 'space-y-4' : 'hidden'}>
 
         {/* Brigades Section */}
-        <AdminCard>
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <AdminCard className="!p-4 sm:!p-5">
+          <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>{uiText.admin.participants.brigades}</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono font-medium">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold">
                   {brigades.length}
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 {uiText.admin.participants.brigadesDescription}
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleCreateBrigade} className="flex gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <form onSubmit={handleCreateBrigade} className="flex gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <input
               type="text"
               placeholder={uiText.admin.participants.brigadeNamePlaceholder}
               value={newBrigadeName}
               onChange={e => setNewBrigadeName(e.target.value)}
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 transition-all shadow-sm"
+              className="flex-1 bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all shadow-2xs"
             />
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm shadow-indigo-200 text-sm flex items-center space-x-2"
+              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               {uiText.admin.participants.add}
             </button>
           </form>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-100">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">{uiText.admin.participants.name}</th>
-                  <th className="px-4 py-3">{uiText.admin.participants.groups}</th>
-                  <th className="px-4 py-3 text-right">{uiText.admin.participants.actions}</th>
+                  <th className="px-3 py-2">{uiText.admin.participants.name}</th>
+                  <th className="px-3 py-2">{uiText.admin.participants.groups}</th>
+                  <th className="px-3 py-2 text-right">{uiText.admin.participants.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -650,18 +651,18 @@ export function ParticipantsTab() {
                   const bGroupsCount = groups.filter(g => g.fireBrigadeId === b.id).length;
                   return (
                     <tr key={b.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 text-slate-800 font-medium">{b.name}</td>
-                      <td className="px-4 py-3.5 text-slate-500 text-xs font-mono">
+                      <td className="px-3 py-2 text-slate-900 font-semibold">{b.name}</td>
+                      <td className="px-3 py-2 text-slate-500 font-mono">
                         {uiText.admin.participants.groupCount(bGroupsCount)}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => handleDeleteBrigade(b.id, b.name)}
-                          className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
                           title={uiText.admin.participants.deleteBrigadeConfirm(b.name)}
                           aria-label={uiText.admin.participants.deleteBrigadeConfirm(b.name)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </td>
                     </tr>
@@ -669,7 +670,7 @@ export function ParticipantsTab() {
                 })}
                 {brigades.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={3} className="px-3 py-6 text-center text-slate-400 text-xs">
                       {uiText.admin.participants.noBrigades}
                     </td>
                   </tr>
@@ -680,26 +681,26 @@ export function ParticipantsTab() {
         </AdminCard>
 
         {/* Groups Section */}
-        <AdminCard>
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <AdminCard className="!p-4 sm:!p-5">
+          <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
                 <span>{uiText.admin.participants.groups}</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-mono font-medium">
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold">
                   {filteredGroups.length}
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-[11px] text-slate-500 mt-0.5">
                 {uiText.admin.participants.groupsDescription}
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleCreateGroup} className="flex gap-3 mb-6 flex-wrap bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <form onSubmit={handleCreateGroup} className="flex gap-2 mb-3 flex-wrap bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <select
               value={selectedBrigade}
               onChange={e => setSelectedBrigade(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 min-w-[200px] shadow-sm"
+              className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 min-w-[180px] shadow-2xs"
               aria-label={uiText.admin.participants.selectBrigadeLabel}
             >
               <option value="">{uiText.admin.participants.selectBrigade}</option>
@@ -713,13 +714,13 @@ export function ParticipantsTab() {
               placeholder={uiText.admin.participants.groupNamePlaceholder}
               value={newGroupName}
               onChange={e => setNewGroupName(e.target.value)}
-              className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 min-w-[150px] shadow-sm"
+              className="flex-1 bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 min-w-[140px] shadow-2xs"
             />
 
             <select
               value={newGroupType}
               onChange={e => setNewGroupType(e.target.value)}
-              className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 min-w-[140px] shadow-sm"
+              className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 min-w-[130px] shadow-2xs"
               aria-label={uiText.admin.participants.selectCompetitionClass}
             >
               {competitionClasses.map(cc => (
@@ -729,21 +730,21 @@ export function ParticipantsTab() {
 
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm shadow-indigo-200 text-sm flex items-center space-x-2"
+              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               {uiText.admin.participants.createGroup}
             </button>
           </form>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-100">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
                 <tr>
-                  <th className="px-4 py-3">{uiText.admin.participants.brigade}</th>
-                  <th className="px-4 py-3">{uiText.admin.participants.group}</th>
-                  <th className="px-4 py-3">{uiText.admin.participants.competitionClass}</th>
-                  <th className="px-4 py-3 text-right">{uiText.admin.participants.actions}</th>
+                  <th className="px-3 py-2">{uiText.admin.participants.brigade}</th>
+                  <th className="px-3 py-2">{uiText.admin.participants.group}</th>
+                  <th className="px-3 py-2">{uiText.admin.participants.competitionClass}</th>
+                  <th className="px-3 py-2 text-right">{uiText.admin.participants.actions}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -751,21 +752,21 @@ export function ParticipantsTab() {
                   const brigade = brigades.find(b => b.id === g.fireBrigadeId);
                   return (
                     <tr key={g.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-4 py-3.5 text-slate-700">{brigade?.name || uiText.admin.participants.unknown}</td>
-                      <td className="px-4 py-3.5 text-slate-800 font-medium">{g.name}</td>
-                      <td className="px-4 py-3.5">
-                        <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700">
+                      <td className="px-3 py-2 text-slate-700">{brigade?.name || uiText.admin.participants.unknown}</td>
+                      <td className="px-3 py-2 text-slate-900 font-semibold">{g.name}</td>
+                      <td className="px-3 py-2">
+                        <span className="px-2 py-0.5 text-[11px] font-semibold rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700">
                           {g.competitionClass}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-3 py-2 text-right">
                         <button
                           onClick={() => handleDeleteGroup(g.id, g.name)}
-                          className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500/20 rounded-lg transition-colors inline-flex items-center justify-center cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-red-700 hover:bg-red-50 focus:text-red-700 focus:bg-red-50 focus:outline-none rounded-md transition-colors inline-flex items-center justify-center cursor-pointer"
                           title={uiText.admin.participants.deleteGroupConfirm(g.name)}
                           aria-label={uiText.admin.participants.deleteGroupConfirm(g.name)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </td>
                     </tr>
@@ -773,7 +774,7 @@ export function ParticipantsTab() {
                 })}
                 {filteredGroups.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={4} className="px-3 py-6 text-center text-slate-400 text-xs">
                       {uiText.admin.participants.noGroups}
                     </td>
                   </tr>

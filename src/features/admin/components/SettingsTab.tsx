@@ -164,9 +164,9 @@ export function SettingsTab() {
 
   return (
     <div className="space-y-6 pb-20 @container">
-      {/* Sleek Segmented Sub-Tab Bar */}
-      <AdminCard className="!p-2">
-        <div className="flex flex-wrap sm:flex-nowrap gap-2">
+      {/* Sub-Tab Bar */}
+      <AdminCard className="!p-1.5 sm:!p-2">
+        <div className="flex flex-wrap sm:flex-nowrap gap-1.5">
           {SETTINGS_SUB_TABS.map((tab) => {
             const isActive = activeSubTab === tab.id;
             const Icon = tab.icon;
@@ -175,13 +175,13 @@ export function SettingsTab() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex-1 min-w-[140px] px-4 py-2.5 rounded-xl text-xs @sm:text-sm font-semibold transition-all flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
+                className={`flex-1 min-w-[130px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
                   isActive
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
+                    ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                <Icon size={18} className={isActive ? 'text-white' : 'text-slate-400'} />
+                <Icon size={15} className={isActive ? 'text-white' : 'text-slate-400'} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -621,26 +621,26 @@ export function SettingsTab() {
 
         {/* Action Buttons */}
         {isDirty && activeSubTab !== 'data-management' && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/90 border-t border-slate-200 backdrop-blur-md flex items-center justify-end space-x-4 z-40 lg:pl-72 shadow-lg">
-            <span className="text-sm text-slate-500 font-medium hidden @sm:inline-block">
+          <div className="fixed bottom-0 left-0 right-0 py-2.5 px-4 bg-white/95 border-t border-slate-200 backdrop-blur-md flex items-center justify-end space-x-3 z-40 lg:pl-64 shadow-md">
+            <span className="text-xs text-slate-500 font-semibold hidden sm:inline-block">
               {uiText.admin.settings.unsaved}
             </span>
             <button
               type="button"
               onClick={handleDiscardChanges}
               disabled={saving}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold border border-slate-200 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
             >
               {uiText.admin.settings.discard}
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-200 transition-all flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-indigo-500/70"
+              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
             >
               {saving ? (
                 <>
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                   <span>{uiText.admin.settings.saving}</span>
                 </>
               ) : (
