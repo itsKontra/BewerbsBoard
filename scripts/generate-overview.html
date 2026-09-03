@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BewerbsBoard Overview Generator</title>
+  <title>BewerbsBoard Multi-Device Overview</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -16,34 +16,35 @@
       width: 1920px;
       height: 1080px;
       overflow: hidden;
-      background-color: #050608;
+      background-color: #06070a;
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: #ffffff;
       position: relative;
     }
 
-    /* Ambient Background Glows */
+    /* Ambient Precision Background System */
     .bg-canvas {
       position: absolute;
       inset: 0;
-      background: 
-        radial-gradient(ellipse 900px 400px at 50% 12%, rgba(225, 29, 72, 0.12), transparent 70%),
-        radial-gradient(ellipse 800px 500px at 25% 65%, rgba(99, 102, 241, 0.08), transparent 70%),
-        radial-gradient(ellipse 900px 600px at 60% 60%, rgba(14, 165, 233, 0.09), transparent 70%),
-        radial-gradient(ellipse 600px 400px at 88% 50%, rgba(245, 158, 11, 0.07), transparent 70%),
-        linear-gradient(180deg, #07090e 0%, #030406 100%);
+      background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+        radial-gradient(ellipse 1100px 480px at 50% -80px, rgba(239, 68, 68, 0.22), transparent 70%),
+        radial-gradient(ellipse 900px 650px at 12% 75%, rgba(99, 102, 241, 0.15), transparent 70%),
+        radial-gradient(ellipse 1000px 700px at 55% 55%, rgba(14, 165, 233, 0.14), transparent 70%),
+        radial-gradient(ellipse 700px 500px at 88% 70%, rgba(245, 158, 11, 0.15), transparent 70%),
+        linear-gradient(180deg, #08090d 0%, #030406 100%);
+      background-size: 32px 32px, auto, auto, auto, auto, auto;
       z-index: 1;
     }
 
-    /* Subtle Studio Floor Grid / Reflection */
     .bg-floor {
       position: absolute;
       bottom: 0;
       left: 0;
       right: 0;
-      height: 380px;
-      background: radial-gradient(ellipse 1400px 200px at 50% 100%, rgba(255, 255, 255, 0.03), transparent 80%);
-      z-index: 1;
+      height: 400px;
+      background: radial-gradient(ellipse 1700px 240px at 50% 100%, rgba(255, 255, 255, 0.035), transparent 80%);
+      z-index: 2;
     }
 
     .main-container {
@@ -52,200 +53,265 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      padding: 42px 60px 40px 60px;
+      justify-content: space-between;
+      padding: 38px 48px 36px 48px;
     }
 
-    /* Top Branding */
+    /* ─── HEADER BRANDING ─── */
     .header {
-      text-align: center;
-      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       z-index: 20;
     }
 
-    .header h1 {
-      font-size: 64px;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-title {
+      font-size: 46px;
       font-weight: 900;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.035em;
       line-height: 1;
       color: #ffffff;
-      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 255, 255, 0.15);
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .header p {
-      margin-top: 10px;
-      font-size: 22px;
-      font-weight: 600;
-      color: #e2e8f0;
-      letter-spacing: -0.01em;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+    .brand-title span.accent {
+      background: linear-gradient(135deg, #f43f5e 0%, #ef4444 50%, #f97316 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    .header p .dot {
-      color: #ef4444;
-      margin: 0 10px;
-      font-size: 20px;
-      vertical-align: middle;
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
     }
 
-    /* Stage Arrangement */
-    .stage {
-      position: relative;
-      width: 1800px;
-      height: 860px;
-      perspective: 1600px;
-    }
-
-    /* 1. Laptop Mockup (Left) */
-    .laptop-wrapper {
-      position: absolute;
-      left: 15px;
-      bottom: 35px;
-      width: 660px;
-      transform: perspective(1400px) rotateY(11deg) rotateX(3deg) rotateZ(-1deg);
-      transform-style: preserve-3d;
-      z-index: 12;
-      filter: drop-shadow(0 35px 55px rgba(0, 0, 0, 0.88));
-    }
-
-    .laptop-screen-frame {
-      background: #181a20;
-      border: 3px solid #333842;
-      border-radius: 18px 18px 0 0;
-      padding: 10px 10px 14px 10px;
-      position: relative;
-      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.2);
-    }
-
-    .laptop-camera {
-      width: 6px;
-      height: 6px;
-      background: #0d0f12;
-      border: 1px solid #2a2e39;
+    .brand-pill-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      position: absolute;
-      top: 4px;
-      left: 50%;
-      transform: translateX(-50%);
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
     }
 
-    .laptop-screen {
-      width: 100%;
+    .brand-pill-text {
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e2e8f0;
+    }
+
+    .header-sub {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #94a3b8;
+    }
+
+    .header-sub .dot {
+      color: #ef4444;
+      font-size: 14px;
+    }
+
+    .header-sub strong {
+      color: #f1f5f9;
+      font-weight: 600;
+    }
+
+    /* ─── 3-COLUMN SHOWCASE STAGE ─── */
+    .stage {
+      display: grid;
+      grid-template-columns: 730px 730px 304px;
+      gap: 28px;
+      width: 1824px;
+      position: relative;
+    }
+
+    /* ─── COLUMN 1: Admin Mission Control ─── */
+    .col-admin {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .admin-wrapper {
+      width: 730px;
+      background: #0f121a;
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      border-radius: 12px;
+      box-shadow: 
+        0 30px 65px -10px rgba(0, 0, 0, 0.95),
+        0 0 35px rgba(99, 102, 241, 0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .admin-titlebar {
+      height: 36px;
+      background: #141722;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      flex-shrink: 0;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 7px;
+    }
+
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .dot-close { background: #ef4444; }
+    .dot-min { background: #f59e0b; }
+    .dot-max { background: #10b981; }
+
+    .window-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .window-tag {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 10px;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .admin-screen {
+      width: 730px;
       aspect-ratio: 16 / 9;
-      border-radius: 8px;
       overflow: hidden;
       background: #000;
-      position: relative;
-      border: 1px solid rgba(0, 0, 0, 0.5);
     }
 
-    .laptop-screen img {
+    .admin-screen img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
     }
 
-    .laptop-base {
-      width: 720px;
-      height: 16px;
-      background: linear-gradient(180deg, #2b303c 0%, #16181e 60%, #0d0e12 100%);
-      margin-left: -30px;
-      border-radius: 0 0 14px 14px;
-      border-top: 1px solid #454c5e;
-      position: relative;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.7);
+    /* Admin Capability Cards */
+    .admin-features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
     }
 
-    .laptop-notch {
-      width: 80px;
-      height: 4px;
-      background: #0d0e12;
-      border-radius: 0 0 5px 5px;
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    /* 2. Mobile Phone Mockup (Front Center-Left) */
-    .phone-wrapper {
-      position: absolute;
-      left: 360px;
-      bottom: 25px;
-      width: 245px;
-      height: 510px;
-      background: #15171d;
-      border: 4px solid #333846;
-      border-radius: 38px;
-      padding: 6px;
-      box-shadow: 
-        0 40px 70px -10px rgba(0, 0, 0, 0.95),
-        0 0 0 1px rgba(255, 255, 255, 0.1),
-        0 0 35px rgba(0, 0, 0, 0.8);
-      z-index: 25;
-      transform: perspective(1000px) rotateY(-2deg) rotateX(1deg);
-    }
-
-    .phone-speaker {
-      width: 60px;
-      height: 14px;
-      background: #000000;
+    .feature-card {
+      background: rgba(17, 20, 28, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 10px;
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 40;
+      padding: 16px 15px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
     }
 
-    .phone-screen {
-      width: 100%;
-      height: 100%;
-      border-radius: 32px;
-      overflow: hidden;
-      background: #0c0d11;
-      position: relative;
-      padding-top: 14px;
-      box-sizing: border-box;
+    .feature-card-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
     }
 
-    .phone-screen img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: top center;
-      display: block;
+    .feature-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 5px;
+      letter-spacing: -0.01em;
     }
 
-    /* 3. TV / Monitor Display (Center) */
+    .feature-card-desc {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* ─── COLUMN 2: TV Arena Ecosystem ─── */
+    .col-tv {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
     .tv-wrapper {
+      width: 730px;
+      position: relative;
+    }
+
+    .tv-badge {
       position: absolute;
-      left: 590px;
-      bottom: 48px;
-      width: 820px;
+      top: -12px;
+      left: 20px;
+      background: #091a33;
+      border: 1px solid #1e3a8a;
+      color: #38bdf8;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 4px 13px;
+      border-radius: 6px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
       z-index: 15;
-      filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.85));
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .tv-frame {
-      background: #16181f;
-      border: 4px solid #2e3442;
+      width: 730px;
+      background: #0d0f15;
+      border: 2px solid #232836;
       border-radius: 12px;
-      padding: 6px;
+      padding: 4px;
       box-shadow: 
-        inset 0 1px 2px rgba(255, 255, 255, 0.15),
-        0 0 30px rgba(14, 165, 233, 0.12);
+        0 30px 65px -10px rgba(0, 0, 0, 0.9),
+        0 0 45px rgba(14, 165, 233, 0.15),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
       position: relative;
     }
 
     .tv-screen {
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: 6px;
+      border-radius: 8px;
       overflow: hidden;
       background: #000;
-      border: 1px solid rgba(0, 0, 0, 0.6);
     }
 
     .tv-screen img {
@@ -255,61 +321,76 @@
       display: block;
     }
 
-    .tv-stand-neck {
-      width: 96px;
-      height: 48px;
-      background: linear-gradient(180deg, #232733 0%, #13151c 100%);
-      margin: 0 auto;
-      border-left: 1px solid #3c4456;
-      border-right: 1px solid #3c4456;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .tv-stand-base {
-      width: 340px;
-      height: 14px;
-      background: linear-gradient(180deg, #2b3140 0%, #151821 100%);
-      margin: 0 auto;
-      border-radius: 4px 4px 8px 8px;
-      border-top: 1px solid #4b556b;
-      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.8);
-    }
-
-    /* 4. Theme Previews (Right Side) */
-    .themes-sidebar {
-      position: absolute;
-      right: 20px;
-      bottom: 60px;
-      width: 390px;
-      display: flex;
-      flex-direction: column;
-      gap: 22px;
-      z-index: 18;
+    /* Side-by-side Themes */
+    .themes-subgrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      width: 100%;
     }
 
     .theme-card {
-      background: #13151b;
-      border-radius: 12px;
-      padding: 6px;
+      background: #10131b;
+      border-radius: 10px;
+      padding: 8px;
       box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.75),
+        0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 0 1px rgba(255, 255, 255, 0.08);
       position: relative;
-      transition: transform 0.2s ease;
     }
 
     .theme-card.theme-ceremony {
-      border: 2px solid rgba(217, 119, 6, 0.45);
+      border: 1.5px solid rgba(245, 158, 11, 0.5);
       box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.75),
-        0 0 25px rgba(217, 119, 6, 0.15);
+        0 20px 40px rgba(0, 0, 0, 0.8),
+        0 0 25px rgba(245, 158, 11, 0.14);
     }
 
     .theme-card.theme-outdoor {
-      border: 2px solid rgba(226, 232, 240, 0.35);
+      border: 1.5px solid rgba(226, 232, 240, 0.4);
       box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.75),
+        0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 25px rgba(255, 255, 255, 0.1);
+    }
+
+    .theme-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 7px;
+      padding: 0 3px;
+    }
+
+    .theme-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .theme-ceremony .theme-card-title { color: #fbbf24; }
+    .theme-outdoor .theme-card-title { color: #f1f5f9; }
+
+    .theme-card-tag {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .theme-ceremony .theme-card-tag {
+      color: #d97706;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+    }
+
+    .theme-outdoor .theme-card-tag {
+      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
     }
 
     .theme-card-screen {
@@ -326,6 +407,100 @@
       object-fit: cover;
       display: block;
     }
+
+    /* ─── COLUMN 3: Mobile Spectator Phone ─── */
+    .col-phone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .phone-wrapper {
+      width: 290px;
+      height: 590px;
+      background: #090a0f;
+      border: 4px solid #2e3444;
+      border-radius: 44px;
+      padding: 5px;
+      box-shadow: 
+        0 35px 75px -10px rgba(0, 0, 0, 0.98),
+        0 0 0 1px rgba(255, 255, 255, 0.15),
+        0 0 35px rgba(0, 0, 0, 0.85);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .phone-dynamic-island {
+      width: 76px;
+      height: 17px;
+      background: #000000;
+      border-radius: 10px;
+      position: absolute;
+      top: 13px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+    }
+
+    .phone-screen {
+      width: 100%;
+      height: 100%;
+      border-radius: 38px;
+      overflow: hidden;
+      background: #0a0c10;
+      position: relative;
+      padding-top: 14px;
+      box-sizing: border-box;
+    }
+
+    .phone-screen img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      display: block;
+    }
+
+    .phone-info-card {
+      width: 290px;
+      background: rgba(17, 20, 28, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 14px 16px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .phone-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #052e16;
+      border: 1px solid #059669;
+      color: #34d399;
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      padding: 3px 12px;
+      border-radius: 9999px;
+      margin-bottom: 7px;
+    }
+
+    .phone-info-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .phone-info-desc {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
@@ -333,60 +508,134 @@
   <div class="bg-floor"></div>
 
   <div class="main-container">
-    <!-- Top Branding -->
+    <!-- Top Branding Header -->
     <header class="header">
-      <h1>BewerbsBoard</h1>
-      <p>Live results <span class="dot">•</span> Admin control <span class="dot">•</span> TV display</p>
+      <div class="header-left">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" style="filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.7));">
+          <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z" fill="url(#fireGradient)" />
+          <defs>
+            <linearGradient id="fireGradient" x1="4" y1="20" x2="18" y2="4" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#ef4444" />
+              <stop offset="0.5" stop-color="#f97316" />
+              <stop offset="1" stop-color="#fbbf24" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <h1 class="brand-title">
+          Bewerbs<span class="accent">Board</span>
+        </h1>
+        <div class="brand-pill">
+          <span class="brand-pill-dot"></span>
+          <span class="brand-pill-text">Fire Brigade Digital Scoreboard Suite</span>
+        </div>
+      </div>
+
+      <div class="header-sub">
+        <span>📺 <strong>Arena TV Display</strong> (1080p Kiosk)</span>
+        <span class="dot">•</span>
+        <span>📱 <strong>Spectator Portal</strong> (Live Mobile)</span>
+        <span class="dot">•</span>
+        <span>⚙️ <strong>Jury Control</strong> (Rapid Scoring)</span>
+      </div>
     </header>
 
-    <!-- Visual Showcase Stage -->
+    <!-- 3-Column Showcase Stage -->
     <div class="stage">
-      <!-- Laptop with Admin Dashboard (Left) -->
-      <div class="laptop-wrapper">
-        <div class="laptop-screen-frame">
-          <div class="laptop-camera"></div>
-          <div class="laptop-screen">
+      <!-- ─── COLUMN 1: Admin Mission Control ─── -->
+      <div class="col-admin">
+        <div class="admin-wrapper">
+          <div class="admin-titlebar">
+            <div class="window-controls">
+              <div class="window-dot dot-close"></div>
+              <div class="window-dot dot-min"></div>
+              <div class="window-dot dot-max"></div>
+            </div>
+            <div class="window-title">
+              <span>⚙️ Jury Mission Control — Erfassung & Wertung</span>
+            </div>
+            <div class="window-tag">1920×1080 Desktop</div>
+          </div>
+          <div class="admin-screen">
             <img src="../docs/images/admin-dashboard.png" alt="Admin Dashboard">
           </div>
         </div>
-        <div class="laptop-base">
-          <div class="laptop-notch"></div>
+
+        <div class="admin-features">
+          <div class="feature-card">
+            <div class="feature-card-icon">⚡</div>
+            <div class="feature-card-title">Rapid Score Capture</div>
+            <div class="feature-card-desc">Keyboard-optimized entry with automatic sum & penalty calculations.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card-icon">🔄</div>
+            <div class="feature-card-title">Live TV Remote</div>
+            <div class="feature-card-desc">Instant theme switching, ceremony podium triggers, and QR onboarding.</div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card-icon">📶</div>
+            <div class="feature-card-title">Flexible Hosting</div>
+            <div class="feature-card-desc">Self-hosted Docker with LAN discovery or serverless Cloudflare Pages.</div>
+          </div>
         </div>
       </div>
 
-      <!-- Smartphone with Public Scoreboard (Front Left) -->
-      <div class="phone-wrapper">
-        <div class="phone-speaker"></div>
-        <div class="phone-screen">
-          <img src="../docs/images/public-scoreboard.png" alt="Public Mobile Scoreboard">
+      <!-- ─── COLUMN 2: TV Arena Ecosystem ─── -->
+      <div class="col-tv">
+        <div class="tv-wrapper">
+          <div class="tv-badge">
+            <span>🖥️ Arena TV Scoreboard • Broadcast Theme</span>
+          </div>
+          <div class="tv-frame">
+            <div class="tv-screen">
+              <img src="../docs/images/tv-scoreboard.png" alt="TV Scoreboard Broadcast Theme">
+            </div>
+          </div>
+        </div>
+
+        <div class="themes-subgrid">
+          <!-- Theme 2: Ceremony -->
+          <div class="theme-card theme-ceremony">
+            <div class="theme-card-header">
+              <div class="theme-card-title">
+                <span>🏆 Ceremony Theme</span>
+              </div>
+              <div class="theme-card-tag">Gold & Finals</div>
+            </div>
+            <div class="theme-card-screen">
+              <img src="../docs/images/tv-scoreboard-theme-2.png" alt="TV Scoreboard Ceremony Theme">
+            </div>
+          </div>
+
+          <!-- Theme 3: Outdoor -->
+          <div class="theme-card theme-outdoor">
+            <div class="theme-card-header">
+              <div class="theme-card-title">
+                <span>☀️ Outdoor Theme</span>
+              </div>
+              <div class="theme-card-tag">Sunlight Anti-Glare</div>
+            </div>
+            <div class="theme-card-screen">
+              <img src="../docs/images/tv-scoreboard-theme-3.png" alt="TV Scoreboard Outdoor Theme">
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- TV Monitor with Broadcast Theme (Center) -->
-      <div class="tv-wrapper">
-        <div class="tv-frame">
-          <div class="tv-screen">
-            <img src="../docs/images/tv-scoreboard.png" alt="TV Scoreboard Broadcast Theme">
-          </div>
-        </div>
-        <div class="tv-stand-neck"></div>
-        <div class="tv-stand-base"></div>
-      </div>
-
-      <!-- Theme Cards (Right Side) -->
-      <div class="themes-sidebar">
-        <!-- Theme 2: Ceremony -->
-        <div class="theme-card theme-ceremony">
-          <div class="theme-card-screen">
-            <img src="../docs/images/tv-scoreboard-theme-2.png" alt="TV Scoreboard Ceremony Theme">
+      <!-- ─── COLUMN 3: Mobile Spectator Phone ─── -->
+      <div class="col-phone">
+        <div class="phone-wrapper">
+          <div class="phone-dynamic-island"></div>
+          <div class="phone-screen">
+            <img src="../docs/images/public-scoreboard.png" alt="Public Mobile Scoreboard">
           </div>
         </div>
 
-        <!-- Theme 3: Outdoor -->
-        <div class="theme-card theme-outdoor">
-          <div class="theme-card-screen">
-            <img src="../docs/images/tv-scoreboard-theme-3.png" alt="TV Scoreboard Outdoor Theme">
+        <div class="phone-info-card">
+          <div class="phone-pill-badge">
+            <span>● Live Spectators</span>
           </div>
+          <div class="phone-info-title">Zero-Install Mobile Portal</div>
+          <div class="phone-info-desc">Live rankings, split times & start orders on any smartphone.</div>
         </div>
       </div>
     </div>
