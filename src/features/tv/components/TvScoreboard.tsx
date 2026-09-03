@@ -1,4 +1,5 @@
-import { DEFAULT_TV_PRESENTATION } from '../../../../shared/domain/tv-presentation';
+import { useState } from 'react';
+import { DEFAULT_TV_PRESENTATION, parseThemeParam, type TvTheme } from '../../../../shared/domain/tv-presentation';
 import { TV_PRESENTATION_STYLES } from '../utils/tv-presentation-styles';
 import { ScoreboardHeader } from './ui/ScoreboardHeader';
 import { TvQrPopupCard } from './ui/TvQrPopupCard';
@@ -10,15 +11,18 @@ import { useTvDataFeed } from '../hooks/useTvDataFeed';
 import { useRankingPager } from '../hooks/useRankingPager';
 import { uiText } from '../../../ui-text';
 import { IterationOneTelemetry } from './iterations/IterationOneTelemetry';
+import { TvThemeSwitcher } from './switcher/TvThemeSwitcher';
 
 export interface TvScoreboardProps {
   initialIteration?: number;
   showSwitcher?: boolean;
+  initialTheme?: TvTheme;
 }
 
 export function TvScoreboard({
   initialIteration: _initialIteration,
   showSwitcher: _showSwitcher,
+  initialTheme,
 }: TvScoreboardProps = {}) {
   const { tvState, resultsData, isDisconnected } = useTvDataFeed();
   const {
@@ -29,6 +33,30 @@ export function TvScoreboard({
     rankingPageIndex,
     rankingPageCount,
   } = useRankingPager(tvState, resultsData);
+
+  // Active theme: user manual override > URL parameter > initial prop > server presentation > default
+  const [userSelectedTheme, setUserSelectedTheme] = useState<TvTheme | null>(() => {
+    if (typeof window !== 'undefined') {
+      return parseThemeParam(new URLSearchParams(window.location.search).get('theme'));
+    }
+    return null;
+  });
+
+  const activeTheme: TvTheme =
+    userSelectedTheme ??
+    initialTheme ??
+    (tvState?.tvPresentation?.theme && ['broadcast', 'ceremony', 'outdoor'].includes(tvState.tvPresentation.theme)
+      ? tvState.tvPresentation.theme
+      : DEFAULT_TV_PRESENTATION.theme);
+
+  const handleSelectTheme = (newTheme: TvTheme) => {
+    setUserSelectedTheme(newTheme);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.set('theme', newTheme);
+      window.history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
+    }
+  };
 
   if (!tvState || !resultsData) {
     return (
@@ -50,15 +78,16 @@ export function TvScoreboard({
     const { eventTitle, mode } = tvState;
     const announcementHeadline = tvState.tvAnnouncement?.headline?.trim() ?? '';
     const announcementMessage = tvState.tvAnnouncement?.message?.trim() ?? '';
-    const tvPresentation = tvState.tvPresentation ?? {
-      theme: DEFAULT_TV_PRESENTATION.theme,
-      logoUrl: '/logo.png',
-      headerLabel: DEFAULT_TV_PRESENTATION.headerLabel,
-      qrCodeEnabled: DEFAULT_TV_PRESENTATION.qrCodeEnabled,
-      qrCodeAlwaysVisible: DEFAULT_TV_PRESENTATION.qrCodeAlwaysVisible,
-      qrCodeIntervalSeconds: DEFAULT_TV_PRESENTATION.qrCodeIntervalSeconds,
-      qrCodeDurationSeconds: DEFAULT_TV_PRESENTATION.qrCodeDurationSeconds,
-      adminSplashEnabled: DEFAULT_TV_PRESENTATION.adminSplashEnabled,
+    const tvPresentation = {
+      ...(tvState.tvPresentation ?? DEFAULT_TV_PRESENTATION),
+      theme: activeTheme,
+      logoUrl: tvState.tvPresentation?.logoUrl || '/logo.png',
+      headerLabel: tvState.tvPresentation?.headerLabel || DEFAULT_TV_PRESENTATION.headerLabel,
+      qrCodeEnabled: tvState.tvPresentation?.qrCodeEnabled ?? DEFAULT_TV_PRESENTATION.qrCodeEnabled,
+      qrCodeAlwaysVisible: tvState.tvPresentation?.qrCodeAlwaysVisible ?? DEFAULT_TV_PRESENTATION.qrCodeAlwaysVisible,
+      qrCodeIntervalSeconds: tvState.tvPresentation?.qrCodeIntervalSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeIntervalSeconds,
+      qrCodeDurationSeconds: tvState.tvPresentation?.qrCodeDurationSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeDurationSeconds,
+      adminSplashEnabled: tvState.tvPresentation?.adminSplashEnabled ?? false,
     };
     const themeStyles = TV_PRESENTATION_STYLES[tvPresentation.theme];
     const isAdminSplashActive = tvPresentation.adminSplashEnabled ?? false;
@@ -122,17 +151,26 @@ export function TvScoreboard({
     );
   }
 
-  // Telemetry Arena Redesign Layout (Applied as Primary Scoreboard)
+  // Primary Scoreboard Display with Dynamic Theme Support & Prototyping Theme Switcher
   return (
-    <IterationOneTelemetry
-      tvState={tvState}
-      resultsData={resultsData}
-      activeCategory={activeCategory}
-      visibleRankingRows={visibleRankingRows}
-      rankingPresentationRowsCount={rankingPresentationRowsCount}
-      rankingPageIndex={rankingPageIndex}
-      rankingPageCount={rankingPageCount}
-      isDisconnected={isDisconnected}
-    />
+    <>
+      <IterationOneTelemetry
+        tvState={tvState}
+        resultsData={resultsData}
+        activeCategory={activeCategory}
+        visibleRankingRows={visibleRankingRows}
+        rankingPresentationRowsCount={rankingPresentationRowsCount}
+        rankingPageIndex={rankingPageIndex}
+        rankingPageCount={rankingPageCount}
+        isDisconnected={isDisconnected}
+        theme={activeTheme}
+      />
+      {_showSwitcher !== false && (
+        <TvThemeSwitcher
+          currentTheme={activeTheme}
+          onSelectTheme={handleSelectTheme}
+        />
+      )}
+    </>
   );
 }
