@@ -24,8 +24,9 @@ Replaces traditional paper lists and manual spreadsheets with an automated, mult
 [🗺️ Architecture](#%EF%B8%8F-multi-screen-architecture) &nbsp;•&nbsp;
 [🚀 Quick Start](#-quick-start) &nbsp;•&nbsp;
 [🐳 Deployment](#-deployment-options) &nbsp;•&nbsp;
-[🛠️ Development Guide](#%EF%B8%8F-development-guide) &nbsp;•&nbsp;
 [📺 TV Kiosk Setup](#-tv-display-kiosk-setup) &nbsp;•&nbsp;
+[⚡ Host Restart Service](docs/restart-service.md) &nbsp;•&nbsp;
+[🛠️ Development Guide](#%EF%B8%8F-development-guide) &nbsp;•&nbsp;
 [⚙️ Configuration](#%EF%B8%8F-configuration)
 
 <br/>
@@ -273,6 +274,10 @@ Then start Docker with the network-info overlay:
 docker compose -f compose.yaml -f compose.network-info.yaml up -d
 ```
 
+### 4. Remote Host Power & Reboot Service
+For headless arena TV kiosks and venue server appliances without a keyboard or monitor attached, BewerbsBoard includes an isolated, zero-dependency host daemon and web interface:
+- 📖 **[Host Restart & Shutdown Web Service Guide](docs/restart-service.md)** — Trigger graceful reboots, shutdowns, or cancellations with real-time hardware telemetry directly from any browser or smartphone.
+
 ---
 
 ## 🛠️ Development Guide
@@ -305,6 +310,7 @@ BewerbsBoard/
 │   ├── app.ts              # Hono application routing & middleware
 │   ├── database.ts         # SQLite connection & schema migrations
 │   └── local-auth.ts       # Session authentication & cookie signing
+├── restart-service/        # Zero-dependency host reboot/shutdown daemon & web UI
 ├── functions/              # Cloudflare Pages Functions (Serverless D1/KV)
 ├── shared/                 # Shared domain logic & database definitions
 │   ├── domain/             # Scoring engine, calculation rules & lifecycles

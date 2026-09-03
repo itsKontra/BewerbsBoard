@@ -40,3 +40,17 @@ dist-server
 skills-lock.json
 .scratch/
 docs/agents/
+
+# Python & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+
+# Restart Service local configuration
+restart-service/config.json

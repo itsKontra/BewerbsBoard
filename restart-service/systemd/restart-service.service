@@ -1,6 +1,6 @@
 [Unit]
-Description=Ubuntu Host Restart and Shutdown Web Service
-Documentation=https://github.com/
+Description=BewerbsBoard Host Restart & Shutdown Web Service
+Documentation=https://github.com/itsKontra/BewerbsBoard
 After=network.target network-online.target
 Wants=network-online.target
 
