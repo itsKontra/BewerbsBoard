@@ -1,0 +1,29 @@
+[Unit]
+Description=BewerbsBoard Host Restart & Shutdown Web Service
+Documentation=https://github.com/itsKontra/BewerbsBoard
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/restart-service
+ExecStart=/usr/bin/python3 /opt/restart-service/server.py --config /etc/restart-service/config.json
+Restart=always
+RestartSec=5s
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Security & Sandboxing (Permit power control commands)
+ProtectControlGroups=false
+ProtectKernelTunables=false
+ProtectKernelModules=false
+
+# Standard system logging via journalctl
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=restart-service
+
+[Install]
+WantedBy=multi-user.target
