@@ -109,7 +109,7 @@ export function LogsTab() {
   };
 
   return (
-    <div className="space-y-6 @container">
+    <div className="space-y-4">
       <SystemHealthHeader
         onOpenResetModal={() => setShowResetModal(true)}
         resetSuccessMessage={resetSuccess}
@@ -117,11 +117,11 @@ export function LogsTab() {
       />
 
       {/* Header & Search Bar */}
-      <AdminCard>
-        <div className="flex flex-col @md:flex-row items-stretch @md:items-center justify-between gap-4">
+      <AdminCard className="!p-2.5 sm:!p-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
           <div className="relative flex-1">
-            <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-              <Search size={16} />
+            <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+              <Search size={14} />
             </span>
             <input
               type="text"
@@ -131,7 +131,7 @@ export function LogsTab() {
                 setPage(1);
               }}
               placeholder={uiText.admin.logs.searchPlaceholder}
-              className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 rounded-xl pl-10 pr-10 py-2.5 text-sm text-slate-800 focus:outline-none transition-all shadow-sm"
+              className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-lg pl-8 pr-8 py-1.5 text-xs text-slate-800 focus:outline-none transition-all shadow-2xs"
             />
             {search && (
               <button
@@ -139,24 +139,24 @@ export function LogsTab() {
                   setSearch('');
                   setPage(1);
                 }}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700"
+                className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-700 cursor-pointer"
               >
-                <X size={16} />
+                <X size={14} />
               </button>
             )}
           </div>
 
-          <div className="flex items-center justify-between @md:justify-end space-x-4">
-            <span className="text-xs font-mono text-slate-500">
+          <div className="flex items-center justify-between sm:justify-end space-x-3 shrink-0">
+            <span className="text-xs font-mono text-slate-500 font-semibold">
               {uiText.admin.logs.foundCount(total)}
             </span>
             <button
               onClick={fetchLogs}
               disabled={loading}
-              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors flex items-center space-x-1.5 shadow-sm cursor-pointer"
+              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 transition-colors flex items-center space-x-1.5 shadow-2xs cursor-pointer"
             >
-              <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
-              <span className="hidden @sm:inline">{uiText.admin.logs.refresh}</span>
+              <RotateCw size={13} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">{uiText.admin.logs.refresh}</span>
             </button>
           </div>
         </div>
@@ -164,16 +164,16 @@ export function LogsTab() {
 
       {/* Error Alert */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl flex items-center justify-between shadow-sm">
-          <div className="flex items-center space-x-2 text-sm font-semibold">
-            <AlertTriangle size={18} />
+        <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl flex items-center justify-between shadow-2xs text-xs font-semibold">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle size={15} />
             <span>{error}</span>
           </div>
           <button
             onClick={() => setError(null)}
-            className="text-red-400 hover:text-red-700"
+            className="text-red-400 hover:text-red-700 cursor-pointer"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
       )}
@@ -181,59 +181,59 @@ export function LogsTab() {
       {/* Audit Log Table */}
       <AdminCard className="!p-0 overflow-hidden">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400 font-medium">
-            <Loader2 className="animate-spin mb-3 text-indigo-500" size={32} />
-            <p className="text-sm">{uiText.admin.logs.loading}</p>
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400 font-medium">
+            <Loader2 className="animate-spin mb-3 text-indigo-500" size={28} />
+            <p className="text-xs">{uiText.admin.logs.loading}</p>
           </div>
         ) : logs.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 space-y-2">
-            <div className="p-3 bg-slate-50 rounded-2xl w-12 h-12 flex items-center justify-center mx-auto text-slate-400 mb-2">
-              <FileText size={24} />
+          <div className="p-8 text-center text-slate-400 space-y-1.5">
+            <div className="p-2.5 bg-slate-50 rounded-xl w-10 h-10 flex items-center justify-center mx-auto text-slate-400 mb-1.5">
+              <FileText size={20} />
             </div>
-            <p className="font-bold text-slate-700">{uiText.admin.logs.empty}</p>
-            <p className="text-xs text-slate-400">
+            <p className="font-bold text-slate-700 text-xs">{uiText.admin.logs.empty}</p>
+            <p className="text-[11px] text-slate-400">
               {search ? uiText.admin.logs.differentSearch : uiText.admin.logs.noChanges}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
+            <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-100">
-                  <th className="py-3.5 px-4">{uiText.admin.logs.timestamp}</th>
-                  <th className="py-3.5 px-4">{uiText.admin.logs.user}</th>
-                  <th className="py-3.5 px-4">{uiText.admin.logs.action}</th>
-                  <th className="py-3.5 px-4">{uiText.admin.logs.detailsPreview}</th>
-                  <th className="py-3.5 px-4 text-right">{uiText.admin.logs.action}</th>
+                <tr className="bg-slate-50 text-slate-600 text-[10px] font-bold uppercase tracking-wider border-b border-slate-200">
+                  <th className="py-2 px-3">{uiText.admin.logs.timestamp}</th>
+                  <th className="py-2 px-3">{uiText.admin.logs.user}</th>
+                  <th className="py-2 px-3">{uiText.admin.logs.action}</th>
+                  <th className="py-2 px-3">{uiText.admin.logs.detailsPreview}</th>
+                  <th className="py-2 px-3 text-right">{uiText.admin.logs.action}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {logs.map((log) => {
                   const detailsObj = parseDetails(log.details);
                   return (
-                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors font-sans">
-                      <td className="py-3.5 px-4 font-mono text-xs text-slate-600 whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2 px-3 font-mono text-[11px] text-slate-600 whitespace-nowrap">
                         {formatDate(log.timestamp)}
                       </td>
 
-                      <td className="py-3.5 px-4 font-mono text-xs font-semibold text-slate-800 whitespace-nowrap">
+                      <td className="py-2 px-3 font-mono text-xs font-bold text-slate-800 whitespace-nowrap">
                         {log.user}
                       </td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
+                      <td className="py-2 px-3 whitespace-nowrap">
                         {renderActionBadge(log.action)}
                       </td>
 
-                      <td className="py-3.5 px-4 text-xs font-mono text-slate-500 max-w-xs truncate">
+                      <td className="py-2 px-3 text-xs font-mono text-slate-500 max-w-xs truncate">
                         {typeof detailsObj === 'object' && detailsObj !== null
                           ? JSON.stringify(detailsObj)
                           : log.details || '—'}
                       </td>
 
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-2 px-3 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedLog(log)}
-                          className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-xs cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/90 transition-colors shadow-2xs cursor-pointer"
                         >
                           {uiText.admin.logs.details}
                         </button>
@@ -248,16 +248,16 @@ export function LogsTab() {
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
-          <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-100 flex items-center justify-between text-xs">
+          <div className="bg-slate-50 px-4 py-2.5 border-t border-slate-200 flex items-center justify-between text-xs">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1 || loading}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-semibold transition-colors shadow-xs"
+              className="px-3 py-1 rounded-md bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-bold transition-colors shadow-2xs cursor-pointer"
             >
               {uiText.admin.logs.previousPage}
             </button>
 
-            <span className="text-slate-500 font-mono">
+            <span className="text-slate-600 font-mono text-xs font-semibold">
               {uiText.admin.logs.page(page, totalPages)}
             </span>
 

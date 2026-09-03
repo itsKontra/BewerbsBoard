@@ -24,48 +24,60 @@ const iconMap: Record<string, React.FC<any>> = {
 };
 
 const BrandHeader = () => (
-  <div className="flex items-center space-x-3 p-6 shrink-0">
-    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/30 shrink-0">
-      <span className="text-xl font-bold tracking-wider">{uiText.common.brandMark}</span>
+  <div className="flex items-center space-x-3 px-5 py-4 border-b border-slate-100 shrink-0">
+    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-slate-900 flex items-center justify-center text-white shadow-xs shrink-0 font-bold text-sm tracking-wider">
+      {uiText.common.brandMark}
     </div>
-    <div className="overflow-hidden">
-      <div className="flex flex-col">
-        <h1 className="text-lg font-bold text-slate-800 tracking-tight leading-tight truncate">
-          {uiText.common.scoreboard}
-        </h1>
-        <span className="text-xs font-medium text-slate-500 tracking-wide uppercase">
-          Admin Panel
-        </span>
-      </div>
+    <div className="overflow-hidden min-w-0">
+      <h1 className="text-base font-black text-slate-900 tracking-tight leading-none truncate">
+        {uiText.common.scoreboard}
+      </h1>
+      <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-0.5 block">
+        {uiText.common.adminBadge} PANEL
+      </span>
     </div>
   </div>
 );
 
 const UserMenu = ({ currentUser, onLogout }: { currentUser: string; onLogout: () => void }) => (
-  <div className="flex flex-col space-y-4 mt-auto p-6 border-t border-slate-100 bg-slate-50/50">
-    <div className="flex flex-col space-y-2">
-      <a href="/" target="_blank" rel="noreferrer" className="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-white text-slate-600 hover:text-indigo-600 transition-all hover:shadow-sm font-medium text-sm group border border-transparent hover:border-slate-100">
-        <Smartphone size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
-        <span>{uiText.adminLayout.audienceView}</span>
+  <div className="mt-auto p-3 border-t border-slate-100 bg-slate-50/70 flex flex-col space-y-2 shrink-0">
+    <div className="grid grid-cols-2 gap-1.5">
+      <a
+        href="/"
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center justify-center space-x-1.5 px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 hover:text-indigo-600 border border-slate-200/80 text-[11px] font-semibold transition-colors shadow-2xs text-center"
+      >
+        <Smartphone size={13} className="text-slate-400" />
+        <span className="truncate">{uiText.adminLayout.audienceView}</span>
       </a>
-      <a href="/tv" target="_blank" rel="noreferrer" className="flex items-center space-x-3 px-4 py-2.5 rounded-xl hover:bg-white text-slate-600 hover:text-indigo-600 transition-all hover:shadow-sm font-medium text-sm group border border-transparent hover:border-slate-100">
-        <Tv size={18} className="text-slate-400 group-hover:text-indigo-500 transition-colors" />
-        <span>{uiText.adminLayout.tvDisplay}</span>
+      <a
+        href="/tv"
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center justify-center space-x-1.5 px-2 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 hover:text-indigo-600 border border-slate-200/80 text-[11px] font-semibold transition-colors shadow-2xs text-center"
+      >
+        <Tv size={13} className="text-slate-400" />
+        <span className="truncate">{uiText.adminLayout.tvDisplay}</span>
       </a>
     </div>
-    
-    <div className="flex items-center p-3 bg-white border border-slate-100 rounded-xl shadow-sm mt-4">
-      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-        <CircleUser size={18} />
+
+    <div className="flex items-center p-2 bg-white border border-slate-200/70 rounded-lg shadow-2xs">
+      <div className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+        <CircleUser size={14} />
       </div>
-      <div className="ml-3 overflow-hidden flex-1">
-        <p className="text-sm font-medium text-slate-700 truncate" title={currentUser}>{currentUser}</p>
-        <p className="text-xs text-slate-500">Administrator</p>
+      <div className="ml-2 overflow-hidden flex-1 min-w-0">
+        <p className="text-xs font-semibold text-slate-700 truncate" title={currentUser}>{currentUser}</p>
+        <p className="text-[10px] text-slate-400 leading-tight">Administrator</p>
       </div>
     </div>
 
-    <button type="button" onClick={onLogout} className="flex items-center justify-center space-x-2 w-full px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors font-medium text-sm">
-      <LogOut size={16} />
+    <button
+      type="button"
+      onClick={onLogout}
+      className="flex items-center justify-center space-x-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-200/80 hover:bg-red-50 hover:text-red-700 text-slate-700 transition-colors text-xs font-semibold cursor-pointer"
+    >
+      <LogOut size={13} />
       <span>{uiText.common.logout}</span>
     </button>
   </div>
@@ -148,110 +160,131 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const activeTabConfig = ADMIN_TABS.find((t) => t.id === currentTab) ?? ADMIN_TABS[0];
 
   const NavigationList = () => (
-    <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-8 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
-      <div>
-        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 px-2">Main Menu</h4>
-        <div className="space-y-1">
-          {ADMIN_TABS.map((tab) => {
-            const isActive = tab.id === currentTab;
-            const IconComponent = iconMap[tab.icon] || LayoutGrid;
-            return (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => handleTabClick(tab.id)}
-                className={`w-full text-left px-4 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 flex items-center space-x-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 ${
-                  isActive
-                    ? 'bg-slate-100 text-indigo-700 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <IconComponent size={20} className={isActive ? 'text-indigo-600' : 'text-slate-400'} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+    <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
+      <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+        Menü
+      </div>
+      <div className="space-y-1">
+        {ADMIN_TABS.map((tab) => {
+          const isActive = tab.id === currentTab;
+          const IconComponent = iconMap[tab.icon] || LayoutGrid;
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => handleTabClick(tab.id)}
+              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer ${
+                isActive
+                  ? 'bg-slate-900 text-white shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+              }`}
+            >
+              <IconComponent size={16} className={isActive ? 'text-indigo-400' : 'text-slate-400'} />
+              <span className="truncate">{tab.label}</span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden text-slate-800">
+    <div className="h-screen w-screen bg-slate-100/80 flex font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden text-slate-800">
       
-      {/* Floating Container Wrapper */}
-      <div className="flex-1 flex flex-col md:flex-row h-screen w-full max-w-[1920px] mx-auto overflow-hidden md:p-4 lg:p-6 transition-all duration-300">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col bg-white w-60 shrink-0 border-r border-slate-200/80 z-20 shadow-2xs">
+        <BrandHeader />
+        <NavigationList />
+        <UserMenu currentUser={currentUser} onLogout={handleLogout} />
+      </aside>
+
+      {/* Main Content Column */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         
-        {/* Desktop Sidebar (Inside floating pane on lg, edge-to-edge on md) */}
-        <aside className="hidden md:flex flex-col bg-white w-72 shrink-0 md:rounded-l-3xl border-r border-slate-100 z-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+        {/* Mobile Header */}
+        <header className="md:hidden shrink-0 h-14 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 z-20">
           <BrandHeader />
-          <NavigationList />
-          <UserMenu currentUser={currentUser} onLogout={handleLogout} />
-        </aside>
+          <button onClick={openDrawer} className="p-2 -mr-1 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 rounded-lg">
+            <Menu size={20} />
+          </button>
+        </header>
 
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col min-w-0 h-full bg-slate-50 md:rounded-r-3xl md:shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden relative">
-          
-          {/* Mobile Header */}
-          <header className="md:hidden shrink-0 h-20 bg-white border-b border-slate-100 flex items-center justify-between px-6 z-10 rounded-b-3xl shadow-sm">
-            <BrandHeader />
-            <button onClick={openDrawer} className="p-2 -mr-2 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 rounded-xl">
-              <Menu size={24} />
-            </button>
-          </header>
+        {/* Top Operational Bar (Desktop) */}
+        <header className="hidden md:flex items-center justify-between px-6 h-12 bg-white border-b border-slate-200/80 sticky top-0 z-10 shrink-0">
+          <div className="flex items-center space-x-3">
+            <div className="p-1 rounded-md bg-indigo-50 text-indigo-600">
+              {React.createElement(iconMap[activeTabConfig.icon] || LayoutGrid, { size: 15 })}
+            </div>
+            <div className="flex items-center text-xs font-medium text-slate-500">
+              <span className="text-slate-400">Dashboard</span>
+              <ChevronRight size={12} className="mx-1 text-slate-300" />
+              <span className="text-slate-900 font-bold">{activeTabConfig.label}</span>
+            </div>
+          </div>
 
-          {/* Top Bar (Desktop) */}
-          <header className="hidden md:flex items-center justify-between px-8 py-5 bg-slate-50/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-100/60">
-            <div className="flex items-center space-x-3.5">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center shadow-md shadow-indigo-200 text-sm shrink-0 select-none">
+          <div className="flex items-center space-x-4">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+            >
+              <Smartphone size={13} className="text-slate-400" />
+              <span>{uiText.adminLayout.audienceView}</span>
+            </a>
+            <a
+              href="/tv"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+            >
+              <Tv size={13} className="text-slate-400" />
+              <span>{uiText.adminLayout.tvDisplay}</span>
+            </a>
+            <div className="h-3.5 w-px bg-slate-200" />
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-[10px] select-none">
                 {(currentUser.charAt(0) || 'A').toUpperCase()}
               </div>
-              <div>
-                <div className="text-sm font-bold text-slate-800 leading-tight">
-                  {currentUser.split('@')[0]}
-                </div>
-                <div className="flex items-center text-xs font-medium text-slate-400 mt-0.5">
-                  <span>Dashboard</span>
-                  <ChevronRight size={12} className="mx-1 text-slate-300" />
-                  <span className="text-indigo-600 font-semibold">{activeTabConfig.label}</span>
-                </div>
-              </div>
+              <span className="text-xs font-semibold text-slate-700 truncate max-w-44" title={currentUser}>
+                {currentUser}
+              </span>
             </div>
-          </header>
+          </div>
+        </header>
 
-          {/* Scrollable Main */}
-          <main className="flex-1 overflow-y-auto overscroll-contain pb-12">
-            <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-              <div role="tabpanel" className="space-y-6">
-                {(() => {
-                  const content = typeof children === 'function' ? children(currentTab) : children;
-                  if (content) return content;
-                  return (
-                    <div className="bg-white border border-slate-100 rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[400px] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                      <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6 text-indigo-500">
-                        {React.createElement(iconMap[activeTabConfig.icon] || LayoutGrid, { size: 32 })}
-                      </div>
-                      <h3 className="text-xl font-bold text-slate-800 mb-2">
-                        {uiText.adminLayout.moduleTitle(activeTabConfig.label)}
-                      </h3>
-                      <p className="text-slate-500 max-w-sm mx-auto mb-6">
-                        {activeTabConfig.description}
-                      </p>
-                      <div className="px-4 py-2 bg-slate-100 rounded-full text-xs font-semibold text-slate-500">
-                        {uiText.adminLayout.readyForTicketImplementation}
-                      </div>
+        {/* Scrollable Main Workspace */}
+        <main className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 lg:p-6 pb-12">
+          <div className="max-w-[1600px] mx-auto">
+            <div role="tabpanel">
+              {(() => {
+                const content = typeof children === 'function' ? children(currentTab) : children;
+                if (content) return content;
+                return (
+                  <div className="bg-white border border-slate-200/80 rounded-xl p-8 text-center flex flex-col items-center justify-center min-h-[360px] shadow-xs">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4 text-indigo-600">
+                      {React.createElement(iconMap[activeTabConfig.icon] || LayoutGrid, { size: 24 })}
                     </div>
-                  );
-                })()}
-              </div>
-              
-              <footer className="mt-12 text-center text-xs text-slate-400 font-medium">
-                {uiText.adminLayout.footer(new Date().getFullYear())}
-              </footer>
+                    <h3 className="text-lg font-bold text-slate-800 mb-1">
+                      {uiText.adminLayout.moduleTitle(activeTabConfig.label)}
+                    </h3>
+                    <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+                      {activeTabConfig.description}
+                    </p>
+                    <div className="px-3 py-1 bg-slate-100 rounded-full text-[11px] font-semibold text-slate-500">
+                      {uiText.adminLayout.readyForTicketImplementation}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
-          </main>
-        </div>
+            
+            <footer className="mt-8 text-center text-[11px] text-slate-400 font-medium">
+              {uiText.adminLayout.footer(new Date().getFullYear())}
+            </footer>
+          </div>
+        </main>
       </div>
 
       {/* Mobile Drawer (Popover) */}
@@ -267,10 +300,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       >
         <div className="Drawer-scroller" ref={scrollerRef}>
           <nav className="Drawer-sheet bg-white flex flex-col w-full max-w-xs shadow-2xl" ref={sheetRef} tabIndex={-1}>
-            <div className="p-4 flex items-center justify-between bg-white z-10 sticky top-0 border-b border-slate-100">
+            <div className="p-3 flex items-center justify-between bg-white z-10 sticky top-0 border-b border-slate-100">
               <BrandHeader />
-              <button onClick={closeDrawer} className="p-2 -mr-2 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-xl focus:outline-none">
-                <X size={20} />
+              <button onClick={closeDrawer} className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-lg focus:outline-none">
+                <X size={18} />
               </button>
             </div>
             <NavigationList />
