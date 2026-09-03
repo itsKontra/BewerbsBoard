@@ -6,6 +6,7 @@ import { IterationOneTelemetry } from './iterations/IterationOneTelemetry';
 import { TvScoreboard } from './TvScoreboard';
 import type { TvStateApiResponse } from '../hooks/useTvDataFeed';
 import type { PublicResultsApiResponse, CategoryResultData } from '../../public/components/PublicScoreboard';
+import { uiText } from '../../../ui-text';
 
 const mockTvState: TvStateApiResponse = {
   mode: 'FIXED',
@@ -387,6 +388,6 @@ describe('TvScoreboard with Primary Telemetry Layout', () => {
 
     render(<TvScoreboard initialIteration={1} />);
 
-    expect(await screen.findByText('LIVE TELEMETRY')).toBeInTheDocument();
+    expect(await screen.findByText(uiText.tv.telemetry.liveBadge)).toBeInTheDocument();
   });
 });

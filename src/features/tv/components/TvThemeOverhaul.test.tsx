@@ -146,7 +146,7 @@ describe('Overhauled Themes in Scoreboard Layout', () => {
     const frame = screen.getByTestId('tv-shared-frame');
     expect(frame).toHaveAttribute('data-theme', 'ceremony');
     expect(frame).toHaveClass('bg-[#0a070e]');
-    expect(screen.getByText(uiText.tv.telemetry.galaBadge)).toBeInTheDocument();
+    expect(screen.getByText(uiText.tv.telemetry.liveBadge)).toBeInTheDocument();
     expect(screen.getByText('FF Alpha Gruppe 1')).toHaveClass('text-[#fffbeb]');
   });
 
@@ -173,7 +173,7 @@ describe('Overhauled Themes in Scoreboard Layout', () => {
     const frame = screen.getByTestId('tv-shared-frame');
     expect(frame).toHaveAttribute('data-theme', 'outdoor');
     expect(frame).toHaveClass('bg-slate-100', 'text-slate-950');
-    expect(screen.getByText(uiText.tv.telemetry.stadiumBadge)).toBeInTheDocument();
+    expect(screen.getByText(uiText.tv.telemetry.liveBadge)).toBeInTheDocument();
     expect(screen.getByText('FF Alpha Gruppe 1')).toHaveClass('text-slate-950');
 
     // Verify gradient caro background grid is removed (marked hidden)
