@@ -19,7 +19,7 @@ export function SystemHealthHeader({ onOpenResetModal, resetSuccessMessage, onCl
         const data = await res.json();
         setEvalCount(Array.isArray(data) ? data.length : 0);
       }
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }, []);

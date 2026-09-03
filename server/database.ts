@@ -440,7 +440,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         return database
           .select()
           .from(schema.auditLog)
-          .orderBy(asc(schema.auditLog.timestamp), asc(schema.auditLog.id))
+          .orderBy(asc(schema.auditLog.timestamp), asc(sql`rowid`))
           .all()
           .map((row) => ({
             id: row.id,
@@ -469,7 +469,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
           })
           .from(schema.auditLog)
           .where(whereClause)
-          .orderBy(desc(schema.auditLog.timestamp), desc(schema.auditLog.id))
+          .orderBy(desc(schema.auditLog.timestamp), desc(sql`rowid`))
           .limit(limit)
           .offset((page - 1) * limit)
           .all()

@@ -96,7 +96,7 @@ test.describe('TV Scoreboard Custom Logo and Offline Branding', () => {
       });
     });
 
-    await page.route('/api/public/logo', async (route) => {
+    await page.route('/api/public/logo*', async (route) => {
       await route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Not Found"}' });
     });
 
@@ -182,9 +182,10 @@ test.describe('TV Scoreboard Custom Logo and Offline Branding', () => {
       });
     });
 
-    await page.route('/api/public/logo', async (route) => {
+    const onePixelPng = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2d0000000049454e44ae426082', 'hex');
+    await page.route('/api/public/logo*', async (route) => {
       if (currentLogoOverride.startsWith('/api/public/logo')) {
-        await route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('fake-image-bytes') });
+        await route.fulfill({ status: 200, contentType: 'image/png', body: onePixelPng });
       } else {
         await route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Not Found"}' });
       }
@@ -270,9 +271,10 @@ test.describe('TV Scoreboard Custom Logo and Offline Branding', () => {
       });
     });
 
-    await page.route('/api/public/logo', async (route) => {
+    const onePixelPng = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2d0000000049454e44ae426082', 'hex');
+    await page.route('/api/public/logo*', async (route) => {
       if (currentLogoOverride.startsWith('/api/public/logo')) {
-        await route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('fake-image-bytes') });
+        await route.fulfill({ status: 200, contentType: 'image/png', body: onePixelPng });
       } else {
         await route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"Not Found"}' });
       }
