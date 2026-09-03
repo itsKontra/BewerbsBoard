@@ -13,9 +13,22 @@ import { uiText } from './ui-text';
 
 type AdminAuthState = 'checking' | 'ok' | 'login-required' | 'forbidden' | 'unauthorized';
 
+function parseTvRouteIteration(pathname: string): 1 | 2 | 3 | undefined {
+  const clean = pathname.toLowerCase().replace(/\/$/, '');
+  if (clean === '/1' || clean === '/tv/1' || clean === '/one' || clean === '/tv/one') return 1;
+  if (clean === '/2' || clean === '/tv/2' || clean === '/two' || clean === '/tv/two') return 2;
+  if (clean === '/3' || clean === '/tv/3' || clean === '/three' || clean === '/tv/three') return 3;
+  return undefined;
+}
+
+function isTvRoute(pathname: string): boolean {
+  const clean = pathname.toLowerCase().replace(/\/$/, '');
+  return clean === '/tv' || parseTvRouteIteration(pathname) !== undefined;
+}
+
 function getDocumentTitle(pathname: string) {
   if (pathname.startsWith('/admin')) return 'BewerbsBoard – Administration';
-  if (pathname === '/tv') return 'BewerbsBoard – TV Display';
+  if (isTvRoute(pathname)) return 'BewerbsBoard – TV Display';
   return 'BewerbsBoard – Live Results';
 }
 
@@ -155,8 +168,8 @@ export default function App() {
     );
   }
 
-  if (pathname === '/tv') {
-    return <TvScoreboard />;
+  if (isTvRoute(pathname)) {
+    return <TvScoreboard initialIteration={parseTvRouteIteration(pathname)} />;
   }
 
   return <PublicScoreboard />;

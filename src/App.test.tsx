@@ -53,6 +53,42 @@ describe('App Routing', () => {
     expect(document.title).toBe('BewerbsBoard – TV Display');
   });
 
+  it('renders TV view when pathname is /1 or /tv/1', () => {
+    window.history.pushState({}, '', '/1');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+    render(<App />);
+
+    expect(screen.getByText(/Ergebnisse/i)).toBeInTheDocument();
+    expect(document.title).toBe('BewerbsBoard – TV Display');
+  });
+
+  it('renders TV view when pathname is /2 or /tv/2', () => {
+    window.history.pushState({}, '', '/tv/2');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+    render(<App />);
+
+    expect(screen.getByText(/Ergebnisse/i)).toBeInTheDocument();
+    expect(document.title).toBe('BewerbsBoard – TV Display');
+  });
+
+  it('renders TV view when pathname is /3 or /tv/3', () => {
+    window.history.pushState({}, '', '/tv/3');
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({}),
+    } as Response);
+    render(<App />);
+
+    expect(screen.getByText(/Ergebnisse/i)).toBeInTheDocument();
+    expect(document.title).toBe('BewerbsBoard – TV Display');
+  });
+
   it('does not expose the TV prototype as a user route', async () => {
     window.history.pushState({}, '', '/tv/prototype');
     globalThis.fetch = vi.fn().mockResolvedValue({

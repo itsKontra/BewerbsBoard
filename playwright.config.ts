@@ -42,7 +42,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm.cmd run dev -- --port 5173',
+    command: process.platform === 'win32' ? 'npm.cmd run dev -- --port 5173' : 'npm run dev -- --port 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
   },

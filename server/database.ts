@@ -440,7 +440,7 @@ export function createDatabase(databasePath: string): SelfHostedDatabase {
         return database
           .select()
           .from(schema.auditLog)
-          .orderBy(asc(schema.auditLog.timestamp), asc(schema.auditLog.id))
+          .orderBy(asc(schema.auditLog.timestamp), sql`rowid asc`)
           .all()
           .map((row) => ({
             id: row.id,
