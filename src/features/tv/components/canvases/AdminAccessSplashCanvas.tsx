@@ -27,7 +27,7 @@ export function AdminAccessSplashCanvas({
 
   return (
     <main
-      className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 sm:p-8 @container"
+      className="flex min-h-0 flex-1 flex-col items-center justify-center p-4 sm:p-8"
       data-testid="tv-mode-canvas"
     >
       <div
@@ -44,7 +44,10 @@ export function AdminAccessSplashCanvas({
         <div className="flex-1 space-y-6 text-left w-full">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-red-600/20 border border-red-500/50 text-red-400">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+            </span>
             <span>{uiText.tv.adminSplash.badge}</span>
           </div>
 

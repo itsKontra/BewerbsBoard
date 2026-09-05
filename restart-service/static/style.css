@@ -968,10 +968,6 @@ body {
     padding: 1rem;
   }
 
-  .metrics-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .actions-wrapper {
     grid-template-columns: 1fr;
   }

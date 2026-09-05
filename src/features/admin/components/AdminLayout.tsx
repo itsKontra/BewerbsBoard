@@ -240,7 +240,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const activeTabConfig = ADMIN_TABS.find((t) => t.id === currentTab) ?? ADMIN_TABS[0];
 
   const NavigationList = () => (
-    <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-1 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
+    <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
       <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
         Menü
       </div>
