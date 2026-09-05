@@ -1,15 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { AdminLayout, type AdminTabId } from './features/admin/components/AdminLayout';
-import { ParticipantsTab } from './features/admin/components/ParticipantsTab';
-import { SetupTab } from './features/admin/components/SetupTab';
-import { ResultsTab } from './features/admin/components/ResultsTab';
-import { SettingsTab } from './features/admin/components/SettingsTab';
-import { BroadcastTab } from './features/admin/components/BroadcastTab';
-import { LogsTab } from './features/admin/components/LogsTab';
-import { PublicScoreboard } from './features/public/components/PublicScoreboard';
-import { TvScoreboard } from './features/tv/components/TvScoreboard';
-import { LocalLogin } from './features/admin/components/LocalLogin';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import type { AdminTabId } from './features/admin/components/AdminLayout';
 import { uiText } from './ui-text';
+
+const PublicScoreboard = lazy(() => import('./features/public/components/PublicScoreboard').then((m) => ({ default: m.PublicScoreboard })));
+const TvScoreboard = lazy(() => import('./features/tv/components/TvScoreboard').then((m) => ({ default: m.TvScoreboard })));
+const AdminLayout = lazy(() => import('./features/admin/components/AdminLayout').then((m) => ({ default: m.AdminLayout })));
+const LocalLogin = lazy(() => import('./features/admin/components/LocalLogin').then((m) => ({ default: m.LocalLogin })));
+
+const ResultsTab = lazy(() => import('./features/admin/components/ResultsTab').then((m) => ({ default: m.ResultsTab })));
+const ParticipantsTab = lazy(() => import('./features/admin/components/ParticipantsTab').then((m) => ({ default: m.ParticipantsTab })));
+const BroadcastTab = lazy(() => import('./features/admin/components/BroadcastTab').then((m) => ({ default: m.BroadcastTab })));
+const SetupTab = lazy(() => import('./features/admin/components/SetupTab').then((m) => ({ default: m.SetupTab })));
+const SettingsTab = lazy(() => import('./features/admin/components/SettingsTab').then((m) => ({ default: m.SettingsTab })));
+const LogsTab = lazy(() => import('./features/admin/components/LogsTab').then((m) => ({ default: m.LogsTab })));
 
 type AdminAuthState = 'checking' | 'ok' | 'login-required' | 'forbidden' | 'unauthorized';
 
@@ -73,12 +76,14 @@ export default function App() {
 
     if (adminAuth === 'login-required') {
       return (
-        <LocalLogin
-          onSuccess={() => {
-            // Re-run the probe; it will set adminAuth to 'ok' on success.
-            setLoginKey((k) => k + 1);
-          }}
-        />
+        <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+          <LocalLogin
+            onSuccess={() => {
+              // Re-run the probe; it will set adminAuth to 'ok' on success.
+              setLoginKey((k) => k + 1);
+            }}
+          />
+        </Suspense>
       );
     }
 
@@ -125,39 +130,38 @@ export default function App() {
     }
 
     return (
-      <AdminLayout
-        key={loginKey}
-        onLogout={() => setLoginKey((k) => k + 1)}
-        onReady={(navigate) => { navigateTabRef.current = navigate; }}
-      >
-        {(activeTab: string) => {
-          if (activeTab === 'results') {
-            return <ResultsTab />;
-          }
-          if (activeTab === 'participants') {
-            return <ParticipantsTab />;
-          }
-          if (activeTab === 'broadcast') {
-            return <BroadcastTab onNavigate={(tab) => navigateTabRef.current?.(tab)} />;
-          }
-          if (activeTab === 'setup') {
-            return <SetupTab />;
-          }
-          if (activeTab === 'settings') {
-            return <SettingsTab />;
-          }
-          if (activeTab === 'logs') {
-            return <LogsTab />;
-          }
-          return null;
-        }}
-      </AdminLayout>
+      <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+        <AdminLayout
+          key={loginKey}
+          onLogout={() => setLoginKey((k) => k + 1)}
+          onReady={(navigate) => { navigateTabRef.current = navigate; }}
+        >
+          {(activeTab: string) => (
+            <Suspense fallback={<div className="p-8 text-center text-slate-400">Laden...</div>}>
+              {activeTab === 'results' && <ResultsTab />}
+              {activeTab === 'participants' && <ParticipantsTab />}
+              {activeTab === 'broadcast' && <BroadcastTab onNavigate={(tab) => navigateTabRef.current?.(tab)} />}
+              {activeTab === 'setup' && <SetupTab />}
+              {activeTab === 'settings' && <SettingsTab />}
+              {activeTab === 'logs' && <LogsTab />}
+            </Suspense>
+          )}
+        </AdminLayout>
+      </Suspense>
     );
   }
 
   if (pathname === '/tv') {
-    return <TvScoreboard />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-950" />}>
+        <TvScoreboard />
+      </Suspense>
+    );
   }
 
-  return <PublicScoreboard />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-900" />}>
+      <PublicScoreboard />
+    </Suspense>
+  );
 }
