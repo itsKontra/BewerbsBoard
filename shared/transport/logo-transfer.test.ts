@@ -5,6 +5,7 @@ import {
   extractImageBytesFromRequest,
   isPrivateOrLoopbackHost,
 } from './logo-transfer';
+import { MAX_LOGO_FILE_SIZE_BYTES } from '../domain/tv-presentation';
 
 describe('isPrivateOrLoopbackHost', () => {
   it('detects localhost and local domains', () => {
@@ -97,6 +98,37 @@ describe('fetchAndProcessRemoteLogo', () => {
     if (result.success) {
       expect(result.mimeType).toBe('image/png');
     }
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://feuerwehr.at/logo.png',
+      expect.objectContaining({
+        redirect: 'error',
+      })
+    );
+  });
+
+  it('refuses external redirects when fetch throws redirect error', async () => {
+    const redirectErrorFetch = vi.fn().mockRejectedValue(new TypeError('Failed to fetch: redirect mode is set to error'));
+    const result = await fetchAndProcessRemoteLogo('https://feuerwehr.at/redirect-to-internal.png', redirectErrorFetch);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain('Verbindungsfehler beim Herunterladen');
+    }
+  });
+
+  it('refuses responses marked as redirected', async () => {
+    const redirectedFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      redirected: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'image/png' }),
+      arrayBuffer: () => Promise.resolve(new Uint8Array(10).buffer),
+    } as any);
+
+    const result = await fetchAndProcessRemoteLogo('https://feuerwehr.at/redirected.png', redirectedFetch);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain('Weiterleitungen sind aus Sicherheitsgründen nicht erlaubt');
+    }
   });
 
   it('rejects fetch attempt to private IP before network call', async () => {
@@ -155,5 +187,38 @@ describe('extractImageBytesFromRequest', () => {
     expect(extracted.error).toBeUndefined();
     expect(extracted.bytes).toBeDefined();
     expect(extracted.declaredMime).toBe('image/png');
+  });
+
+  it('rejects oversized base64 payload before decoding', async () => {
+    const maxLen = Math.ceil(MAX_LOGO_FILE_SIZE_BYTES * 1.4);
+    const oversizedBase64 = 'A'.repeat(maxLen + 10);
+    const request = new Request('http://localhost/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base64Data: oversizedBase64,
+        mimeType: 'image/png',
+      }),
+    });
+
+    const extracted = await extractImageBytesFromRequest(request);
+    expect(extracted.bytes).toBeNull();
+    expect(extracted.error).toBe('Die Datei überschreitet die maximale Größe von 2 MB.');
+  });
+
+  it('rejects oversized base64 data URI before decoding', async () => {
+    const maxLen = Math.ceil(MAX_LOGO_FILE_SIZE_BYTES * 1.4);
+    const oversizedDataUri = `data:image/png;base64,${'A'.repeat(maxLen + 10)}`;
+    const request = new Request('http://localhost/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base64Data: oversizedDataUri,
+      }),
+    });
+
+    const extracted = await extractImageBytesFromRequest(request);
+    expect(extracted.bytes).toBeNull();
+    expect(extracted.error).toBe('Die Datei überschreitet die maximale Größe von 2 MB.');
   });
 });
