@@ -88,8 +88,10 @@ function viteDevAdminMockPlugin(): Plugin {
   return {
     name: 'vite-dev-admin-mock',
     configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const fullUrl = req.url ?? ''
+      server.middlewares.use((req, res, next) => {
+        Promise.resolve(
+          (async () => {
+            const fullUrl = req.url ?? ''
         const [path, qs] = fullUrl.split('?')
         const method = req.method?.toUpperCase() ?? 'GET'
 
@@ -470,6 +472,8 @@ function viteDevAdminMockPlugin(): Plugin {
         }
 
         next()
+          })()
+        ).catch(next)
       })
     },
   }
