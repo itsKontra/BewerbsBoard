@@ -642,8 +642,11 @@ describe('PublicScoreboard Component', () => {
 
   it('renders demo data when ?demo=true is present in query parameters', async () => {
     const originalLocation = window.location;
-    delete (window as any).location;
-    window.location = new URL('http://localhost:5173/?demo=true') as any;
+    Object.defineProperty(window, 'location', {
+      value: new URL('http://localhost:5173/?demo=true'),
+      writable: true,
+      configurable: true,
+    });
 
     try {
       render(<PublicScoreboard />);
@@ -652,7 +655,11 @@ describe('PublicScoreboard Component', () => {
         expect(screen.getByText('BFLB FREIWILLIGE FEUERWEHR')).toBeInTheDocument();
       });
     } finally {
-      window.location = originalLocation;
+      Object.defineProperty(window, 'location', {
+        value: originalLocation,
+        writable: true,
+        configurable: true,
+      });
     }
   });
 });
