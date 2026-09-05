@@ -639,4 +639,20 @@ describe('PublicScoreboard Component', () => {
     const ausfallRow = screen.getByText('FF Ausfall Gruppe DNF').closest('[role="row"]');
     expect(ausfallRow?.firstElementChild).toHaveTextContent('—');
   });
+
+  it('renders demo data when ?demo=true is present in query parameters', async () => {
+    const originalLocation = window.location;
+    delete (window as any).location;
+    window.location = new URL('http://localhost:5173/?demo=true') as any;
+
+    try {
+      render(<PublicScoreboard />);
+
+      await waitFor(() => {
+        expect(screen.getByText('BFLB FREIWILLIGE FEUERWEHR')).toBeInTheDocument();
+      });
+    } finally {
+      window.location = originalLocation;
+    }
+  });
 });

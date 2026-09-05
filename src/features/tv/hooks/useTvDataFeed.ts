@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
 import type { TvTheme } from '../../../../shared/domain/tv-presentation';
-import { getDemoTvState, DEMO_RESULTS_DATA } from '../../../mock/demo-scoreboard-data';
 
 export type TvMode = 'ROTATION' | 'FIXED' | 'MESSAGE' | 'WINNERS';
 
@@ -64,9 +63,11 @@ export const httpTvDataFeedAdapter: TvDataFeedAdapter = {
 
 export const demoTvDataFeedAdapter: TvDataFeedAdapter = {
   fetchTvState: async (): Promise<TvStateApiResponse> => {
-    return getDemoTvState(window.location.search);
+    const { getDemoTvState } = await import('../../../mock/demo-scoreboard-data');
+    return getDemoTvState(typeof window !== 'undefined' ? window.location.search : '');
   },
   fetchResultsData: async (): Promise<PublicResultsApiResponse> => {
+    const { DEMO_RESULTS_DATA } = await import('../../../mock/demo-scoreboard-data');
     return DEMO_RESULTS_DATA;
   },
 };

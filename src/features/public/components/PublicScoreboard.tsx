@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { formatHundredthsToDisplayTime } from '../../../../shared/utils/time-parser';
-import { DEMO_RESULTS_DATA } from '../../../../src/mock/demo-scoreboard-data';
-import { DEFAULT_CATALOG_SEED } from '../../../../shared/seed/seed-data';
 import { uiText } from '../../../ui-text';
 
 export interface RunResultRow {
@@ -69,10 +67,7 @@ export interface PublicResultsApiResponse {
   categories: Record<string, CategoryResultData>;
 }
 
-const FALLBACK_CATEGORY_KEYS = [...DEFAULT_CATALOG_SEED.evaluationTypes]
-  .filter((evaluation) => evaluation.public)
-  .sort((left, right) => left.order - right.order)
-  .map((evaluation) => evaluation.id);
+const FALLBACK_CATEGORY_KEYS: string[] = [];
 
 function RankBadge({ rank }: { rank: number | null }) {
   if (rank === 1) return <span className="bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)] inline-flex items-center justify-center w-8 h-8 rounded-full font-oswald font-extrabold text-sm border-2">1</span>;
@@ -412,10 +407,18 @@ export function PublicScoreboard() {
   const fetchResults = async (isInitial = false) => {
     const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
     if (isDemoMode) {
-      setData(DEMO_RESULTS_DATA as unknown as PublicResultsApiResponse);
-      setLastUpdated(new Date());
-      setError(null);
-      if (isInitial) setLoading(false);
+      try {
+        const { DEMO_RESULTS_DATA } = await import('../../../mock/demo-scoreboard-data');
+        setData(DEMO_RESULTS_DATA as unknown as PublicResultsApiResponse);
+        setLastUpdated(new Date());
+        setError(null);
+      } catch (err: any) {
+        if (isInitial) {
+          setError(err.message || uiText.publicScoreboard.resultsCouldNotBeLoaded);
+        }
+      } finally {
+        if (isInitial) setLoading(false);
+      }
       return;
     }
     try {

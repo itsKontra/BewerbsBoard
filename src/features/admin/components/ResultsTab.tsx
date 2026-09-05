@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { rankEntries } from '../../../../shared/domain/ranking';
 import { type CategoryEntry as ScoringCategoryEntry } from '../../../../shared/domain/scoring';
-import { DEFAULT_CATALOG_SEED } from '../../../../shared/seed/seed-data';
 import { parseGermanTimeToHundredths, formatHundredthsToGerman } from '../../../../shared/utils/time-parser';
 import { uiText } from '../../../ui-text';
 import { AdminCard } from './AdminCard';
@@ -39,7 +38,7 @@ export interface CategoryEntry {
   fireBrigadeName: string;
 }
 
-const FALLBACK_CATEGORIES: CategoryType[] = DEFAULT_CATALOG_SEED.categoryTypes;
+const FALLBACK_CATEGORIES: CategoryType[] = [];
 
 
 interface FormState {
