@@ -83,6 +83,41 @@ const UserMenu = ({ currentUser, onLogout }: { currentUser: string; onLogout: ()
   </div>
 );
 
+interface NavigationListProps {
+  currentTab: AdminTabId;
+  onTabClick: (tabId: AdminTabId) => void;
+}
+
+const NavigationList: React.FC<NavigationListProps> = ({ currentTab, onTabClick }) => (
+  <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
+    <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+      Menü
+    </div>
+    <div className="space-y-1">
+      {ADMIN_TABS.map((tab) => {
+        const isActive = tab.id === currentTab;
+        const IconComponent = iconMap[tab.icon] || LayoutGrid;
+        return (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onTabClick(tab.id)}
+            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer ${
+              isActive
+                ? 'bg-slate-900 text-white shadow-xs font-bold'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+            }`}
+          >
+            <IconComponent size={16} className={isActive ? 'text-indigo-400' : 'text-slate-400'} />
+            <span className="truncate">{tab.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  </nav>
+);
+
 export const AdminLayout: React.FC<AdminLayoutProps> = ({
   userEmail: userEmailProp,
   defaultTab = 'results',
@@ -239,43 +274,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const activeTabConfig = ADMIN_TABS.find((t) => t.id === currentTab) ?? ADMIN_TABS[0];
 
-  const NavigationList = () => (
-    <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-gutter-stable" aria-label={uiText.adminLayout.navigationLabel}>
-      <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        Menü
-      </div>
-      <div className="space-y-1">
-        {ADMIN_TABS.map((tab) => {
-          const isActive = tab.id === currentTab;
-          const IconComponent = iconMap[tab.icon] || LayoutGrid;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={isActive}
-              onClick={() => handleTabClick(tab.id)}
-              className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 flex items-center space-x-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer ${
-                isActive
-                  ? 'bg-slate-900 text-white shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
-            >
-              <IconComponent size={16} className={isActive ? 'text-indigo-400' : 'text-slate-400'} />
-              <span className="truncate">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </nav>
-  );
-
   return (
     <div className="h-screen w-screen bg-slate-100/80 flex font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden text-slate-800">
       
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col bg-white w-60 shrink-0 border-r border-slate-200/80 z-20 shadow-2xs">
         <BrandHeader />
-        <NavigationList />
+        <NavigationList currentTab={currentTab} onTabClick={handleTabClick} />
         <UserMenu currentUser={currentUser} onLogout={handleLogout} />
       </aside>
 
@@ -393,7 +398,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
                 <X size={18} />
               </button>
             </div>
-            <NavigationList />
+            <NavigationList currentTab={currentTab} onTabClick={handleTabClick} />
             <UserMenu currentUser={currentUser} onLogout={handleLogout} />
           </nav>
         </div>
