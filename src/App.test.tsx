@@ -41,7 +41,7 @@ describe('App Routing', () => {
     expect(document.title).toBe('BewerbsBoard – Administration');
   });
 
-  it('renders TV view when pathname is /tv', () => {
+  it('renders TV view when pathname is /tv', async () => {
     window.history.pushState({}, '', '/tv');
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
@@ -49,7 +49,7 @@ describe('App Routing', () => {
     } as Response);
     render(<App />);
 
-    expect(screen.getByText(/Ergebnisse/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Ergebnisse/i)).toBeInTheDocument();
     expect(document.title).toBe('BewerbsBoard – TV Display');
   });
 

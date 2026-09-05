@@ -477,6 +477,20 @@ function viteDevAdminMockPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), viteDevPublicMockPlugin(), viteDevAdminMockPlugin()],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
   test: {
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-server/**', 'tests/**'],
   },
