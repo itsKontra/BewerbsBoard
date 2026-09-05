@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { DEFAULT_CATALOG_SEED } from '../../../../shared/seed/seed-data';
 import { uiText } from '../../../ui-text';
 import { AdminCard } from './AdminCard';
 import { ClipboardList, Users, Plus, ChevronUp, ChevronDown, Trash2, Loader2, X } from 'lucide-react';
@@ -60,7 +59,7 @@ const PARTICIPANTS_SUB_TABS: ParticipantsSubTabConfig[] = [
   { id: 'stammdaten', label: uiText.admin.participants.masterData, icon: Users },
 ];
 
-const FALLBACK_COMPETITION_CLASSES: CompetitionClass[] = DEFAULT_CATALOG_SEED.competitionClasses;
+const FALLBACK_COMPETITION_CLASSES: CompetitionClass[] = [];
 
 export function ParticipantsTab() {
   const [activeSubTab, setActiveSubTab] = useState<ParticipantsSubTab>('stammdaten');

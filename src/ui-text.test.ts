@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { uiText } from './ui-text';
+import {
+  uiText,
+  commonText,
+  authText,
+  adminLayoutText,
+  adminTabsText,
+  publicScoreboardText,
+  tvText,
+  resultsText,
+  participantsText,
+  setupText,
+  settingsText,
+  broadcastText,
+  logsText,
+} from './ui-text';
 
 describe('uiText formatting', () => {
   it('formats public group names', () => {
@@ -24,5 +38,20 @@ describe('uiText formatting', () => {
     expect(uiText.admin.setup.evaluationTypes.webVisibility('Gesamtwertung')).toBe(
       'Web-Sichtbarkeit für Gesamtwertung',
     );
+  });
+
+  it('exports domain-scoped text objects matching the aggregated uiText', () => {
+    expect(uiText.common).toBe(commonText);
+    expect(uiText.auth).toBe(authText);
+    expect(uiText.adminLayout).toBe(adminLayoutText);
+    expect(uiText.adminTabs).toBe(adminTabsText);
+    expect(uiText.publicScoreboard).toBe(publicScoreboardText);
+    expect(uiText.tv).toBe(tvText);
+    expect(uiText.admin.results).toBe(resultsText);
+    expect(uiText.admin.participants).toBe(participantsText);
+    expect(uiText.admin.setup).toBe(setupText);
+    expect(uiText.admin.settings).toBe(settingsText);
+    expect(uiText.admin.broadcast).toBe(broadcastText);
+    expect(uiText.admin.logs).toBe(logsText);
   });
 });

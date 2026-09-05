@@ -1,9 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { SystemHealthHeader } from './logs/SystemHealthHeader';
-import { DatabaseResetModal } from './logs/DatabaseResetModal';
 import { uiText } from '../../../ui-text';
 import { AdminCard } from './AdminCard';
 import { Search, RotateCw, FileText, X, AlertTriangle, Loader2 } from 'lucide-react';
+
+const DatabaseResetModal = lazy(() =>
+  import('./logs/DatabaseResetModal').then((m) => ({ default: m.DatabaseResetModal }))
+);
 
 export interface AuditRecord {
   id: string;
@@ -385,14 +388,18 @@ export function LogsTab() {
         </div>
       )}
 
-      <DatabaseResetModal
-        isOpen={showResetModal}
-        onClose={() => setShowResetModal(false)}
-        onSuccess={(msg) => {
-          setResetSuccess(msg);
-          fetchLogs();
-        }}
-      />
+      {showResetModal && (
+        <Suspense fallback={null}>
+          <DatabaseResetModal
+            isOpen={showResetModal}
+            onClose={() => setShowResetModal(false)}
+            onSuccess={(msg) => {
+              setResetSuccess(msg);
+              fetchLogs();
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

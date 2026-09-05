@@ -88,4 +88,13 @@ describe('LogsTab Component', () => {
       expect(screen.getByText(/🔺 NACHHER/i)).toBeInTheDocument();
     });
   });
+
+  it('opens lazy-loaded database reset modal when clicking reset button', async () => {
+    render(<LogsTab />);
+
+    const clearDbBtn = screen.getByRole('button', { name: /Datenbank leeren/i });
+    fireEvent.click(clearDbBtn);
+
+    expect(await screen.findByText('Datenbank zurücksetzen')).toBeInTheDocument();
+  });
 });

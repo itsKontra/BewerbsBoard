@@ -486,6 +486,10 @@ export default defineConfig({
               name: 'vendor-react',
               test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
             },
+            {
+              name: 'vendor-icons',
+              test: /node_modules[\\/]lucide-react[\\/]/,
+            },
           ],
         },
       },
