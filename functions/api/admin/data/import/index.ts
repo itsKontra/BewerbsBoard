@@ -2,6 +2,8 @@ import { getDb, jsonResponse, jsonError, buildAuditLog, type EventContext } from
 import * as schema from '../../../../../shared/db/schema';
 import { validateDataExportEnvelope } from '../../../../../shared/domain/data-management';
 
+export const BATCH_CHUNK_SIZE = 50;
+
 export async function onRequestPost(context: EventContext) {
   try {
     const body = await context.request.json().catch(() => null);
@@ -198,8 +200,9 @@ export async function onRequestPost(context: EventContext) {
     });
     operations.push(auditOperation);
 
-    if (operations.length > 0) {
-      await db.batch(operations as any);
+    for (let i = 0; i < operations.length; i += BATCH_CHUNK_SIZE) {
+      const chunk = operations.slice(i, i + BATCH_CHUNK_SIZE);
+      await db.batch(chunk as any);
     }
 
     return jsonResponse({

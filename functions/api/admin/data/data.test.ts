@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { onRequestGet as exportHandler } from './export';
 import { onRequestPost as preflightHandler } from './import/preflight';
-import { onRequestPost as importHandler } from './import/index';
+import { onRequestPost as importHandler, BATCH_CHUNK_SIZE } from './import/index';
 import * as utils from '../utils';
 
 vi.mock('../utils', async (importOriginal) => {
@@ -136,5 +136,42 @@ describe('Cloudflare Pages Data Management API', () => {
     const json = await res.json() as any;
     expect(json.message).toContain('erfolgreich');
     expect(mockBatchCalls).toHaveLength(1);
+  });
+
+  it('chunks batch operations when total statements exceed BATCH_CHUNK_SIZE (>100 statements)', async () => {
+    const fireBrigades = Array.from({ length: 120 }, (_, i) => ({
+      id: `fb-${i}`,
+      name: `Brigade ${i}`,
+    }));
+
+    const ctx = createMockContext('POST', {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: {
+        appConfig: [],
+        competitionClasses: [],
+        fireBrigades,
+        categoryTypes: [],
+        evaluationTypes: [],
+        groups: [],
+        categoryEntries: [],
+      },
+    });
+
+    const res = await importHandler(ctx);
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as any;
+    expect(json.totalEntities).toBe(120);
+
+    const totalOperations = 120 + 1; // 120 fire brigades + 1 audit operation
+    const expectedBatchCount = Math.ceil(totalOperations / BATCH_CHUNK_SIZE);
+    expect(mockBatchCalls).toHaveLength(expectedBatchCount);
+    expect(mockBatchCalls[0]).toHaveLength(BATCH_CHUNK_SIZE);
+    expect(mockBatchCalls[1]).toHaveLength(BATCH_CHUNK_SIZE);
+    expect(mockBatchCalls[2]).toHaveLength(totalOperations - 2 * BATCH_CHUNK_SIZE);
+
+    for (const batch of mockBatchCalls) {
+      expect(batch.length).toBeLessThanOrEqual(BATCH_CHUNK_SIZE);
+    }
   });
 });
