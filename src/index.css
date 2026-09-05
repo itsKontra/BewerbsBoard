@@ -27,13 +27,36 @@ body,
 }
 
 /* Hide scrollbar for category tabs */
-.hide-scrollbar {
+.hide-scrollbar,
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
+.hide-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Stable scrollbar gutter utility */
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
+/* Modal scale-in animation */
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-modal-in {
+  animation: 0.15s cubic-bezier(0.16, 1, 0.3, 1) both modal-scale-in;
 }
 
 /* View transitions for main content */
@@ -49,24 +72,20 @@ body,
 @keyframes fade-out {
   from {
     opacity: 1;
-    transform: translateY(0);
   }
 
   to {
     opacity: 0;
-    transform: translateY(0);
   }
 }
 
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(0);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 

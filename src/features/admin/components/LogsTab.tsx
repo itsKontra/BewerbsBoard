@@ -278,7 +278,7 @@ export function LogsTab() {
       {/* JSON Diff Inspection Modal */}
       {selectedLog && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden animate-modal-in">
             {/* Modal Header */}
             <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center space-x-3 min-w-0">

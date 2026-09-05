@@ -434,7 +434,7 @@ export function ParticipantsTab() {
           <>
             {/* Category Selection Tabs */}
             <AdminCard className="!p-2.5 sm:!p-3">
-              <div className="flex space-x-1.5 overflow-x-auto pb-0.5 scrollbar-hide touch-pan-x">
+              <div className="flex space-x-1.5 overflow-x-auto pb-0.5 hide-scrollbar touch-pan-x">
                 {categoryTypes.map((cat) => {
                   const isSelected = selectedCategoryId === cat.id;
                   return (

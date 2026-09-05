@@ -105,7 +105,7 @@ export function DatabaseResetModal({ isOpen, onClose, onSuccess }: DatabaseReset
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 my-8">
+      <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-modal-in my-8">
         <div className="p-4 sm:p-6 bg-red-50/50 border-b border-red-100 flex items-center justify-between">
           <h3 className="text-base sm:text-lg font-bold text-red-700 flex items-center space-x-2">
             <AlertTriangle size={20} className="text-red-600 shrink-0" />

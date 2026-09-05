@@ -30,7 +30,7 @@ const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
   broadcast: {
     card: 'border-b border-l border-slate-700/80 bg-slate-950/95 shadow-[0_20px_50px_rgba(0,0,0,0.85)] text-white',
     minimalCard: 'border-b border-l border-slate-800/40 bg-slate-950/90 shadow-md text-white',
-    qrContainer: 'bg-white p-0 rounded-none rounded-bl-2xl shadow-sm border-r border-neutral-200 overflow-clip',
+    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-neutral-200 overflow-clip',
     badge: 'bg-sky-500/15 border-sky-500/30 text-sky-300',
     badgeDotPing: 'bg-sky-400',
     badgeDot: 'bg-sky-500',
@@ -41,7 +41,7 @@ const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
   ceremony: {
     card: 'border-b border-l border-amber-700/60 bg-stone-950/95 shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-amber-50',
     minimalCard: 'border-b border-l border-amber-900/30 bg-stone-950/90 shadow-md text-amber-50',
-    qrContainer: 'bg-white p-0 rounded-none rounded-bl-2xl shadow-sm border-r border-amber-200/40 overflow-clip',
+    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-amber-200/40 overflow-clip',
     badge: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
     badgeDotPing: 'bg-amber-400',
     badgeDot: 'bg-amber-500',
@@ -52,7 +52,7 @@ const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
   outdoor: {
     card: 'border-b border-l border-slate-300 bg-white/95 shadow-[0_15px_40px_rgba(0,0,0,0.2)] text-slate-900',
     minimalCard: 'border-b border-l border-slate-200/80 bg-white/90 shadow-sm text-slate-900',
-    qrContainer: 'bg-white p-0 rounded-none rounded-bl-2xl shadow-sm border-r border-slate-200 overflow-clip',
+    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-slate-200 overflow-clip',
     badge: 'bg-sky-100 border-sky-300 text-sky-800',
     badgeDotPing: 'bg-sky-400',
     badgeDot: 'bg-sky-600',
@@ -113,12 +113,11 @@ export function TvQrPopupCard({
         : '-translate-y-full opacity-0 scale-95 pointer-events-none'
         }`}
     >
-      <div className={`rounded-none rounded-bl-2xl ${alwaysVisible ? styles.minimalCard : styles.card} py-0 pl-0 pr-4 sm:pr-5 backdrop-blur-md w-auto min-w-[320px] max-w-md sm:max-w-lg overflow-clip`}>
+      <div className={`rounded-bl-2xl ${alwaysVisible ? styles.minimalCard : styles.card} py-0 pl-0 pr-4 sm:pr-5 backdrop-blur-md w-auto min-w-[320px] max-w-md sm:max-w-lg overflow-clip`}>
         <div className="flex items-center gap-4">
           {/* High-Contrast QR-Code (Left Side) */}
           <div
             className={`shrink-0 flex items-center justify-center overflow-clip ${styles.qrContainer}`}
-            style={{ overflow: 'clip' }}
             data-testid="tv-qr-code"
           >
             <QRCodeSVG

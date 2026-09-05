@@ -162,7 +162,7 @@ function ResultsGrid({
   }
 
   return (
-    <div className="@container w-full">
+    <div className="w-full">
       <div className="bg-[#181818]/60 backdrop-blur-xl border border-neutral-800/80 rounded-3xl p-3 min-[1025px]:p-6 shadow-2xl">
         <div className="flex flex-col landscape:max-lg:flex-row landscape:max-lg:items-center min-[1025px]:flex-row min-[1025px]:items-center justify-between gap-2 border-b border-neutral-800 pb-4 landscape:max-lg:pb-2 mb-4 landscape:max-lg:mb-2">
           <div>
@@ -514,10 +514,7 @@ export function PublicScoreboard() {
 
       {/* Category Selection Bar */}
       <nav className="bg-[#151515]/80 backdrop-blur-lg border-b border-neutral-800/80 sticky top-0 z-20 shadow-xl">
-        <div
-          className="max-w-4xl mx-auto px-4 py-3 flex gap-2.5 overflow-x-auto snap-x scroll-px-4 hide-scrollbar"
-          style={{ scrollPadding: '0 1rem' }}
-        >
+        <div className="max-w-4xl mx-auto px-4 py-3 flex gap-2.5 overflow-x-auto snap-x scroll-px-4 hide-scrollbar">
           {visibleCategoryKeys.map((catKey) => {
             const cat = data?.categories[catKey];
             const isSelected = selectedCategoryKey === catKey;
