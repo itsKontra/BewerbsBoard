@@ -266,7 +266,7 @@ export function ResultsTab() {
       {/* Header & Category Selection */}
       <AdminCard className="!p-3 sm:!p-4">
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
-          <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full py-0.5 hide-scrollbar">
+          <div className="flex items-center space-x-1.5 overflow-x-auto max-w-full py-0.5 hide-scrollbar touch-pan-x">
             {categoryFilterOptions.map((cat) => (
               <button
                 key={cat.id}
@@ -283,21 +283,21 @@ export function ResultsTab() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between sm:justify-end gap-2.5">
             {/* Quick search input */}
-            <div className="relative flex-1 sm:flex-initial min-w-[180px]">
+            <div className="relative flex-1 sm:flex-initial sm:w-48">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Startnr. / Wehr suchen..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-48 pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full pl-7 pr-2.5 py-1.5 bg-slate-50 border border-slate-200/90 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               />
             </div>
 
             {/* Quick Counters */}
-            <div className="flex items-center space-x-1.5 text-xs shrink-0">
+            <div className="flex items-center justify-between sm:justify-end space-x-1.5 text-xs shrink-0">
               <span className="px-2.5 py-1 rounded-md bg-blue-50 border border-blue-200 text-blue-900 font-mono font-semibold text-xs">
                 {uiText.admin.results.openCount(openEntries.length)}
               </span>
@@ -391,7 +391,7 @@ export function ResultsTab() {
                         className="bg-white border border-slate-200/90 rounded-xl p-2.5 sm:p-3 flex flex-col xl:flex-row xl:items-center justify-between gap-3 hover:border-slate-300 hover:shadow-xs transition-all"
                       >
                         {/* Entry info */}
-                        <div className="flex items-center space-x-3 min-w-0 xl:min-w-[260px] xl:max-w-[340px]">
+                        <div className="flex items-center space-x-3 min-w-0 xl:min-w-[240px] xl:max-w-[320px]">
                           <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center font-mono font-bold text-xs shrink-0">
                             #{entry.startOrderPosition}
                           </div>
@@ -406,7 +406,7 @@ export function ResultsTab() {
                         </div>
 
                         {/* Input controls */}
-                        <div className="flex flex-wrap items-center gap-2.5 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-200/70">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 bg-slate-50/80 p-2 sm:px-3 sm:py-2 rounded-lg border border-slate-200/70">
                           {/* Attack Time Input */}
                           <div className="flex items-center space-x-1.5">
                             <label
@@ -426,7 +426,7 @@ export function ResultsTab() {
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveResult(entry.id);
                               }}
-                              className="w-20 sm:w-24 bg-white border border-slate-300 rounded-md px-2 py-1 text-xs font-mono text-slate-900 text-center font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                              className="w-18 sm:w-24 bg-white border border-slate-300 rounded-md px-1.5 sm:px-2 py-1 text-xs font-mono text-slate-900 text-center font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                             />
                           </div>
 
@@ -450,7 +450,7 @@ export function ResultsTab() {
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveResult(entry.id);
                               }}
-                              className="w-14 sm:w-16 bg-white border border-slate-300 rounded-md px-1.5 py-1 text-xs font-mono text-slate-900 text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                              className="w-13 sm:w-16 bg-white border border-slate-300 rounded-md px-1 sm:px-1.5 py-1 text-xs font-mono text-slate-900 text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                             />
                           </div>
 
@@ -476,7 +476,7 @@ export function ResultsTab() {
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSaveResult(entry.id);
                                   }}
-                                  className="w-20 sm:w-24 bg-white border border-slate-300 rounded-md px-2 py-1 text-xs font-mono text-slate-900 text-center font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                                  className="w-18 sm:w-24 bg-white border border-slate-300 rounded-md px-1.5 sm:px-2 py-1 text-xs font-mono text-slate-900 text-center font-bold focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                                 />
                               </div>
 
@@ -499,19 +499,19 @@ export function ResultsTab() {
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') handleSaveResult(entry.id);
                                   }}
-                                  className="w-14 sm:w-16 bg-white border border-slate-300 rounded-md px-1.5 py-1 text-xs font-mono text-slate-900 text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
+                                  className="w-13 sm:w-16 bg-white border border-slate-300 rounded-md px-1 sm:px-1.5 py-1 text-xs font-mono text-slate-900 text-center focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 outline-none transition-all"
                                 />
                               </div>
                             </>
                           )}
 
                           {/* Actions: exactly 2 buttons: DNF and Speichern */}
-                          <div className="flex items-center space-x-1.5 ml-auto pl-1">
+                          <div className="flex items-center space-x-1.5 w-full sm:w-auto sm:ml-auto justify-end pt-1.5 sm:pt-0 border-t border-slate-200/50 sm:border-t-0 pl-1">
                             <button
                               id={`dnf-btn-${entry.id}`}
                               onClick={() => handleStatusChange(entry.id, 'DNF')}
                               disabled={isSaving}
-                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs rounded-md transition-colors cursor-pointer disabled:opacity-50"
+                              className="flex-1 sm:flex-initial px-2.5 py-1 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-bold text-xs rounded-md transition-colors cursor-pointer disabled:opacity-50 text-center"
                             >
                               {uiText.admin.results.dnf}
                             </button>
@@ -519,7 +519,7 @@ export function ResultsTab() {
                               id={`save-btn-${entry.id}`}
                               onClick={() => handleSaveResult(entry.id)}
                               disabled={isSaving}
-                              className={`px-3.5 py-1 disabled:opacity-50 font-bold text-xs rounded-md transition-all cursor-pointer ${
+                              className={`flex-1 sm:flex-initial px-3.5 py-1 disabled:opacity-50 font-bold text-xs rounded-md transition-all cursor-pointer text-center ${
                                 isDirty
                                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border border-emerald-600'
                                   : 'bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-600'
@@ -572,9 +572,9 @@ export function ResultsTab() {
                       <div
                         key={entry.id}
                         data-testid={`valid-entry-row-${entry.id}`}
-                        className="bg-white border border-slate-200/80 rounded-lg p-2 sm:p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50/70 transition-colors shadow-2xs"
+                        className="bg-white border border-slate-200/80 rounded-lg p-2.5 flex flex-col md:flex-row md:items-center justify-between gap-2.5 hover:bg-slate-50/70 transition-colors shadow-2xs"
                       >
-                        <div className="flex items-center space-x-3 min-w-0">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
                           <div
                             className={`w-7 h-7 rounded-md flex items-center justify-center font-bold text-xs font-mono shrink-0 ${
                               entry.rank === 1
@@ -598,8 +598,8 @@ export function ResultsTab() {
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 sm:space-x-5 ml-auto sm:ml-0 shrink-0">
-                          <div className="text-right">
+                        <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 pt-1.5 md:pt-0 border-t border-slate-100 md:border-t-0 shrink-0">
+                          <div className="text-left md:text-right">
                             <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{uiText.admin.results.attackAndRelay}</div>
                             <div className="text-xs font-mono text-slate-700 font-medium">
                               {formattedAttack}s <span className="text-red-500 text-[11px]">(+{attackErrors}F)</span>
@@ -618,12 +618,12 @@ export function ResultsTab() {
                             </div>
                           </div>
 
-                          <div className="pl-2">
+                          <div className="pl-1 md:pl-2">
                             <button
                               id={`revert-btn-${entry.id}`}
                               onClick={() => handleStatusChange(entry.id, 'OPEN')}
                               disabled={isSaving}
-                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-600 font-semibold text-xs rounded-md border border-slate-200/90 shadow-2xs transition-colors cursor-pointer"
+                              className="px-2.5 py-1 bg-white hover:bg-slate-100 text-slate-600 font-semibold text-xs rounded-md border border-slate-200/90 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                               title={uiText.admin.results.resetToOpenTitle}
                             >
                               {uiText.admin.results.resetToOpen}
@@ -665,11 +665,11 @@ export function ResultsTab() {
                       data-testid={`dnf-entry-row-${entry.id}`}
                       className="bg-red-50/40 border border-red-200/80 rounded-lg p-2 sm:p-2.5 flex items-center justify-between gap-3 shadow-2xs"
                     >
-                      <div className="flex items-center space-x-3 min-w-0">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
                         <div className="w-7 h-7 rounded-md bg-red-100 text-red-700 border border-red-200 flex items-center justify-center font-bold text-xs font-mono shrink-0">
                           {uiText.admin.results.dnf}
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="font-bold text-slate-900 text-sm truncate leading-tight">
                             {entry.fireBrigadeName ? `${entry.fireBrigadeName} — ` : ''}{entry.groupName}
                           </div>
@@ -679,12 +679,12 @@ export function ResultsTab() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="shrink-0">
                         <button
                           id={`revert-dnf-btn-${entry.id}`}
                           onClick={() => handleStatusChange(entry.id, 'OPEN')}
                           disabled={isSaving}
-                          className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-md border border-slate-200 shadow-2xs transition-colors"
+                          className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-md border border-slate-200 shadow-2xs transition-colors cursor-pointer whitespace-nowrap"
                         >
                           {uiText.admin.results.resetToOpen}
                         </button>

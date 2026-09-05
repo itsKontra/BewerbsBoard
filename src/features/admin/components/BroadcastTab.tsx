@@ -268,7 +268,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
             type="button"
             onClick={handleDisableAdminSplash}
             disabled={updating}
-            className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold border border-amber-500/40 rounded-lg text-xs transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0 disabled:opacity-50"
+            className="w-full sm:w-auto px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold border border-amber-500/40 rounded-lg text-xs transition-all whitespace-nowrap shadow-2xs cursor-pointer shrink-0 disabled:opacity-50 text-center justify-center"
           >
             {uiText.admin.broadcast.disableSplashButton}
           </button>
@@ -329,7 +329,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
             </p>
           </div>
 
-          <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
             {/* Quick Duration Setting Inline */}
             <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
               <label htmlFor="ranking-page-duration" className="text-[10px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
@@ -343,7 +343,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
                 step={1}
                 value={rankingPageDurationSeconds}
                 onChange={(event) => setRankingPageDurationSeconds(Number(event.target.value))}
-                className="w-14 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs text-center font-mono font-bold text-slate-800 outline-none focus:border-indigo-500"
+                className="w-12 sm:w-14 bg-white border border-slate-300 rounded px-1.5 py-0.5 text-xs text-center font-mono font-bold text-slate-800 outline-none focus:border-indigo-500"
               />
               <button
                 type="button"
@@ -358,7 +358,7 @@ export function BroadcastTab({ onNavigate }: BroadcastTabProps = {}) {
             <button
               type="button"
               onClick={navigateToSettingsTab}
-              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200 transition-colors flex items-center space-x-1.5 shadow-2xs"
+              className="px-2.5 py-1 rounded-lg bg-white hover:bg-slate-100 text-slate-600 text-xs font-semibold border border-slate-200 transition-colors flex items-center space-x-1.5 shadow-2xs cursor-pointer"
               title={uiText.admin.broadcast.settingsTitle}
             >
               <Settings size={13} className="text-slate-400" />

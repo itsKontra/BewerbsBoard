@@ -267,7 +267,7 @@ export function LogsTab() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages || loading}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-semibold transition-colors shadow-xs"
+              className="px-3 py-1 rounded-md bg-white hover:bg-slate-100 disabled:opacity-40 border border-slate-200 text-slate-700 font-bold transition-colors shadow-2xs cursor-pointer"
             >
               {uiText.admin.logs.nextPage}
             </button>
@@ -277,40 +277,40 @@ export function LogsTab() {
 
       {/* JSON Diff Inspection Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 flex items-center justify-between">
+              <div className="flex items-center space-x-3 min-w-0">
+                <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
                   <FileText size={20} />
                 </div>
-                <div>
-                  <div className="flex items-center space-x-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="text-base font-bold text-slate-800">
                       {uiText.admin.logs.inspector}
                     </h3>
                     {renderActionBadge(selectedLog.action)}
                   </div>
-                  <p className="text-xs text-slate-500 font-mono mt-0.5">
+                  <p className="text-xs text-slate-500 font-mono mt-0.5 truncate">
                     ID: {selectedLog.id} | {formatDate(selectedLog.timestamp)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-white transition-colors"
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-white transition-colors shrink-0 ml-2 cursor-pointer"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6 overflow-y-auto space-y-4 text-xs font-mono">
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-100">
                 <div>
                   <span className="text-slate-400 uppercase font-bold text-[10px]">{uiText.admin.logs.userLabel}</span>
-                  <div className="text-slate-800 font-semibold mt-0.5">{selectedLog.user}</div>
+                  <div className="text-slate-800 font-semibold mt-0.5 truncate">{selectedLog.user}</div>
                 </div>
                 <div>
                   <span className="text-slate-400 uppercase font-bold text-[10px]">{uiText.admin.logs.timestampLabel}</span>
@@ -376,10 +376,10 @@ export function LogsTab() {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end">
+            <div className="bg-slate-50 px-4 py-3 sm:px-6 sm:py-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-5 py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-xs"
+                className="w-full sm:w-auto px-5 py-2 sm:py-2.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200 transition-colors shadow-xs cursor-pointer text-center"
               >
                 {uiText.admin.logs.close}
               </button>

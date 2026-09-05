@@ -171,7 +171,7 @@ export function SettingsTab() {
     <div className="space-y-6 pb-20 @container">
       {/* Sub-Tab Bar */}
       <AdminCard className="!p-1.5 sm:!p-2">
-        <div className="flex flex-wrap sm:flex-nowrap gap-1.5">
+        <div className="flex gap-1.5">
           {SETTINGS_SUB_TABS.map((tab) => {
             const isActive = activeSubTab === tab.id;
             const Icon = tab.icon;
@@ -180,14 +180,14 @@ export function SettingsTab() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex-1 min-w-[130px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                className={`flex-1 min-w-0 px-2 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1 sm:space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 <Icon size={15} className={isActive ? 'text-white' : 'text-slate-400'} />
-                <span>{tab.label}</span>
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
@@ -412,7 +412,7 @@ export function SettingsTab() {
               <label htmlFor="publicUrl" className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
                 {uiText.admin.settings.publicUrl}
               </label>
-              <div className="flex gap-2.5">
+              <div className="flex flex-col sm:flex-row gap-2.5">
                 <input
                   id="publicUrl"
                   type="url"
@@ -422,24 +422,26 @@ export function SettingsTab() {
                   placeholder={uiText.admin.settings.publicUrlPlaceholder}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={handleCopyUrl}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-colors whitespace-nowrap cursor-pointer flex items-center space-x-1.5"
-                  title={uiText.admin.settings.copyUrlTitle}
-                >
-                  <Copy size={14} />
-                  <span>{copiedUrl ? uiText.admin.settings.copied : uiText.admin.settings.copyUrl}</span>
-                </button>
-                <a
-                  href={config.publicUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hidden @sm:inline-flex items-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-colors whitespace-nowrap space-x-1.5"
-                >
-                  <ExternalLink size={14} />
-                  <span>{uiText.admin.settings.open}</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyUrl}
+                    className="flex-1 sm:flex-initial px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center space-x-1.5"
+                    title={uiText.admin.settings.copyUrlTitle}
+                  >
+                    <Copy size={14} />
+                    <span>{copiedUrl ? uiText.admin.settings.copied : uiText.admin.settings.copyUrl}</span>
+                  </button>
+                  <a
+                    href={config.publicUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold border border-slate-200 transition-colors whitespace-nowrap space-x-1.5"
+                  >
+                    <ExternalLink size={14} />
+                    <span>{uiText.admin.settings.open}</span>
+                  </a>
+                </div>
               </div>
               <p className="text-[11px] text-slate-400 mt-1.5">
                 {uiText.admin.settings.publicUrlHelp}
@@ -642,32 +644,34 @@ export function SettingsTab() {
 
         {/* Action Buttons */}
         {isDirty && activeSubTab !== 'data-management' && (
-          <div className="fixed bottom-0 left-0 right-0 py-2.5 px-4 bg-white/95 border-t border-slate-200 backdrop-blur-md flex items-center justify-end space-x-3 z-40 lg:pl-64 shadow-md">
+          <div className="fixed bottom-0 left-0 right-0 py-2.5 px-4 bg-white/95 border-t border-slate-200 backdrop-blur-md flex items-center justify-between sm:justify-end space-x-3 z-40 md:pl-64 shadow-md">
             <span className="text-xs text-slate-500 font-semibold hidden sm:inline-block">
               {uiText.admin.settings.unsaved}
             </span>
-            <button
-              type="button"
-              onClick={handleDiscardChanges}
-              disabled={saving}
-              className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors cursor-pointer"
-            >
-              {uiText.admin.settings.discard}
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center space-x-1.5 cursor-pointer"
-            >
-              {saving ? (
-                <>
-                  <Loader2 size={14} className="animate-spin" />
-                  <span>{uiText.admin.settings.saving}</span>
-                </>
-              ) : (
-                <span>{uiText.admin.settings.save}</span>
-              )}
-            </button>
+            <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
+              <button
+                type="button"
+                onClick={handleDiscardChanges}
+                disabled={saving}
+                className="flex-1 sm:flex-initial px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold border border-slate-200 transition-colors cursor-pointer text-center"
+              >
+                {uiText.admin.settings.discard}
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 sm:flex-initial px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>{uiText.admin.settings.saving}</span>
+                  </>
+                ) : (
+                  <span>{uiText.admin.settings.save}</span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </form>
