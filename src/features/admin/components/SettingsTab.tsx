@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { DEFAULT_TV_PRESENTATION, TV_THEMES, type TvPresentationConfig } from '../../../../shared/domain/tv-presentation';
 import { TV_PRESENTATION_STYLES } from '../../tv/utils/tv-presentation-styles';
 import { uiText } from '../../../ui-text';
-import { DataManagementSection } from './settings/DataManagementSection';
-import { LogoSection } from './settings/LogoSection';
 import { AdminCard } from './AdminCard';
 import { Sliders, QrCode, Database, CheckCircle2, AlertTriangle, X, Loader2, Copy, ExternalLink, Eye, Tv } from 'lucide-react';
+
+const LogoSection = lazy(() =>
+  import('./settings/LogoSection').then((m) => ({ default: m.LogoSection }))
+);
+const DataManagementSection = lazy(() =>
+  import('./settings/DataManagementSection').then((m) => ({ default: m.DataManagementSection }))
+);
 
 export interface ServerInfoState {
   serverIp: string;
@@ -309,27 +314,35 @@ export function SettingsTab() {
             </div>
 
             {/* Event Logo & Branding Presets / Custom Upload */}
-            <LogoSection
-              logoOverride={config.tvPresentation.logoOverride}
-              onChangeLogoOverride={(newLogoOverride) =>
-                setConfig((prev) => ({
-                  ...prev,
-                  tvPresentation: {
-                    ...prev.tvPresentation,
-                    logoOverride: newLogoOverride,
-                  },
-                }))
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 size={24} className="animate-spin text-indigo-600" />
+                </div>
               }
-              onSyncSavedLogoOverride={(savedLogoOverride) =>
-                setSavedConfig((prev) => ({
-                  ...prev,
-                  tvPresentation: {
-                    ...prev.tvPresentation,
-                    logoOverride: savedLogoOverride,
-                  },
-                }))
-              }
-            />
+            >
+              <LogoSection
+                logoOverride={config.tvPresentation.logoOverride}
+                onChangeLogoOverride={(newLogoOverride) =>
+                  setConfig((prev) => ({
+                    ...prev,
+                    tvPresentation: {
+                      ...prev.tvPresentation,
+                      logoOverride: newLogoOverride,
+                    },
+                  }))
+                }
+                onSyncSavedLogoOverride={(savedLogoOverride) =>
+                  setSavedConfig((prev) => ({
+                    ...prev,
+                    tvPresentation: {
+                      ...prev.tvPresentation,
+                      logoOverride: savedLogoOverride,
+                    },
+                  }))
+                }
+              />
+            </Suspense>
 
             {/* Visual Theme Selection */}
             <fieldset className="pt-4 border-t border-slate-100">
@@ -616,7 +629,15 @@ export function SettingsTab() {
         {/* 3. SUB-TAB: DATENVERWALTUNG (DATA MANAGEMENT)                            */}
         {/* ========================================================================= */}
         <div className={activeSubTab === 'data-management' ? 'block' : 'hidden'}>
-          <DataManagementSection />
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-12">
+                <Loader2 size={24} className="animate-spin text-indigo-600" />
+              </div>
+            }
+          >
+            <DataManagementSection />
+          </Suspense>
         </div>
 
         {/* Action Buttons */}
