@@ -8,11 +8,11 @@ import { WinnersCanvas } from './canvases/WinnersCanvas';
 import { AdminAccessSplashCanvas } from './canvases/AdminAccessSplashCanvas';
 import { useTvDataFeed } from '../hooks/useTvDataFeed';
 import { useRankingPager } from '../hooks/useRankingPager';
-import { useTvScale, TV_DESIGN_WIDTH, TV_DESIGN_HEIGHT } from '../hooks/useTvScale';
+import { useTvScale } from '../hooks/useTvScale';
 import { uiText } from '../../../ui-text';
 
 export function TvScoreboard() {
-  const scale = useTvScale();
+  const { scale, width, height } = useTvScale();
   const { tvState, resultsData, isDisconnected } = useTvDataFeed();
   const {
     activeCategory,
@@ -24,19 +24,21 @@ export function TvScoreboard() {
   if (!tvState || !resultsData) {
     return (
       <div
-        className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black font-sans text-white select-none"
+        className="fixed inset-0 overflow-hidden bg-black font-sans text-white select-none"
         data-testid="tv-viewport-container"
       >
         <div
           className="flex flex-col items-center justify-center"
           style={{
-            width: TV_DESIGN_WIDTH,
-            height: TV_DESIGN_HEIGHT,
+            width,
+            height,
+            minWidth: width,
+            minHeight: height,
             position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: `translate(-50%, -50%) scale(${scale})`,
-            transformOrigin: 'center center',
+            top: 0,
+            left: 0,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
           }}
         >
           <h1 className="mb-4 animate-pulse text-4xl font-extrabold uppercase tracking-widest text-red-600">
@@ -93,25 +95,23 @@ export function TvScoreboard() {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black select-none"
+      className="fixed inset-0 overflow-hidden bg-black select-none"
       data-testid="tv-viewport-container"
     >
       <div
-        className={`relative flex h-[1080px] w-[1920px] shrink-0 flex-col overflow-hidden select-none bg-gradient-to-br font-sans ${
+        className={`relative flex shrink-0 flex-col overflow-hidden select-none bg-gradient-to-br font-sans ${
           themeStyles.textColor
         } ${themeStyles.frameGradient}`}
         style={{
-          width: TV_DESIGN_WIDTH,
-          height: TV_DESIGN_HEIGHT,
-          minWidth: TV_DESIGN_WIDTH,
-          minHeight: TV_DESIGN_HEIGHT,
-          maxWidth: TV_DESIGN_WIDTH,
-          maxHeight: TV_DESIGN_HEIGHT,
+          width,
+          height,
+          minWidth: width,
+          minHeight: height,
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: 'center center',
+          top: 0,
+          left: 0,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
         }}
         data-theme={tvPresentation.theme}
         data-testid="tv-shared-frame"
