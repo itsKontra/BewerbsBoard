@@ -42,11 +42,13 @@ export async function onRequestGet(context: EventContext) {
     }
 
     const binaryData = base64ToUint8Array(logo.base64Data);
-    return new Response(binaryData.buffer as ArrayBuffer, {
+    return new Response(binaryData as BodyInit, {
       status: 200,
       headers: {
         'Content-Type': logo.mimeType,
         'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (err: any) {

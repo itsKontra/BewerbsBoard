@@ -39,6 +39,8 @@ export function registerConfigurationAndTvRoutes(app: Hono<SelfHostedAppEnvironm
     return context.body(buffer, 200, {
       'Content-Type': logo.mimeType,
       'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+      'X-Content-Type-Options': 'nosniff',
     })
   })
   app.delete('/api/admin/logo', (context) => {
