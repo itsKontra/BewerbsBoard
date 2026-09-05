@@ -662,4 +662,27 @@ describe('PublicScoreboard Component', () => {
       });
     }
   });
+
+  it('passes AbortSignal to fetch and aborts in-flight fetch on unmount without throwing errors', async () => {
+    let capturedSignal: AbortSignal | undefined;
+    globalThis.fetch = vi.fn().mockImplementation((_url: string, init?: RequestInit) => {
+      capturedSignal = init?.signal as AbortSignal;
+      return new Promise((_, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          const abortErr = new Error('The operation was aborted');
+          abortErr.name = 'AbortError';
+          reject(abortErr);
+        });
+      });
+    });
+
+    const { unmount } = render(<PublicScoreboard />);
+
+    expect(capturedSignal).toBeDefined();
+    expect(capturedSignal?.aborted).toBe(false);
+
+    unmount();
+
+    expect(capturedSignal?.aborted).toBe(true);
+  });
 });

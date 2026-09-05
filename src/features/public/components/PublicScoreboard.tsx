@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { formatHundredthsToDisplayTime } from '../../../../shared/utils/time-parser';
 import { uiText } from '../../../ui-text';
 
@@ -404,29 +404,43 @@ export function PublicScoreboard() {
   const [selectedCategoryKey, setSelectedCategoryKey] = useState<string>(FALLBACK_CATEGORY_KEYS[0] ?? '');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const fetchResults = async (isInitial = false) => {
+  const controllerRef = useRef<AbortController | null>(null);
+  const isMountedRef = useRef(true);
+  const latestRequestIdRef = useRef(0);
+
+  const fetchResults = useCallback(async (isInitial = false) => {
+    const requestId = ++latestRequestIdRef.current;
+    if (isInitial) {
+      setLoading(true);
+      setError(null);
+    }
     const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
     if (isDemoMode) {
       try {
         const { DEMO_RESULTS_DATA } = await import('../../../mock/demo-scoreboard-data');
+        if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
         setData(DEMO_RESULTS_DATA as unknown as PublicResultsApiResponse);
         setLastUpdated(new Date());
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        if (!isMountedRef.current || requestId !== latestRequestIdRef.current) return;
         if (isInitial) {
-          setError(err.message || uiText.publicScoreboard.resultsCouldNotBeLoaded);
+          setError((err as { message?: string })?.message || uiText.publicScoreboard.resultsCouldNotBeLoaded);
         }
       } finally {
-        if (isInitial) setLoading(false);
+        if (isMountedRef.current && isInitial && requestId === latestRequestIdRef.current) {
+          setLoading(false);
+        }
       }
       return;
     }
     try {
-      const res = await fetch('/api/public/results');
+      const res = await fetch('/api/public/results', controllerRef.current ? { signal: controllerRef.current.signal } : undefined);
       if (!res.ok) {
         throw new Error(uiText.publicScoreboard.resultsLoadError(res.status));
       }
       const json: PublicResultsApiResponse = await res.json();
+      if (!isMountedRef.current || controllerRef.current?.signal.aborted || requestId !== latestRequestIdRef.current) return;
       setData(json);
       setSelectedCategoryKey((current) => {
         if (json.categories[current] && json.categories[current].publicEnabled !== false) return current;
@@ -436,25 +450,40 @@ export function PublicScoreboard() {
       });
       setLastUpdated(new Date());
       setError(null);
-    } catch (err: any) {
-      if (isInitial) {
-        setError(err.message || uiText.publicScoreboard.resultsCouldNotBeLoaded);
+    } catch (err: unknown) {
+      if (
+        !isMountedRef.current ||
+        controllerRef.current?.signal.aborted ||
+        (err instanceof Error && err.name === 'AbortError') ||
+        (typeof err === 'object' && err !== null && (err as { name?: string }).name === 'AbortError')
+      ) {
+        return;
+      }
+      if (isInitial && requestId === latestRequestIdRef.current) {
+        setError((err as { message?: string })?.message || uiText.publicScoreboard.resultsCouldNotBeLoaded);
       }
     } finally {
-      if (isInitial) {
+      if (isMountedRef.current && isInitial && requestId === latestRequestIdRef.current) {
         setLoading(false);
       }
     }
-  };
+  }, []);
 
   useEffect(() => {
+    isMountedRef.current = true;
+    controllerRef.current = new AbortController();
+
     fetchResults(true);
     const interval = setInterval(() => {
       fetchResults(false);
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, []);
+    return () => {
+      isMountedRef.current = false;
+      controllerRef.current?.abort();
+      clearInterval(interval);
+    };
+  }, [fetchResults]);
 
   const categoryEntries = data?.categories ? Object.entries(data.categories) : [];
   const visibleCategoryKeys = categoryEntries.length > 0

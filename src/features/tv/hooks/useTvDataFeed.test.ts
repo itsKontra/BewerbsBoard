@@ -91,8 +91,12 @@ describe('useTvDataFeed Hook and Adapters', () => {
         await vi.advanceTimersByTimeAsync(5000);
       });
 
-      expect(globalThis.fetch).toHaveBeenCalledWith('/api/public/tv-state');
-      expect(globalThis.fetch).toHaveBeenCalledWith('/api/public/results');
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/public/tv-state', {
+        signal: expect.any(AbortSignal),
+      });
+      expect(globalThis.fetch).toHaveBeenCalledWith('/api/public/results', {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('uses DemoAdapter when ?demo=true parameter is present', async () => {
@@ -123,8 +127,8 @@ describe('useTvDataFeed Hook and Adapters', () => {
 
       expect(result.current.tvState).toEqual(mockState);
       expect(result.current.resultsData).toEqual(mockResults);
-      expect(customAdapter.fetchTvState).toHaveBeenCalled();
-      expect(customAdapter.fetchResultsData).toHaveBeenCalled();
+      expect(customAdapter.fetchTvState).toHaveBeenCalledWith(expect.any(AbortSignal));
+      expect(customAdapter.fetchResultsData).toHaveBeenCalledWith(expect.any(AbortSignal));
     });
 
     it('sets isDisconnected to true when fetches fail', async () => {
@@ -137,6 +141,97 @@ describe('useTvDataFeed Hook and Adapters', () => {
       });
 
       expect(result.current.isDisconnected).toBe(true);
+    });
+
+    it('aborts signals and suppresses errors on unmount', async () => {
+      let stateSignal: AbortSignal | undefined;
+      let resultsSignal: AbortSignal | undefined;
+
+      const customAdapter = {
+        fetchTvState: vi.fn().mockImplementation((signal?: AbortSignal) => {
+          stateSignal = signal;
+          return new Promise((_, reject) => {
+            signal?.addEventListener('abort', () => {
+              const abortErr = new Error('The operation was aborted');
+              abortErr.name = 'AbortError';
+              reject(abortErr);
+            });
+          });
+        }),
+        fetchResultsData: vi.fn().mockImplementation((signal?: AbortSignal) => {
+          resultsSignal = signal;
+          return new Promise((_, reject) => {
+            signal?.addEventListener('abort', () => {
+              const abortErr = new Error('The operation was aborted');
+              abortErr.name = 'AbortError';
+              reject(abortErr);
+            });
+          });
+        }),
+      };
+
+      const { unmount, result } = renderHook(() => useTvDataFeed(customAdapter));
+
+      expect(stateSignal).toBeDefined();
+      expect(resultsSignal).toBeDefined();
+      expect(stateSignal?.aborted).toBe(false);
+      expect(resultsSignal?.aborted).toBe(false);
+
+      act(() => {
+        unmount();
+      });
+
+      expect(stateSignal?.aborted).toBe(true);
+      expect(resultsSignal?.aborted).toBe(true);
+      // isDisconnected should NOT be flipped to true by unmount AbortError
+      expect(result.current.isDisconnected).toBe(false);
+    });
+
+    it('ignores older out-of-order responses when a newer poll finishes first', async () => {
+      let resolveFirstState!: (value: any) => void;
+      let resolveSecondState!: (value: any) => void;
+
+      let callCount = 0;
+      const customAdapter = {
+        fetchTvState: vi.fn().mockImplementation(() => {
+          callCount++;
+          if (callCount === 1) {
+            return new Promise((resolve) => {
+              resolveFirstState = resolve;
+            });
+          }
+          return new Promise((resolve) => {
+            resolveSecondState = resolve;
+          });
+        }),
+        fetchResultsData: vi.fn().mockResolvedValue(mockResults),
+      };
+
+      const { result } = renderHook(() =>
+        useTvDataFeed(customAdapter, { stateIntervalMs: 1000, resultsIntervalMs: 1000 }),
+      );
+
+      // Trigger second poll
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
+
+      expect(callCount).toBe(2);
+
+      // Newer response resolves first
+      await act(async () => {
+        resolveSecondState({ ...mockState, eventTitle: 'Newer Event' });
+      });
+
+      expect(result.current.tvState?.eventTitle).toBe('Newer Event');
+
+      // Older response resolves later
+      await act(async () => {
+        resolveFirstState({ ...mockState, eventTitle: 'Older Event' });
+      });
+
+      // State must retain the newer update and not be overwritten by the stale one
+      expect(result.current.tvState?.eventTitle).toBe('Newer Event');
     });
   });
 });
