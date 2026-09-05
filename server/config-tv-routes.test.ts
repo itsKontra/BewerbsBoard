@@ -80,6 +80,8 @@ describe('self-hosted configuration and TV routes', () => {
       expect(response.status).toBe(200)
       expect(response.headers.get('Content-Type')).toBe('image/png')
       expect(response.headers.get('Cache-Control')).toContain('public')
+      expect(response.headers.get('Content-Security-Policy')).toBe("default-src 'none'; style-src 'unsafe-inline'")
+      expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff')
       const buffer = await response.arrayBuffer()
       expect(buffer.byteLength).toBeGreaterThan(0)
 

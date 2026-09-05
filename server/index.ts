@@ -20,10 +20,10 @@ function parsePort(value: string | undefined): number {
     return 8080
   }
 
-  const port = Number(value)
-  if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+  const parsedPort = Number(value)
+  if (!Number.isInteger(parsedPort) || parsedPort < 1 || parsedPort > 65_535) {
     throw new Error(`PORT must be an integer between 1 and 65535; received ${value}`)
   }
 
-  return port
+  return parsedPort
 }

@@ -65,7 +65,31 @@ describe('Public Logo Function (GET /api/public/logo)', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toBe('image/png');
     expect(response.headers.get('Cache-Control')).toContain('public');
+    expect(response.headers.get('Content-Security-Policy')).toBe("default-src 'none'; style-src 'unsafe-inline'");
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
     const buffer = await response.arrayBuffer();
     expect(buffer.byteLength).toBeGreaterThan(0);
+  });
+
+  it('serves SVG custom logo with CSP and nosniff headers', async () => {
+    const sampleSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5"/></svg>';
+    const sampleSvgBase64 = btoa(sampleSvg);
+    mockKv['tv:custom-logo'] = JSON.stringify({
+      mimeType: 'image/svg+xml',
+      base64Data: sampleSvgBase64,
+      updatedAt: 1700000000000,
+    });
+
+    const context: any = {
+      env: { KV: kvBinding },
+      request: new Request('http://localhost/api/public/logo'),
+    };
+    const response = await onRequestGet(context);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toBe('image/svg+xml');
+    expect(response.headers.get('Content-Security-Policy')).toBe("default-src 'none'; style-src 'unsafe-inline'");
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
+    const text = await response.text();
+    expect(text).toContain('<circle');
   });
 });

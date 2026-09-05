@@ -1,4 +1,4 @@
-import { QRCodeSVG } from 'qrcode.react';
+import { QrSvg } from '../ui/QrSvg';
 import type { TvTheme } from '../../../../../shared/domain/tv-presentation';
 import { uiText } from '../../../../ui-text';
 import type { ServerNetworkInfo } from '../../hooks/useTvDataFeed';
@@ -121,7 +121,7 @@ export function AdminAccessSplashCanvas({
             className="p-4 sm:p-6 bg-white rounded-3xl shadow-2xl border-4 border-white flex flex-col items-center justify-center transition-transform hover:scale-105"
             data-testid="admin-access-qr"
           >
-            <QRCodeSVG
+            <QrSvg
               value={finalAdminUrl}
               size={220}
               level="M"

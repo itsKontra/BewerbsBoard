@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { WinnersCanvas } from './WinnersCanvas';
-import type { CategoryResultData } from '../../../public/components/PublicScoreboard';
+import type { CategoryResultData } from '../../../public/types';
 
 const mockCategory: CategoryResultData = {
   id: 'bronze-aktiv',

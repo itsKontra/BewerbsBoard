@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveCategoryShape } from './category-shape';
-import type { CategoryResultData } from '../../public/components/PublicScoreboard';
+import type { CategoryResultData } from '../../public/types';
 
 describe('resolveCategoryShape', () => {
   it('returns standard category shape when category is undefined or null', () => {

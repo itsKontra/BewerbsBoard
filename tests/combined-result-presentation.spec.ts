@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { PublicResultsApiResponse } from '../src/features/public/components/PublicScoreboard';
+import type { PublicResultsApiResponse } from '../src/features/public/types';
 import type { TvMode, TvStateApiResponse } from '../src/features/tv/hooks/useTvDataFeed';
 
 const categoryId = 'combined-fire-attack';

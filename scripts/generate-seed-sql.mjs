@@ -83,8 +83,8 @@ function quoteValue(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-function validateSeedData(seedData) {
-  const catalog = seedData?.catalog;
+function validateSeedData(catalogSeedData) {
+  const catalog = catalogSeedData?.catalog;
   if (!catalog || !Array.isArray(catalog.competitionClasses) || !Array.isArray(catalog.categoryTypes) || !Array.isArray(catalog.evaluationTypes)) {
     throw new Error('Seed data must contain catalog competitionClasses, categoryTypes, and evaluationTypes arrays');
   }

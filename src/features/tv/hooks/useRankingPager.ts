@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CategoryResultData, PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
+import type { CategoryResultData, PublicResultsApiResponse } from '../../public/types';
 import type { RankingPresentationRow } from '../components/canvases/RankingCanvas';
 import { RANKING_PAGE_SIZE } from '../utils/presentation-constants';
 import type { TvCategoryConfig, TvStateApiResponse } from './useTvDataFeed';

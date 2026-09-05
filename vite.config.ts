@@ -88,8 +88,10 @@ function viteDevAdminMockPlugin(): Plugin {
   return {
     name: 'vite-dev-admin-mock',
     configureServer(server) {
-      server.middlewares.use(async (req, res, next) => {
-        const fullUrl = req.url ?? ''
+      server.middlewares.use((req, res, next) => {
+        Promise.resolve(
+          (async () => {
+            const fullUrl = req.url ?? ''
         const [path, qs] = fullUrl.split('?')
         const method = req.method?.toUpperCase() ?? 'GET'
 
@@ -438,9 +440,9 @@ function viteDevAdminMockPlugin(): Plugin {
           }
           const rawScopes = body?.scopes
           const scopes = {
-            categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
-            groups: rawScopes?.groups ?? (rawScopes ? false : true),
-            fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+            categoryEntries: rawScopes?.categoryEntries ?? !rawScopes,
+            groups: rawScopes?.groups ?? !rawScopes,
+            fireBrigades: rawScopes?.fireBrigades ?? !rawScopes,
             evaluationTypes: rawScopes?.evaluationTypes ?? false,
             categoryTypes: rawScopes?.categoryTypes ?? false,
           }
@@ -470,14 +472,20 @@ function viteDevAdminMockPlugin(): Plugin {
         }
 
         next()
+          })()
+        ).catch(next)
       })
     },
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), viteDevPublicMockPlugin(), viteDevAdminMockPlugin()],
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
+    target: 'es2022',
     rolldownOptions: {
       output: {
         codeSplitting: {
@@ -498,4 +506,4 @@ export default defineConfig({
   test: {
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-server/**', 'tests/**'],
   },
-})
+}))

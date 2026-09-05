@@ -130,11 +130,19 @@ export async function fetchAndProcessRemoteLogo(
   try {
     const response = await fetchFn(urlValidation.url.toString(), {
       signal: controller.signal,
+      redirect: 'error',
       headers: {
         'User-Agent': 'BewerbsBoard-LogoFetcher/1.0',
         Accept: 'image/png,image/jpeg,image/webp,image/svg+xml,*/*',
       },
     });
+
+    if (response.redirected) {
+      return {
+        success: false,
+        error: 'Weiterleitungen sind aus Sicherheitsgründen nicht erlaubt.',
+      };
+    }
 
     if (!response.ok) {
       return {
@@ -212,10 +220,19 @@ export async function extractImageBytesFromRequest(request: Request): Promise<{
       }
 
       rawData = rawData.trim();
+      const maxBase64Length = Math.ceil(MAX_LOGO_FILE_SIZE_BYTES * 1.4);
+      if (rawData.length > maxBase64Length + 128) {
+        return { bytes: null, error: 'Die Datei überschreitet die maximale Größe von 2 MB.' };
+      }
+
       const dataUriMatch = rawData.match(/^data:([^;]+);base64,(.+)$/i);
       if (dataUriMatch) {
         declaredMime = declaredMime || dataUriMatch[1];
         rawData = dataUriMatch[2];
+      }
+
+      if (rawData.length > maxBase64Length) {
+        return { bytes: null, error: 'Die Datei überschreitet die maximale Größe von 2 MB.' };
       }
 
       try {

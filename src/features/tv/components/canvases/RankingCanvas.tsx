@@ -1,4 +1,4 @@
-import type { CategoryResultData } from '../../../public/components/PublicScoreboard';
+import type { CategoryResultData } from '../../../public/types';
 import type { TvTheme } from '../../../../../shared/domain/tv-presentation';
 import { TV_PRESENTATION_STYLES } from '../../utils/tv-presentation-styles';
 import { resolveCategoryShape } from '../../utils/category-shape';

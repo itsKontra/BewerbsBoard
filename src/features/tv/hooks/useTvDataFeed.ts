@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
+import type { PublicResultsApiResponse } from '../../public/types';
 import type { TvTheme } from '../../../../shared/domain/tv-presentation';
 
 export type TvMode = 'ROTATION' | 'FIXED' | 'MESSAGE' | 'WINNERS';
@@ -38,22 +38,29 @@ export interface TvStateApiResponse {
   };
 }
 
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof Error && err.name === 'AbortError') ||
+    (typeof err === 'object' && err !== null && (err as { name?: string }).name === 'AbortError')
+  );
+}
+
 export interface TvDataFeedAdapter {
-  fetchTvState: () => Promise<TvStateApiResponse>;
-  fetchResultsData: () => Promise<PublicResultsApiResponse>;
+  fetchTvState: (signal?: AbortSignal) => Promise<TvStateApiResponse>;
+  fetchResultsData: (signal?: AbortSignal) => Promise<PublicResultsApiResponse>;
 }
 
 export const httpTvDataFeedAdapter: TvDataFeedAdapter = {
-  fetchTvState: async (): Promise<TvStateApiResponse> => {
+  fetchTvState: async (signal?: AbortSignal): Promise<TvStateApiResponse> => {
     const search = typeof window !== 'undefined' ? window.location.search : '';
-    const response = await fetch('/api/public/tv-state' + search);
+    const response = await fetch('/api/public/tv-state' + search, signal ? { signal } : undefined);
     if (!response.ok) {
       throw new Error(`Failed to fetch tv state: ${response.status}`);
     }
     return response.json();
   },
-  fetchResultsData: async (): Promise<PublicResultsApiResponse> => {
-    const response = await fetch('/api/public/results');
+  fetchResultsData: async (signal?: AbortSignal): Promise<PublicResultsApiResponse> => {
+    const response = await fetch('/api/public/results', signal ? { signal } : undefined);
     if (!response.ok) {
       throw new Error(`Failed to fetch results: ${response.status}`);
     }
@@ -62,11 +69,11 @@ export const httpTvDataFeedAdapter: TvDataFeedAdapter = {
 };
 
 export const demoTvDataFeedAdapter: TvDataFeedAdapter = {
-  fetchTvState: async (): Promise<TvStateApiResponse> => {
+  fetchTvState: async (_signal?: AbortSignal): Promise<TvStateApiResponse> => {
     const { getDemoTvState } = await import('../../../mock/demo-scoreboard-data');
     return getDemoTvState(typeof window !== 'undefined' ? window.location.search : '');
   },
-  fetchResultsData: async (): Promise<PublicResultsApiResponse> => {
+  fetchResultsData: async (_signal?: AbortSignal): Promise<PublicResultsApiResponse> => {
     const { DEMO_RESULTS_DATA } = await import('../../../mock/demo-scoreboard-data');
     return DEMO_RESULTS_DATA;
   },
@@ -90,43 +97,67 @@ export function useTvDataFeed(
   const resultsIntervalMs = options?.resultsIntervalMs ?? 5000;
 
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+    let latestRequestId = 0;
     const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
     const adapter = customAdapter ?? (isDemoMode ? demoTvDataFeedAdapter : httpTvDataFeedAdapter);
 
     const fetchState = async () => {
+      const requestId = ++latestRequestId;
       try {
-        const data = await adapter.fetchTvState();
+        const data = await adapter.fetchTvState(controller.signal);
+        if (!isMounted || controller.signal.aborted || requestId !== latestRequestId) return;
         setTvState(data);
         setIsStateDisconnected(false);
-      } catch {
-        // Retain last known state on screen upon network/server disconnect
-        setIsStateDisconnected(true);
+      } catch (err: unknown) {
+        if (!isMounted || controller.signal.aborted || isAbortError(err)) return;
+        if (requestId === latestRequestId) {
+          // Retain last known state on screen upon network/server disconnect
+          setIsStateDisconnected(true);
+        }
       }
     };
 
     fetchState();
     const interval = setInterval(fetchState, stateIntervalMs);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [customAdapter, stateIntervalMs]);
 
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+    let latestRequestId = 0;
     const isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
     const adapter = customAdapter ?? (isDemoMode ? demoTvDataFeedAdapter : httpTvDataFeedAdapter);
 
     const fetchResults = async () => {
+      const requestId = ++latestRequestId;
       try {
-        const data = await adapter.fetchResultsData();
+        const data = await adapter.fetchResultsData(controller.signal);
+        if (!isMounted || controller.signal.aborted || requestId !== latestRequestId) return;
         setResultsData(data);
         setIsResultsDisconnected(false);
-      } catch {
-        // Retain last known results on screen upon network/server disconnect
-        setIsResultsDisconnected(true);
+      } catch (err: unknown) {
+        if (!isMounted || controller.signal.aborted || isAbortError(err)) return;
+        if (requestId === latestRequestId) {
+          // Retain last known results on screen upon network/server disconnect
+          setIsResultsDisconnected(true);
+        }
       }
     };
 
     fetchResults();
     const interval = setInterval(fetchResults, resultsIntervalMs);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      controller.abort();
+      clearInterval(interval);
+    };
   }, [customAdapter, resultsIntervalMs]);
 
   const isDisconnected = isStateDisconnected || isResultsDisconnected;

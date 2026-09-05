@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import { QrSvg } from './QrSvg';
 import type { TvTheme } from '../../../../../shared/domain/tv-presentation';
 import { conciseDestination } from '../../../../../shared/utils/tv-destination';
 import { uiText } from '../../../../ui-text';
@@ -120,7 +120,7 @@ export function TvQrPopupCard({
             className={`shrink-0 flex items-center justify-center overflow-clip ${styles.qrContainer}`}
             data-testid="tv-qr-code"
           >
-            <QRCodeSVG
+            <QrSvg
               value={payload}
               size={150}
               level="M"
