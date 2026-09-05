@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import type { AdminTabId } from './features/admin/components/AdminLayout';
-import { uiText } from './ui-text';
+import { authText } from './auth-text';
 
 const PublicScoreboard = lazy(() => import('./features/public/components/PublicScoreboard').then((m) => ({ default: m.PublicScoreboard })));
 const TvScoreboard = lazy(() => import('./features/tv/components/TvScoreboard').then((m) => ({ default: m.TvScoreboard })));
@@ -103,11 +103,11 @@ export default function App() {
             <div className="w-16 h-16 bg-red-50 border border-red-100 rounded-2xl flex items-center justify-center mx-auto text-red-600 text-2xl font-bold">
               🚫
             </div>
-            <h1 className="text-xl font-bold text-slate-800">{uiText.auth.forbiddenTitle}</h1>
+            <h1 className="text-xl font-bold text-slate-800">{authText.forbiddenTitle}</h1>
             <p className="text-sm text-slate-500">
-              {uiText.auth.forbiddenBeforeRole}{' '}
+              {authText.forbiddenBeforeRole}{' '}
               <code className="bg-slate-100 px-2 py-0.5 rounded-md text-red-600 font-mono font-semibold border border-slate-200">admin</code>
-              {uiText.auth.forbiddenAfterRole}
+              {authText.forbiddenAfterRole}
             </p>
             <div className="pt-3 flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
@@ -115,13 +115,13 @@ export default function App() {
                 onClick={handleForbiddenLogout}
                 className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-sm font-semibold transition-colors cursor-pointer"
               >
-                <span>{uiText.auth.switchAccount}</span>
+                <span>{authText.switchAccount}</span>
               </button>
               <a
                 href="/"
                 className="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold transition-colors"
               >
-                {uiText.auth.backToHome}
+                {authText.backToHome}
               </a>
             </div>
           </div>
