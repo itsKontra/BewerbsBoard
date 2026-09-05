@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ADMIN_TABS, type AdminTabId } from './admin-tabs';
 import { uiText } from '../../../ui-text';
 import { Timer, Users, Radio, LayoutGrid, Settings, ScrollText, LogOut, Smartphone, Tv, ChevronRight, Menu, X, CircleUser } from 'lucide-react';
@@ -129,9 +129,29 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     return () => { isMounted = false; };
   }, [userEmailProp]);
 
+  const isOpeningRef = useRef(false);
+  const closeTimeoutRef = useRef<number | null>(null);
+
+  const safeHidePopover = useCallback(() => {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    if (drawerRef.current && drawerRef.current.matches(':popover-open')) {
+      drawerRef.current.hidePopover();
+    }
+  }, []);
+
   const openDrawer = async () => {
     if (drawerRef.current && scrollerRef.current) {
-      drawerRef.current.showPopover();
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+      }
+      isOpeningRef.current = true;
+      if (!drawerRef.current.matches(':popover-open')) {
+        drawerRef.current.showPopover();
+      }
       if (!CSS.supports('scroll-initial-target', 'nearest')) {
         scrollerRef.current.scrollTo({ left: scrollerRef.current.offsetWidth, behavior: 'instant' });
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -140,17 +160,77 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     }
   };
 
-  const closeDrawer = () => {
-    if (scrollerRef.current) {
-      scrollerRef.current.scrollTo({ left: scrollerRef.current.offsetWidth, behavior: 'auto' });
+  const closeDrawer = useCallback((instant = false) => {
+    if (!drawerRef.current || !drawerRef.current.matches(':popover-open')) return;
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
     }
-  };
+
+    if (instant || !scrollerRef.current) {
+      safeHidePopover();
+      return;
+    }
+
+    scrollerRef.current.scrollTo({ left: scrollerRef.current.offsetWidth, behavior: 'auto' });
+    closeTimeoutRef.current = window.setTimeout(() => {
+      safeHidePopover();
+    }, 350);
+  }, [safeHidePopover]);
 
   const handleTabClick = (tabId: AdminTabId) => {
     setCurrentTab(tabId);
     onTabChange?.(tabId);
     closeDrawer();
   };
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const sheet = sheetRef.current;
+    if (!scroller || !sheet) return;
+
+    const handleScrollEnd = () => {
+      if (isOpeningRef.current) return;
+      if (scroller.scrollLeft >= scroller.offsetWidth * 0.5) {
+        safeHidePopover();
+      }
+    };
+
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              isOpeningRef.current = false;
+            } else if (!isOpeningRef.current) {
+              safeHidePopover();
+            }
+          }
+        },
+        { root: scroller, threshold: 0.05 }
+      );
+      observer.observe(sheet);
+    }
+
+    scroller.addEventListener('scrollend', handleScrollEnd);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && drawerRef.current?.matches(':popover-open')) {
+        closeDrawer();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      scroller.removeEventListener('scrollend', handleScrollEnd);
+      observer?.disconnect();
+      window.removeEventListener('keydown', handleKeyDown);
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, [closeDrawer, safeHidePopover]);
 
   useEffect(() => {
     onReady?.(handleTabClick);
@@ -205,7 +285,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         {/* Mobile Header */}
         <header className="md:hidden shrink-0 h-14 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 z-20">
           <BrandHeader />
-          <button onClick={openDrawer} className="p-2 -mr-1 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 rounded-lg">
+          <button id="drawer-open" aria-label={uiText.adminLayout.openMenu} onClick={openDrawer} className="p-2 -mr-1 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 rounded-lg">
             <Menu size={20} />
           </button>
         </header>
@@ -302,7 +382,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           <nav className="Drawer-sheet bg-white flex flex-col w-full max-w-xs shadow-2xl" ref={sheetRef} tabIndex={-1}>
             <div className="p-3 flex items-center justify-between bg-white z-10 sticky top-0 border-b border-slate-100">
               <BrandHeader />
-              <button onClick={closeDrawer} className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-lg focus:outline-none">
+              <button onClick={() => closeDrawer()} aria-label={uiText.adminLayout.closeMenu} className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-lg focus:outline-none cursor-pointer">
                 <X size={18} />
               </button>
             </div>
