@@ -8,9 +8,11 @@ import { WinnersCanvas } from './canvases/WinnersCanvas';
 import { AdminAccessSplashCanvas } from './canvases/AdminAccessSplashCanvas';
 import { useTvDataFeed } from '../hooks/useTvDataFeed';
 import { useRankingPager } from '../hooks/useRankingPager';
+import { useTvScale, TV_DESIGN_WIDTH, TV_DESIGN_HEIGHT } from '../hooks/useTvScale';
 import { uiText } from '../../../ui-text';
 
 export function TvScoreboard() {
+  const scale = useTvScale();
   const { tvState, resultsData, isDisconnected } = useTvDataFeed();
   const {
     activeCategory,
@@ -21,11 +23,27 @@ export function TvScoreboard() {
 
   if (!tvState || !resultsData) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black font-sans text-white">
-        <h1 className="mb-4 animate-pulse text-4xl font-extrabold uppercase tracking-widest text-red-600">
-          {uiText.tv.results}
-        </h1>
-        <p className="font-mono text-neutral-500">{uiText.tv.connecting}</p>
+      <div
+        className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black font-sans text-white select-none"
+        data-testid="tv-viewport-container"
+      >
+        <div
+          className="flex flex-col items-center justify-center"
+          style={{
+            width: TV_DESIGN_WIDTH,
+            height: TV_DESIGN_HEIGHT,
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            transformOrigin: 'center center',
+          }}
+        >
+          <h1 className="mb-4 animate-pulse text-4xl font-extrabold uppercase tracking-widest text-red-600">
+            {uiText.tv.results}
+          </h1>
+          <p className="font-mono text-neutral-500">{uiText.tv.connecting}</p>
+        </div>
       </div>
     );
   }
@@ -75,32 +93,50 @@ export function TvScoreboard() {
 
   return (
     <div
-      className={`fixed inset-0 flex h-screen h-dvh w-screen w-full flex-col overflow-hidden select-none bg-gradient-to-br font-sans ${
-        themeStyles.textColor
-      } ${themeStyles.frameGradient}`}
-      data-theme={tvPresentation.theme}
-      data-testid="tv-shared-frame"
+      className="fixed inset-0 flex items-center justify-center overflow-hidden bg-black select-none"
+      data-testid="tv-viewport-container"
     >
-      {!isAdminSplashActive && (
-        <TvQrPopupCard
-          publicUrl={resultsData.publicUrl}
+      <div
+        className={`relative flex h-[1080px] w-[1920px] shrink-0 flex-col overflow-hidden select-none bg-gradient-to-br font-sans ${
+          themeStyles.textColor
+        } ${themeStyles.frameGradient}`}
+        style={{
+          width: TV_DESIGN_WIDTH,
+          height: TV_DESIGN_HEIGHT,
+          minWidth: TV_DESIGN_WIDTH,
+          minHeight: TV_DESIGN_HEIGHT,
+          maxWidth: TV_DESIGN_WIDTH,
+          maxHeight: TV_DESIGN_HEIGHT,
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
+        data-theme={tvPresentation.theme}
+        data-testid="tv-shared-frame"
+      >
+        {!isAdminSplashActive && (
+          <TvQrPopupCard
+            publicUrl={resultsData.publicUrl}
+            theme={tvPresentation.theme}
+            enabled={tvPresentation.qrCodeEnabled ?? DEFAULT_TV_PRESENTATION.qrCodeEnabled}
+            alwaysVisible={tvPresentation.qrCodeAlwaysVisible ?? DEFAULT_TV_PRESENTATION.qrCodeAlwaysVisible}
+            intervalSeconds={tvPresentation.qrCodeIntervalSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeIntervalSeconds}
+            durationSeconds={tvPresentation.qrCodeDurationSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeDurationSeconds}
+          />
+        )}
+
+        <ScoreboardHeader
+          eventTitle={eventTitle}
+          headerLabel={tvPresentation.headerLabel || DEFAULT_TV_PRESENTATION.headerLabel}
+          logoUrl={tvPresentation.logoUrl || '/logo.png'}
           theme={tvPresentation.theme}
-          enabled={tvPresentation.qrCodeEnabled ?? DEFAULT_TV_PRESENTATION.qrCodeEnabled}
-          alwaysVisible={tvPresentation.qrCodeAlwaysVisible ?? DEFAULT_TV_PRESENTATION.qrCodeAlwaysVisible}
-          intervalSeconds={tvPresentation.qrCodeIntervalSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeIntervalSeconds}
-          durationSeconds={tvPresentation.qrCodeDurationSeconds ?? DEFAULT_TV_PRESENTATION.qrCodeDurationSeconds}
+          statusLabel={isDisconnected ? uiText.tv.disconnected : undefined}
         />
-      )}
 
-      <ScoreboardHeader
-        eventTitle={eventTitle}
-        headerLabel={tvPresentation.headerLabel || DEFAULT_TV_PRESENTATION.headerLabel}
-        logoUrl={tvPresentation.logoUrl || '/logo.png'}
-        theme={tvPresentation.theme}
-        statusLabel={isDisconnected ? uiText.tv.disconnected : undefined}
-      />
-
-      {modeCanvas}
+        {modeCanvas}
+      </div>
     </div>
   );
 }
