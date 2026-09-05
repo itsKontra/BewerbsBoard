@@ -23,8 +23,8 @@ const iconMap: Record<string, React.FC<any>> = {
   ScrollText,
 };
 
-const BrandHeader = () => (
-  <div className="flex items-center space-x-3 px-5 py-4 border-b border-slate-100 shrink-0">
+const BrandHeader = ({ className = 'px-5 py-4 border-b border-slate-100' }: { className?: string }) => (
+  <div className={`flex items-center space-x-3 shrink-0 ${className}`}>
     <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-600 to-slate-900 flex items-center justify-center text-white shadow-xs shrink-0 font-bold text-sm tracking-wider">
       {uiText.common.brandMark}
     </div>
@@ -283,51 +283,58 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
         
         {/* Mobile Header */}
-        <header className="md:hidden shrink-0 h-14 bg-white border-b border-slate-200/80 flex items-center justify-between px-4 z-20">
-          <BrandHeader />
-          <button id="drawer-open" aria-label={uiText.adminLayout.openMenu} onClick={openDrawer} className="p-2 -mr-1 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 rounded-lg">
-            <Menu size={20} />
-          </button>
+        <header className="md:hidden shrink-0 h-14 bg-white border-b border-slate-200/80 flex items-center justify-between px-3 sm:px-4 z-20">
+          <BrandHeader className="px-0 py-0 border-none" />
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md truncate max-w-[120px] sm:max-w-none">
+              {activeTabConfig.label}
+            </span>
+            <button id="drawer-open" aria-label={uiText.adminLayout.openMenu} onClick={openDrawer} className="p-2 -mr-1 text-slate-500 hover:text-indigo-600 focus:outline-none bg-slate-50 hover:bg-slate-100 rounded-lg cursor-pointer transition-colors">
+              <Menu size={20} />
+            </button>
+          </div>
         </header>
 
-        {/* Top Operational Bar (Desktop) */}
-        <header className="hidden md:flex items-center justify-between px-6 h-12 bg-white border-b border-slate-200/80 sticky top-0 z-10 shrink-0">
-          <div className="flex items-center space-x-3">
-            <div className="p-1 rounded-md bg-indigo-50 text-indigo-600">
+        {/* Top Operational Bar (Desktop / Tablet) */}
+        <header className="hidden md:flex items-center justify-between px-4 lg:px-6 h-12 bg-white border-b border-slate-200/80 sticky top-0 z-10 shrink-0">
+          <div className="flex items-center space-x-2 lg:space-x-3 min-w-0">
+            <div className="p-1 rounded-md bg-indigo-50 text-indigo-600 shrink-0">
               {React.createElement(iconMap[activeTabConfig.icon] || LayoutGrid, { size: 15 })}
             </div>
-            <div className="flex items-center text-xs font-medium text-slate-500">
-              <span className="text-slate-400">Dashboard</span>
-              <ChevronRight size={12} className="mx-1 text-slate-300" />
-              <span className="text-slate-900 font-bold">{activeTabConfig.label}</span>
+            <div className="flex items-center text-xs font-medium text-slate-500 truncate">
+              <span className="text-slate-400 hidden xl:inline">Dashboard</span>
+              <ChevronRight size={12} className="mx-1 text-slate-300 hidden xl:inline shrink-0" />
+              <span className="text-slate-900 font-bold truncate">{activeTabConfig.label}</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 lg:space-x-4 shrink-0">
             <a
               href="/"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+              title={uiText.adminLayout.audienceView}
             >
-              <Smartphone size={13} className="text-slate-400" />
-              <span>{uiText.adminLayout.audienceView}</span>
+              <Smartphone size={13} className="text-slate-400 shrink-0" />
+              <span className="hidden xl:inline">{uiText.adminLayout.audienceView}</span>
             </a>
             <a
               href="/tv"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
+              title={uiText.adminLayout.tvDisplay}
             >
-              <Tv size={13} className="text-slate-400" />
-              <span>{uiText.adminLayout.tvDisplay}</span>
+              <Tv size={13} className="text-slate-400 shrink-0" />
+              <span className="hidden xl:inline">{uiText.adminLayout.tvDisplay}</span>
             </a>
             <div className="h-3.5 w-px bg-slate-200" />
-            <div className="flex items-center space-x-2">
-              <div className="w-5 h-5 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-[10px] select-none">
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-5 h-5 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-[10px] select-none shrink-0">
                 {(currentUser.charAt(0) || 'A').toUpperCase()}
               </div>
-              <span className="text-xs font-semibold text-slate-700 truncate max-w-44" title={currentUser}>
+              <span className="text-xs font-semibold text-slate-700 truncate max-w-28 lg:max-w-44" title={currentUser}>
                 {currentUser}
               </span>
             </div>
@@ -335,7 +342,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </header>
 
         {/* Scrollable Main Workspace */}
-        <main className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 lg:p-6 pb-12">
+        <main className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5 lg:p-6 pb-20 md:pb-12">
           <div className="max-w-[1600px] mx-auto">
             <div role="tabpanel">
               {(() => {
@@ -381,7 +388,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         <div className="Drawer-scroller" ref={scrollerRef}>
           <nav className="Drawer-sheet bg-white flex flex-col w-full max-w-xs shadow-2xl" ref={sheetRef} tabIndex={-1}>
             <div className="p-3 flex items-center justify-between bg-white z-10 sticky top-0 border-b border-slate-100">
-              <BrandHeader />
+              <BrandHeader className="px-0 py-0 border-none" />
               <button onClick={() => closeDrawer()} aria-label={uiText.adminLayout.closeMenu} className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 rounded-lg focus:outline-none cursor-pointer">
                 <X size={18} />
               </button>

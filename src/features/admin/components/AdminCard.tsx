@@ -9,7 +9,7 @@ interface AdminCardProps {
 
 export const AdminCard: React.FC<AdminCardProps> = ({ title, children, className = '', headerAction }) => {
   return (
-    <div className={`bg-white rounded-xl p-4 sm:p-5 shadow-xs border border-slate-200/80 flex flex-col ${className}`}>
+    <div className={`bg-white rounded-xl p-3.5 sm:p-5 shadow-xs border border-slate-200/80 flex flex-col ${className}`}>
       {(title || headerAction) && (
         <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100">
           {title && <h3 className="font-bold text-slate-800 text-base tracking-tight">{title}</h3>}

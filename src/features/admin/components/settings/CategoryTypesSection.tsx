@@ -235,7 +235,7 @@ export function CategoryTypesSection({
             </select>
           </div>
 
-          <div className="sm:col-span-3 flex items-center h-10">
+          <div className="sm:col-span-3 flex items-center h-auto py-1 sm:h-10">
             <label className="flex items-center space-x-2 cursor-pointer select-none">
               <input
                 id="newCategoryHasRelay"
@@ -255,7 +255,7 @@ export function CategoryTypesSection({
               type="button"
               onClick={handleCreateCategoryType}
               disabled={isCreating || !formData.name.trim() || !formData.competitionClassId}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm shadow-indigo-200 transition-all flex items-center space-x-1.5 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-sm shadow-indigo-200 transition-all flex items-center justify-center space-x-1.5 cursor-pointer"
             >
               {isCreating ? (
                 <span>{text.creating}</span>

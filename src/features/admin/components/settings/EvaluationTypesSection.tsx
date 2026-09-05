@@ -222,13 +222,13 @@ export function EvaluationTypesSection({
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => {
               evaluationTypes.forEach((e) => onUpdateEvaluationType(e.id, { public: true }));
             }}
-            className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer text-center whitespace-nowrap"
           >
             {text.enableAllWeb}
           </button>
@@ -237,7 +237,7 @@ export function EvaluationTypesSection({
             onClick={() => {
               evaluationTypes.forEach((e) => onUpdateEvaluationType(e.id, { publicTv: true }));
             }}
-            className="px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-xs font-semibold text-slate-700 border border-slate-200 shadow-sm transition-colors cursor-pointer text-center whitespace-nowrap"
           >
             {text.enableAllTv}
           </button>
@@ -355,8 +355,8 @@ export function EvaluationTypesSection({
         </div>
 
         {/* Checkboxes and Action Row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
-          <div className="flex flex-wrap items-center gap-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-slate-200/60">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5">
             <label className="flex items-center space-x-2 cursor-pointer select-none">
               <input
                 id="newEvaluationExcludeRelay"
@@ -456,7 +456,7 @@ export function EvaluationTypesSection({
             type="button"
             onClick={handleCreateEvaluationType}
             disabled={isCreating || !formData.name.trim() || categoryTypes.length === 0}
-            className="h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-indigo-200 flex items-center justify-center space-x-1.5 cursor-pointer"
+            className="w-full sm:w-auto h-9 px-5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-indigo-200 flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
           >
             {isCreating ? (
               <span>{text.creating}</span>

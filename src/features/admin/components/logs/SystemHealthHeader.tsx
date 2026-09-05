@@ -30,10 +30,10 @@ export function SystemHealthHeader({ onOpenResetModal, resetSuccessMessage, onCl
 
   return (
     <AdminCard className="space-y-6">
-      <div className="flex flex-col @md:flex-row @md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
         <div>
           <h3 className="text-lg font-bold text-slate-800 flex items-center space-x-2">
-            <Server size={20} className="text-indigo-600" />
+            <Server size={20} className="text-indigo-600 shrink-0" />
             <span>{uiText.admin.logs.systemTitle}</span>
           </h3>
           <p className="text-xs text-slate-500 mt-1">
@@ -44,14 +44,14 @@ export function SystemHealthHeader({ onOpenResetModal, resetSuccessMessage, onCl
         <button
           type="button"
           onClick={onOpenResetModal}
-          className="px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-semibold shadow-xs transition-colors whitespace-nowrap self-start @md:self-auto flex items-center space-x-1.5 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-semibold shadow-xs transition-colors whitespace-nowrap flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
         >
           <Trash2 size={14} />
           <span>{uiText.admin.logs.clearDatabase}</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 @sm:grid-cols-3 gap-4 text-xs font-mono">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 text-xs font-mono">
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1.5 shadow-xs">
           <div className="text-slate-400 uppercase font-bold text-[10px] flex items-center space-x-1">
             <Activity size={12} />

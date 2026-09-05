@@ -387,7 +387,7 @@ export function ParticipantsTab() {
     <div className="space-y-4">
       {/* Sub-Tab Bar */}
       <AdminCard className="!p-1.5 sm:!p-2">
-        <div className="flex flex-wrap sm:flex-nowrap gap-1.5">
+        <div className="flex gap-1.5">
           {PARTICIPANTS_SUB_TABS.map((tab) => {
             const isActive = activeSubTab === tab.id;
             const Icon = tab.icon;
@@ -396,14 +396,14 @@ export function ParticipantsTab() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex-1 min-w-[130px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                className={`flex-1 min-w-0 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 <Icon size={15} className={isActive ? 'text-white' : 'text-slate-400'} />
-                <span>{tab.label}</span>
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
@@ -434,7 +434,7 @@ export function ParticipantsTab() {
           <>
             {/* Category Selection Tabs */}
             <AdminCard className="!p-2.5 sm:!p-3">
-              <div className="flex space-x-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+              <div className="flex space-x-1.5 overflow-x-auto pb-0.5 scrollbar-hide touch-pan-x">
                 {categoryTypes.map((cat) => {
                   const isSelected = selectedCategoryId === cat.id;
                   return (
@@ -509,7 +509,7 @@ export function ParticipantsTab() {
                   <button
                     type="submit"
                     disabled={!selectedGroupId || isAdding}
-                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-md shadow-2xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
+                    className="w-full sm:w-auto px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold rounded-md shadow-2xs transition-all flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
                   >
                     <Plus size={14} />
                     {isAdding ? uiText.admin.participants.adding : uiText.admin.participants.add}
@@ -536,13 +536,13 @@ export function ParticipantsTab() {
                             isOpen ? 'bg-white border-slate-200 shadow-2xs hover:border-slate-300' : 'bg-slate-50 border-slate-200/60 opacity-60'
                           }`}
                         >
-                          <div className="flex items-center space-x-2.5 min-w-0">
+                          <div className="flex items-center space-x-2.5 min-w-0 flex-1">
                             <div className={`w-7 h-7 flex items-center justify-center rounded-md text-xs font-bold font-mono shrink-0 ${
                               isOpen ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-slate-100 text-slate-400'
                             }`}>
                               {isOpen ? entry.startOrderPosition : '-'}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                               <div className="font-bold text-slate-900 text-xs sm:text-sm truncate leading-tight">
                                 {entry.fireBrigadeName ? `${entry.fireBrigadeName} - ` : ''}{entry.groupName}
                               </div>
@@ -619,7 +619,7 @@ export function ParticipantsTab() {
             </div>
           </div>
 
-          <form onSubmit={handleCreateBrigade} className="flex gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <form onSubmit={handleCreateBrigade} className="flex flex-col sm:flex-row gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <input
               type="text"
               placeholder={uiText.admin.participants.brigadeNamePlaceholder}
@@ -629,7 +629,7 @@ export function ParticipantsTab() {
             />
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
             >
               <Plus size={14} />
               {uiText.admin.participants.add}
@@ -695,11 +695,11 @@ export function ParticipantsTab() {
             </div>
           </div>
 
-          <form onSubmit={handleCreateGroup} className="flex gap-2 mb-3 flex-wrap bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <form onSubmit={handleCreateGroup} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <select
               value={selectedBrigade}
               onChange={e => setSelectedBrigade(e.target.value)}
-              className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 min-w-[180px] shadow-2xs"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-2xs"
               aria-label={uiText.admin.participants.selectBrigadeLabel}
             >
               <option value="">{uiText.admin.participants.selectBrigade}</option>
@@ -713,13 +713,13 @@ export function ParticipantsTab() {
               placeholder={uiText.admin.participants.groupNamePlaceholder}
               value={newGroupName}
               onChange={e => setNewGroupName(e.target.value)}
-              className="flex-1 bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 min-w-[140px] shadow-2xs"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-2xs"
             />
 
             <select
               value={newGroupType}
               onChange={e => setNewGroupType(e.target.value)}
-              className="bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 min-w-[130px] shadow-2xs"
+              className="w-full bg-white border border-slate-300 rounded-md px-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500 shadow-2xs"
               aria-label={uiText.admin.participants.selectCompetitionClass}
             >
               {competitionClasses.map(cc => (
@@ -729,7 +729,7 @@ export function ParticipantsTab() {
 
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
             >
               <Plus size={14} />
               {uiText.admin.participants.createGroup}

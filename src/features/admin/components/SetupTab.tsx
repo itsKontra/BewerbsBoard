@@ -197,7 +197,7 @@ export function SetupTab() {
     <div className="space-y-4 pb-12">
       {/* Sleek Segmented Sub-Tab Bar */}
       <AdminCard className="!p-1.5 sm:!p-2">
-        <div className="flex flex-wrap sm:flex-nowrap gap-1.5">
+        <div className="flex gap-1.5">
           {SETUP_SUB_TABS.map((tab) => {
             const isActive = activeSubTab === tab.id;
             const Icon = tab.icon;
@@ -206,14 +206,14 @@ export function SetupTab() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`flex-1 min-w-[130px] px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
+                className={`flex-1 min-w-0 px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/30 ${
                   isActive
                     ? 'bg-indigo-600 text-white shadow-xs'
                     : 'bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
                 <Icon size={15} className={isActive ? 'text-white' : 'text-slate-400'} />
-                <span>{tab.label}</span>
+                <span className="truncate">{tab.label}</span>
               </button>
             );
           })}
@@ -255,7 +255,7 @@ export function SetupTab() {
             </p>
           </div>
 
-          <form onSubmit={handleCreateCompetitionClass} className="flex gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <form onSubmit={handleCreateCompetitionClass} className="flex flex-col sm:flex-row gap-2 mb-3 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
             <input
               type="text"
               placeholder={uiText.admin.setup.classNamePlaceholder}
@@ -265,10 +265,10 @@ export function SetupTab() {
             />
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center space-x-1.5 cursor-pointer shrink-0"
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 py-1.5 rounded-md font-bold transition-all shadow-2xs text-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
             >
               <Plus size={14} />
-              {uiText.admin.setup.createClass}
+              <span>{uiText.admin.setup.createClass}</span>
             </button>
           </form>
 

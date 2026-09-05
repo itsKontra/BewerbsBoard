@@ -53,8 +53,8 @@ export const LocalLogin: React.FC<LocalLoginProps> = ({ onSuccess }) => {
 
       <div className="relative w-full max-w-md">
         {/* Card */}
-        <div className="bg-white border border-slate-100 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
-          <div className="px-8 pt-10 pb-10">
+        <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] overflow-hidden">
+          <div className="px-5 py-7 sm:px-8 sm:pt-10 sm:pb-10">
             {/* Logo + title */}
             <div className="flex flex-col items-center mb-8 gap-3">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white">
