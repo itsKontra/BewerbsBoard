@@ -26,9 +26,9 @@ export async function onRequestPost(context: EventContext) {
 
     const rawScopes = body.scopes;
     const scopes = {
-      categoryEntries: rawScopes?.categoryEntries ?? (rawScopes ? false : true),
-      groups: rawScopes?.groups ?? (rawScopes ? false : true),
-      fireBrigades: rawScopes?.fireBrigades ?? (rawScopes ? false : true),
+      categoryEntries: rawScopes?.categoryEntries ?? !rawScopes,
+      groups: rawScopes?.groups ?? !rawScopes,
+      fireBrigades: rawScopes?.fireBrigades ?? !rawScopes,
       evaluationTypes: rawScopes?.evaluationTypes ?? false,
       categoryTypes: rawScopes?.categoryTypes ?? false,
     };

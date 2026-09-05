@@ -174,8 +174,8 @@ export function ParticipantsTab() {
       }
       setNewBrigadeName('');
       await fetchData();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : uiText.admin.participants.genericError);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : uiText.admin.participants.genericError);
     }
   };
 
@@ -225,8 +225,8 @@ export function ParticipantsTab() {
       }
       setNewGroupName('');
       await fetchData();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : uiText.admin.participants.genericError);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : uiText.admin.participants.genericError);
     }
   };
 

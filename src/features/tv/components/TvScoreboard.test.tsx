@@ -1147,9 +1147,9 @@ describe('TvScoreboard Component', () => {
   });
 
   it.each([
-    { state: 'empty', rankedResults: [] },
-    { state: 'missing', rankedResults: null },
-  ])('keeps the Shared Frame visible when WINNERS ranking data is $state', async ({ rankedResults }) => {
+    { state: 'empty', rankingRows: [] },
+    { state: 'missing', rankingRows: null },
+  ])('keeps the Shared Frame visible when WINNERS ranking data is $state', async ({ rankingRows }) => {
     mockTvScenario({
       mode: 'WINNERS',
       resultsData: {
@@ -1157,7 +1157,7 @@ describe('TvScoreboard Component', () => {
         categories: {
           'bronze-aktiv': {
             ...mockResultsData.categories['bronze-aktiv'],
-            rankedResults,
+            rankedResults: rankingRows,
           },
         },
       },

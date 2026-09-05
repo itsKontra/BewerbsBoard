@@ -46,7 +46,7 @@
   let pendingModalAction = null;
   let pendingModalDelay = 0;
   let countdownInterval = null;
-  let _pollInterval = null;
+  let pollInterval = null;
   let isReconnecting = false;
   let pingAttempts = 0;
 
@@ -143,7 +143,10 @@
       iconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
     }
 
-    toast.innerHTML = `${iconSvg}<span>${message}</span>`;
+    toast.innerHTML = iconSvg;
+    const messageSpan = document.createElement('span');
+    messageSpan.textContent = message;
+    toast.appendChild(messageSpan);
     el.toastContainer.appendChild(toast);
 
     setTimeout(() => {
@@ -430,6 +433,10 @@
 
   // Reconnection Detection
   function triggerReconnectionOverlay(action) {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
     isReconnecting = true;
     pingAttempts = 0;
 
@@ -521,9 +528,20 @@
 
   // Initial Load and Polling
   fetchStatus();
-  _pollInterval = setInterval(() => {
+  pollInterval = setInterval(() => {
     if (!isReconnecting && !isStaticHostingMode) {
       fetchStatus();
     }
   }, 3500);
+
+  window.addEventListener('beforeunload', () => {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  });
 })();
