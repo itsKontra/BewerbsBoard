@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { RankingCanvas, type RankingPresentationRow } from './RankingCanvas';
-import type { CategoryResultData } from '../../../public/components/PublicScoreboard';
+import type { CategoryResultData } from '../../../public/types';
 
 const standardCategory: CategoryResultData = {
   id: 'bronze-aktiv',

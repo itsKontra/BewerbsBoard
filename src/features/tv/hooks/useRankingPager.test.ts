@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import type { PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
+import type { PublicResultsApiResponse } from '../../public/types';
 import type { TvStateApiResponse } from './useTvDataFeed';
 import {
   useRankingPager,

@@ -1,4 +1,4 @@
-import type { CategoryResultData } from '../../public/components/PublicScoreboard';
+import type { CategoryResultData } from '../../public/types';
 import { uiText } from '../../../ui-text';
 
 export type CategoryRowKind =

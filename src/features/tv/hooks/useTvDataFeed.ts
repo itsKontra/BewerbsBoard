@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { PublicResultsApiResponse } from '../../public/components/PublicScoreboard';
+import type { PublicResultsApiResponse } from '../../public/types';
 import type { TvTheme } from '../../../../shared/domain/tv-presentation';
 
 export type TvMode = 'ROTATION' | 'FIXED' | 'MESSAGE' | 'WINNERS';
