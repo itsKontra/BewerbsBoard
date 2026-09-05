@@ -479,9 +479,13 @@ function viteDevAdminMockPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), viteDevPublicMockPlugin(), viteDevAdminMockPlugin()],
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
   build: {
+    target: 'es2022',
     rolldownOptions: {
       output: {
         codeSplitting: {
@@ -502,4 +506,4 @@ export default defineConfig({
   test: {
     exclude: ['**/node_modules/**', '**/dist/**', '**/dist-server/**', 'tests/**'],
   },
-})
+}))
