@@ -37,7 +37,9 @@ export function SingleRankingRow({
   const hasAttack = typeof attackTimeHundredths === 'number';
   const hasScore = typeof scoreHundredths === 'number';
   const penaltyHundredths = hasAttack && hasScore ? Math.max(0, scoreHundredths - attackTimeHundredths) : 0;
-  const timeDisplay = formatHundredthsToDisplayTime(scoreHundredths ?? attackTimeHundredths);
+  const timeDisplay = scoreHundredths != null || attackTimeHundredths != null
+    ? formatHundredthsToDisplayTime(scoreHundredths ?? attackTimeHundredths)
+    : '-';
 
   const { container: rankLeadingClass, rankNumber: rankTextClass } = themeStyles.row(rank);
 
@@ -66,7 +68,7 @@ export function SingleRankingRow({
     >
       <td className="px-4 py-1.5 text-center">
         <span className={`inline-flex items-center justify-center font-oswald font-black ${rankClass} ${rankTextClass}`}>
-          {rank}
+          {rank ?? '-'}
         </span>
       </td>
       <td className="min-w-0 px-4 py-1.5">
@@ -75,13 +77,13 @@ export function SingleRankingRow({
         </FittedCompetitorIdentity>
       </td>
       <td className="px-4 py-1.5 text-right">
-        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
+        <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-2 whitespace-nowrap font-mono text-[clamp(1.35rem,2.1vw,2.25rem)] font-black tabular-nums">
           <span className={`text-right ${themeStyles.score.time}`}>
             {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : timeDisplay}
           </span>
           <span className="w-[6ch] text-left">
             {penaltyHundredths > 0 && (
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+              <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
                 +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
               </span>
             )}

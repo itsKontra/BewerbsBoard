@@ -78,7 +78,7 @@ describe('OverallRankingRow component', () => {
     expect(screen.getByText('+5,00')).toBeInTheDocument();
   });
 
-  it('renders — in rank cell when rank is null (DNF Tier 3 row)', () => {
+  it('renders - in rank cell when rank is null (DNF Tier 3 row)', () => {
     const { container } = render(
       <table>
         <tbody>
@@ -98,10 +98,10 @@ describe('OverallRankingRow component', () => {
     const tr = container.querySelector('tr');
     expect(tr).toHaveAttribute('data-row-kind', 'ranked');
     const rankSpan = container.querySelector('td:first-child span');
-    expect(rankSpan).toHaveTextContent('—');
+    expect(rankSpan).toHaveTextContent('-');
   });
 
-  it('renders — in secondary score column when score2Hundredths is null (Tier 2 row)', () => {
+  it('renders - in secondary score column when score2Hundredths is null (Tier 2 row)', () => {
     const { container } = render(
       <table>
         <tbody>
@@ -120,13 +120,13 @@ describe('OverallRankingRow component', () => {
 
     const cells = container.querySelectorAll('td');
     expect(cells[2]).toHaveTextContent('32,00 s');
-    expect(cells[3]).toHaveTextContent('—');
-    expect(cells[4]).toHaveTextContent('—');
+    expect(cells[3]).toHaveTextContent('-');
+    expect(cells[4]).toHaveTextContent('-');
   });
 });
 
 describe('CombinedRelayRow component', () => {
-  it('renders — in rank cell when rank is null (DNF Tier 3 row)', () => {
+  it('renders - in rank cell when rank is null (DNF Tier 3 row)', () => {
     const { container } = render(
       <table>
         <tbody>
@@ -148,6 +148,6 @@ describe('CombinedRelayRow component', () => {
     const tr = container.querySelector('tr');
     expect(tr).toHaveAttribute('data-row-kind', 'ranked');
     const rankSpan = container.querySelector('td:first-child span');
-    expect(rankSpan).toHaveTextContent('—');
+    expect(rankSpan).toHaveTextContent('-');
   });
 });

@@ -16,14 +16,14 @@ export function MessageCanvas({
   const themeStyles = TV_PRESENTATION_STYLES[theme];
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-12 py-8 text-center" data-testid="tv-mode-canvas">
+    <main className="flex min-h-0 flex-1 flex-col items-center justify-center px-8 py-6 text-center" data-testid="tv-mode-canvas">
       {announcementHeadline && (
-        <h2 className={`max-w-5xl font-oswald text-[clamp(2.5rem,5.5vw,5.5rem)] font-black uppercase leading-none tracking-wide ${themeStyles.announcement.headline}`}>
+        <h2 className={`max-w-5xl font-oswald text-[clamp(2.5rem,5vw,5rem)] font-black uppercase leading-tight tracking-wide ${themeStyles.announcement.headline}`}>
           {announcementHeadline}
         </h2>
       )}
       {announcementMessage && (
-        <p className={`mt-8 max-w-4xl text-[clamp(1.25rem,2.5vw,2.25rem)] leading-tight ${themeStyles.announcement.message}`}>
+        <p className={`mt-8 max-w-5xl text-[clamp(1.5rem,2.5vw,3rem)] text-[48px] font-bold leading-snug line-clamp-3 ${themeStyles.announcement.message}`}>
           {announcementMessage}
         </p>
       )}

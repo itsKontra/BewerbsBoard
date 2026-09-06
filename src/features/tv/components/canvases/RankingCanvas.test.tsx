@@ -137,7 +137,7 @@ describe('RankingCanvas', () => {
       .toHaveClass('grid-rows-[4.5rem_minmax(0,1fr)]');
   });
 
-  it('renders — in combined total column for a Tier-2 entry with no secondary run', () => {
+  it('renders - in combined total column for a Tier-2 entry with no secondary run', () => {
     const tier2Result: CategoryResultData['rankedResults'][number] = {
       rank: 3,
       groupId: 'g-tier2',
@@ -183,11 +183,11 @@ describe('RankingCanvas', () => {
     expect(screen.getByText('FF Einzel Gr 99')).toBeInTheDocument();
     const rankedRow = container.querySelector('tr[data-row-kind="ranked"]');
     const cells = rankedRow?.querySelectorAll('td');
-    expect(cells?.[3]).toHaveTextContent('—');
-    expect(cells?.[4]).toHaveTextContent('—');
+    expect(cells?.[3]).toHaveTextContent('-');
+    expect(cells?.[4]).toHaveTextContent('-');
   });
 
-  it('renders — in rank cell for a DNF entry with null rank in a combined category', () => {
+  it('renders - in rank cell for a DNF entry with null rank in a combined category', () => {
     const dnfResult: CategoryResultData['rankedResults'][number] = {
       rank: null,
       groupId: 'g-dnf',
@@ -232,6 +232,6 @@ describe('RankingCanvas', () => {
     const rankedRow = container.querySelector('tr[data-row-kind="ranked"]');
     expect(rankedRow).not.toBeNull();
     const rankSpan = rankedRow?.querySelector('td:first-child span');
-    expect(rankSpan).toHaveTextContent('—');
+    expect(rankSpan).toHaveTextContent('-');
   });
 });

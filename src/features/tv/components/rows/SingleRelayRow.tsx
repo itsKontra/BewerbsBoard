@@ -77,7 +77,7 @@ export function SingleRelayRow({
       {/* Rank */}
       <td className="px-4 py-1.5 text-center">
         <span className={`inline-flex items-center justify-center font-oswald font-black ${rankClass} ${rankTextClass}`}>
-          {rank}
+          {rank ?? '-'}
         </span>
       </td>
 
@@ -92,12 +92,12 @@ export function SingleRelayRow({
       <td className="px-4 py-1.5 text-center">
         <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
           <span className={themeStyles.score.time}>
-            {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : '—'}
+            {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : '-'}
           </span>
-          <span className="w-[4ch] text-left">
+          <span className="w-[5.5ch] text-left">
             {attackPenalty > 0 && (
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-                +{attackTimeErrors}F
+              <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+                +{formatHundredthsToDisplayTime(attackPenalty).replace(' s', '')}
               </span>
             )}
           </span>
@@ -108,12 +108,12 @@ export function SingleRelayRow({
       <td className="px-4 py-1.5 text-center">
         <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.9vw,2rem)] font-black tabular-nums">
           <span className={themeStyles.score.time}>
-            {hasRelay ? formatHundredthsToDisplayTime(relayRaceHundredths) : '—'}
+            {hasRelay ? formatHundredthsToDisplayTime(relayRaceHundredths) : '-'}
           </span>
-          <span className="w-[4ch] text-left">
+          <span className="w-[5.5ch] text-left">
             {relayPenalty > 0 && (
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-                +{relayRaceErrors}F
+              <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+                +{formatHundredthsToDisplayTime(relayPenalty).replace(' s', '')}
               </span>
             )}
           </span>
@@ -122,7 +122,7 @@ export function SingleRelayRow({
 
       {/* Total Score */}
       <td className={`whitespace-nowrap px-6 py-1.5 text-right font-mono font-black leading-none tabular-nums ${themeStyles.score.total} ${scoreClass}`}>
-        {formatHundredthsToDisplayTime(totalScoreHundredths)}
+        {totalScoreHundredths != null ? formatHundredthsToDisplayTime(totalScoreHundredths) : '-'}
       </td>
     </tr>
   );

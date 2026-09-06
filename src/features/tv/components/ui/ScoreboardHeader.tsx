@@ -21,13 +21,22 @@ export function ScoreboardHeader({
   statusLabel = uiText.tv.interimResult,
 }: ScoreboardHeaderProps) {
   const themeStyles = TV_PRESENTATION_STYLES[theme];
+  const isDisconnected = statusLabel === uiText.tv.disconnected;
+
+  const statusBadgeStyle = isDisconnected
+    ? 'border border-red-500 bg-red-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm'
+    : theme === 'outdoor'
+      ? 'border border-slate-900 bg-slate-950 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-amber-400 shadow-sm'
+      : theme === 'ceremony'
+        ? 'border border-amber-600/60 bg-stone-900/90 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-amber-300 shadow-sm'
+        : 'border border-slate-700 bg-slate-800/90 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-sky-300 shadow-sm';
 
   return (
     <header
       aria-label={uiText.tv.identityRegion}
-      className={`flex items-center justify-between border-b px-6 py-2.5 sm:px-8 ${themeStyles.identityRail}`}
+      className={`flex h-[96px] min-h-[96px] max-h-[96px] shrink-0 items-center justify-between border-b px-6 ${themeStyles.identityRail}`}
     >
-      <div className="flex min-w-0 items-center gap-8">
+      <div className="flex min-w-0 items-center gap-6">
         <img
           key={logoUrl || '/logo.png'}
           data-testid="tv-header-logo"
@@ -39,28 +48,22 @@ export function ScoreboardHeader({
             event.currentTarget.src = '/logo.png';
           }}
         />
-        <div className="min-w-0">
+        <div className="min-w-0 flex flex-col justify-center">
           <div className="flex items-center gap-3">
-            <p className={`text-xs font-bold uppercase tracking-[0.25em] ${themeStyles.headerSublabel}`}>
+            <p className={`text-xs font-bold uppercase tracking-[0.25em] leading-tight ${themeStyles.headerSublabel}`}>
               {headerLabel}
             </p>
             {statusLabel && (
-              <span
-                className={
-                  statusLabel === uiText.tv.disconnected
-                    ? 'rounded border border-red-600 bg-red-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm'
-                    : 'rounded border border-slate-900 bg-slate-950 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white shadow-sm ring-1 ring-white/10'
-                }
-              >
+              <span className={`rounded-sm ${statusBadgeStyle}`}>
                 {statusLabel}
               </span>
             )}
           </div>
-          <h1 className={`mt-0.5 truncate font-oswald text-2xl sm:text-3xl font-black uppercase tracking-wide ${themeStyles.textColor}`}>
+          <h1 className={`mt-0.5 truncate font-oswald text-2xl sm:text-3xl font-black uppercase tracking-wide leading-tight ${themeStyles.textColor}`}>
             {eventTitle}
           </h1>
           {categoryDisplayName && (
-            <p className={`font-oswald text-lg sm:text-xl font-bold uppercase tracking-wider ${themeStyles.categoryTitle}`}>
+            <p className={`truncate font-oswald text-base sm:text-lg font-bold uppercase tracking-wider leading-tight ${themeStyles.categoryTitle}`}>
               {categoryDisplayName}
             </p>
           )}

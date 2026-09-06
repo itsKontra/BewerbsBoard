@@ -33,20 +33,23 @@ export function RankingCanvas({
   const rankingPresentation = RANKING_DENSITY_PRESENTATION[rankingDensity];
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col p-3 sm:p-5" data-testid="tv-mode-canvas">
+    <main className="flex min-h-0 flex-1 flex-col px-8 pb-6 pt-3" data-testid="tv-mode-canvas">
       {!activeCategory ? (
         <div className={`flex flex-1 items-center justify-center font-oswald text-2xl tracking-widest ${themeStyles.emptyTableMessage}`}>
           {uiText.tv.noActiveCategory}
         </div>
       ) : (
-        <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col">
+        <div
+          key={`${activeCategory.id}-${visibleRankingRows[0]?.entry ? ('rank' in visibleRankingRows[0].entry ? visibleRankingRows[0].entry.rank : 'up') : 0}`}
+          className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col animate-tv-page-flip"
+        >
           <div className={`mb-2 border-b pb-1.5 ${themeStyles.sectionBorder}`}>
             <h2 className={`font-oswald text-3xl sm:text-4xl font-black uppercase tracking-wider ${themeStyles.categoryTitle}`}>
               {activeCategory.displayName}
             </h2>
           </div>
 
-          <div className={`flex-1 overflow-hidden rounded-2xl border ${themeStyles.tableContainer}`}>
+          <div className={`flex-1 min-h-0 overflow-hidden rounded-sm border ${themeStyles.tableContainer}`}>
             <table
               aria-label={uiText.tv.ranking(activeCategory.displayName)}
               className={`grid h-full w-full text-left ${shape.kind === 'combined-relay'

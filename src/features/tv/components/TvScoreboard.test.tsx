@@ -980,9 +980,9 @@ describe('TvScoreboard Component', () => {
     render(<TvScoreboard />);
 
     const row = await screen.findByRole('row', {
-      name: '1 FF Safe — — —',
+      name: '1 FF Safe - - -',
     });
-    expect(within(row).getAllByText('—')).toHaveLength(3);
+    expect(within(row).getAllByText('-')).toHaveLength(3);
     expect(row).not.toHaveTextContent(/undefined|NaN/);
     expect(within(row).queryByText(/^\+/)).not.toBeInTheDocument();
   });
@@ -1189,7 +1189,7 @@ describe('TvScoreboard Component', () => {
 
     const canvas = await screen.findByTestId('tv-mode-canvas');
     expect(within(canvas).getByRole('heading', { name: 'Unbekannte Feuerwehr' })).toBeInTheDocument();
-    expect(within(canvas).getByText('—')).toBeInTheDocument();
+    expect(within(canvas).getByText('-')).toBeInTheDocument();
     expect(canvas).not.toHaveTextContent('undefined');
     expect(screen.getByTestId('tv-qr-code')).toBeInTheDocument();
   });
