@@ -76,14 +76,17 @@ function TimeWithPenalty({
     ? Math.max(0, scoreHundredths - attackTimeHundredths)
     : 0;
 
+  const timeValue = hasAttackTime ? attackTimeHundredths : scoreHundredths;
+  const timeFormatted = typeof timeValue === 'number' ? formatHundredthsToDisplayTime(timeValue) : '-';
+
   return (
     <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.1rem,1.6vw,1.9rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
-        {isDnf ? uiText.tv.dnf : formatHundredthsToDisplayTime(hasAttackTime ? attackTimeHundredths : scoreHundredths)}
+        {isDnf ? uiText.tv.dnf : timeFormatted}
       </span>
       <span className="w-[5.5ch] text-left">
         {!isDnf && penaltyHundredths > 0 && (
-          <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+          <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
             +{formatHundredthsToDisplayTime(penaltyHundredths).replace(' s', '')}
           </span>
         )}
@@ -149,7 +152,7 @@ export function OverallRankingRow({
       {/* Rank */}
       <td className="px-4 py-1.5 text-center">
         <span className={`inline-flex items-center justify-center font-oswald font-black ${rankClass} ${rankTextClass}`}>
-          {rank ?? '—'}
+          {rank ?? '-'}
         </span>
       </td>
 
@@ -203,7 +206,7 @@ export function OverallRankingRow({
       {/* GESAMT (Total Score) Column if enabled */}
       {showTotal && (
         <td className={`whitespace-nowrap px-6 py-1.5 text-right font-mono font-black leading-none tabular-nums ${themeStyles.score.total} ${scoreClass}`}>
-          {formatHundredthsToDisplayTime(totalScoreHundredths)}
+          {typeof totalScoreHundredths === 'number' ? formatHundredthsToDisplayTime(totalScoreHundredths) : '-'}
         </td>
       )}
     </tr>

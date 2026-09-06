@@ -146,10 +146,10 @@ test('presents complete, single-result, and DNF competitors on TV and keeps DNF 
   await expect(completeRow).toHaveAttribute('data-rank', '1');
   await expect(completeRow.locator('td').last()).toHaveText('82,00 s');
   await expect(singleRow).toHaveAttribute('data-rank', '2');
-  await expect(singleRow.locator('td').last()).toHaveText('—');
+  await expect(singleRow.locator('td').last()).toHaveText('-');
   await expect(dnfRow).not.toHaveAttribute('data-rank', /.+/);
-  await expect(dnfRow.locator('td').first()).toHaveText('—');
-  await expect(dnfRow.locator('td').last()).toHaveText('—');
+  await expect(dnfRow.locator('td').first()).toHaveText('-');
+  await expect(dnfRow.locator('td').last()).toHaveText('-');
   await expect(dnfRow.getByText('DNF', { exact: true })).toBeVisible();
   await expect(dnfRow.getByText('47,00 s', { exact: true })).toHaveCount(0);
 

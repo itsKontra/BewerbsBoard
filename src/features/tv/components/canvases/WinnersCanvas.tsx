@@ -71,12 +71,22 @@ export function WinnersCanvas({
             const place = podiumPlace(result, fallbackPlace);
             const podiumStyle = themeStyles.podium(place);
 
+            const timeDisplay = typeof result.scoreHundredths === 'number'
+              ? formatHundredthsToDisplayTime(result.scoreHundredths)
+              : '-';
+
             return (
               <section className="flex w-1/3 flex-col items-center" key={slot}>
-                <h3 className={`max-w-full truncate text-[clamp(1.25rem,2.2vw,2.25rem)] font-black ${podiumStyle.name}`}>{podiumBrigadeName(result)}</h3>
-                {groupLabel && <p className={`mt-1 text-lg ${podiumStyle.group}`}>{groupLabel}</p>}
-                <p className={`mt-2 font-mono text-[clamp(1.1rem,1.8vw,1.75rem)] font-black tabular-nums ${podiumStyle.time}`}>
-                  {formatHundredthsToDisplayTime(result.scoreHundredths)}
+                <h3 className={`max-w-full truncate font-oswald text-[clamp(1.5rem,2.4vw,2.5rem)] font-black uppercase tracking-wide ${podiumStyle.name}`}>
+                  {podiumBrigadeName(result)}
+                </h3>
+                {groupLabel && (
+                  <p className={`mt-1 font-oswald text-lg uppercase tracking-wider font-bold ${podiumStyle.group}`}>
+                    {groupLabel}
+                  </p>
+                )}
+                <p className={`mt-2 font-mono text-[clamp(1.25rem,2vw,2rem)] font-black tabular-nums ${podiumStyle.time}`}>
+                  {timeDisplay}
                 </p>
                 <div className={`mt-3 flex w-full items-start justify-center border-t-8 pt-3 font-oswald text-[clamp(2.5rem,5vw,5rem)] font-black ${podiumStyle.height} ${podiumStyle.tone}`}>
                   {place}

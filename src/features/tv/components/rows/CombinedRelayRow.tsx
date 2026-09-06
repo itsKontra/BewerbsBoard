@@ -47,12 +47,12 @@ function CompactTimePenalty({
   return (
     <div className="inline-grid grid-cols-[1fr_auto] items-baseline gap-1.5 whitespace-nowrap font-mono text-[clamp(1.25rem,1.7vw,1.8rem)] font-black tabular-nums">
       <span className={themeStyles.score.time}>
-        {isDnf ? uiText.tv.dnf : hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '—'}
+        {isDnf ? uiText.tv.dnf : hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '-'}
       </span>
-      <span className="w-[3.5ch] text-left">
+      <span className="w-[4.5ch] text-left">
         {!isDnf && penalty > 0 && (
-          <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-            +{errors}F
+          <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+            +{formatHundredthsToDisplayTime(penalty).replace(' s', '')}
           </span>
         )}
       </span>
@@ -117,7 +117,7 @@ export function CombinedRelayRow({
       {/* Rank */}
       <td className="px-3 py-1.5 text-center">
         <span className={`inline-flex items-center justify-center font-oswald font-black ${rankClass} ${rankTextClass}`}>
-          {rank ?? '—'}
+          {rank ?? '-'}
         </span>
       </td>
 
@@ -170,7 +170,7 @@ export function CombinedRelayRow({
 
       {/* Total Score */}
       <td className={`whitespace-nowrap px-4 py-1.5 text-right font-mono font-black leading-none tabular-nums ${themeStyles.score.total} ${scoreClass}`}>
-        {formatHundredthsToDisplayTime(totalScoreHundredths)}
+        {typeof totalScoreHundredths === 'number' ? formatHundredthsToDisplayTime(totalScoreHundredths) : '-'}
       </td>
     </tr>
   );

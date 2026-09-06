@@ -28,10 +28,10 @@ interface QrThemeStyle {
 
 const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
   broadcast: {
-    card: 'border-b border-l border-slate-700/80 bg-slate-950/95 shadow-[0_20px_50px_rgba(0,0,0,0.85)] text-white',
+    card: 'border-b border-l border-slate-800 bg-slate-950/95 shadow-md text-white',
     minimalCard: 'border-b border-l border-slate-800/40 bg-slate-950/90 shadow-md text-white',
-    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-neutral-200 overflow-clip',
-    badge: 'bg-sky-500/15 border-sky-500/30 text-sky-300',
+    qrContainer: 'bg-white p-1 rounded-sm border-r border-slate-800 overflow-clip',
+    badge: 'bg-slate-800 border-sky-500/50 text-sky-300',
     badgeDotPing: 'bg-sky-400',
     badgeDot: 'bg-sky-500',
     badgeText: uiText.tv.qr.liveResults,
@@ -39,10 +39,10 @@ const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
     hint: 'text-slate-400',
   },
   ceremony: {
-    card: 'border-b border-l border-amber-700/60 bg-stone-950/95 shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-amber-50',
+    card: 'border-b border-l border-amber-900/60 bg-stone-950/95 shadow-md text-amber-50',
     minimalCard: 'border-b border-l border-amber-900/30 bg-stone-950/90 shadow-md text-amber-50',
-    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-amber-200/40 overflow-clip',
-    badge: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+    qrContainer: 'bg-white p-1 rounded-sm border-r border-amber-900/60 overflow-clip',
+    badge: 'bg-stone-900 border-amber-500/50 text-amber-300',
     badgeDotPing: 'bg-amber-400',
     badgeDot: 'bg-amber-500',
     badgeText: uiText.tv.qr.liveResults,
@@ -50,15 +50,15 @@ const QR_THEME_STYLES: Record<TvTheme, QrThemeStyle> = {
     hint: 'text-amber-200/70',
   },
   outdoor: {
-    card: 'border-b border-l border-slate-300 bg-white/95 shadow-[0_15px_40px_rgba(0,0,0,0.2)] text-slate-900',
+    card: 'border-b border-l border-slate-300 bg-white/95 shadow-sm text-slate-900',
     minimalCard: 'border-b border-l border-slate-200/80 bg-white/90 shadow-sm text-slate-900',
-    qrContainer: 'bg-white p-0 rounded-bl-2xl shadow-sm border-r border-slate-200 overflow-clip',
-    badge: 'bg-sky-100 border-sky-300 text-sky-800',
-    badgeDotPing: 'bg-sky-400',
-    badgeDot: 'bg-sky-600',
+    qrContainer: 'bg-white p-1 rounded-sm border-r border-slate-300 overflow-clip',
+    badge: 'bg-slate-900 border-slate-800 text-amber-400',
+    badgeDotPing: 'bg-amber-400',
+    badgeDot: 'bg-amber-500',
     badgeText: uiText.tv.qr.liveResults,
-    link: 'text-slate-950 hover:text-sky-700 decoration-slate-300',
-    hint: 'text-slate-600',
+    link: 'text-slate-950 hover:text-slate-800 decoration-slate-400',
+    hint: 'text-slate-700 font-semibold',
   },
 };
 
@@ -113,7 +113,7 @@ export function TvQrPopupCard({
         : '-translate-y-full opacity-0 scale-95 pointer-events-none'
         }`}
     >
-      <div className={`rounded-bl-2xl ${alwaysVisible ? styles.minimalCard : styles.card} py-0 pl-0 pr-4 sm:pr-5 backdrop-blur-md w-auto min-w-[320px] max-w-md sm:max-w-lg overflow-clip`}>
+      <div className={`rounded-bl-md ${alwaysVisible ? styles.minimalCard : styles.card} py-0 pl-0 pr-4 sm:pr-5 backdrop-blur-md w-auto min-w-[320px] max-w-md sm:max-w-lg overflow-clip`}>
         <div className="flex items-center gap-4">
           {/* High-Contrast QR-Code (Left Side) */}
           <div
@@ -132,9 +132,9 @@ export function TvQrPopupCard({
           </div>
 
           {/* Text Content (Right Side) */}
-          <div className="flex flex-col justify-center min-w-0 text-left py-2.5 sm:py-3">
+          <div className="flex flex-col justify-center min-w-0 text-left py-1.5">
             {/* Header Badge */}
-            <div className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border text-[11px] font-black uppercase tracking-wider self-start mb-1 ${styles.badge}`}>
+            <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border text-[10px] font-black uppercase tracking-wider self-start mb-0.5 ${styles.badge}`}>
               <span className="relative flex h-2 w-2">
                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${styles.badgeDotPing}`} />
                 <span className={`relative inline-flex rounded-full h-2 w-2 ${styles.badgeDot}`} />
