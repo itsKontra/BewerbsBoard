@@ -231,6 +231,7 @@ const mockApiResponse: PublicResultsApiResponse = {
 describe('PublicScoreboard Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     vi.useFakeTimers({ shouldAdvanceTime: true });
 
     globalThis.fetch = vi.fn().mockResolvedValue({
@@ -252,23 +253,23 @@ describe('PublicScoreboard Component', () => {
     });
 
     // Verify ranked results in Bronze Aktiv
-    expect(screen.getByText('FF Oberndorf Gruppe 1')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'FF Oberndorf Gruppe 1' })).toBeInTheDocument();
     expect(screen.getAllByText('42,38 s').length).toBeGreaterThan(0);
     expect(screen.getAllByText('50,00 s').length).toBe(2);
     expect(screen.getAllByText('55,00 s').length).toBeGreaterThan(0);
 
     // Verify ties: rank badges 1, 2, 2, 4
-    const rankBadges = screen.getAllByText(/^(1|2|4)$/);
+    const rankBadges = within(screen.getByRole('table')).getAllByText(/^(1|2|4)$/);
     expect(rankBadges.map((b) => b.textContent)).toEqual(['1', '2', '2', '4']);
 
     // Verify OPEN entries
     expect(screen.getByText('Nächste Starts')).toBeInTheDocument();
     expect(screen.getByText('#1')).toBeInTheDocument();
-    const nextStart = screen.getByText('FF West Gruppe 5');
-    expect(nextStart).toHaveClass('text-lg');
-    expect(screen.queryByText('Gruppe 5')).not.toBeInTheDocument();
+    const nextStart = screen.getByText('FF West').closest('li');
+    expect(nextStart).toHaveTextContent('FF West Gruppe 5');
+    expect(screen.getByText('Gruppe 5')).toBeInTheDocument();
     expect(screen.getByText('#2')).toBeInTheDocument();
-    expect(screen.getByText('FF Ost Gruppe 6')).toBeInTheDocument();
+    expect(screen.getByText('FF Ost').closest('li')).toBeInTheDocument();
 
     // Verify DNF section
     expect(screen.getByText('Disqualifiziert (DNF)')).toBeInTheDocument();
@@ -287,8 +288,8 @@ describe('PublicScoreboard Component', () => {
     fireEvent.click(gesamtTab);
 
     // Should display combined Aktiv table
-    expect(screen.getByRole('columnheader', { name: 'Bronze' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Silber' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bronze', level: 4 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Silber', level: 4 })).toBeInTheDocument();
     expect(screen.getByText('87,38 s')).toBeInTheDocument();
 
     // Click on "Gesamtwertung Feuerwehr" tab
@@ -296,8 +297,8 @@ describe('PublicScoreboard Component', () => {
     fireEvent.click(feuerwehrTab);
 
     // Should display combined Feuerwehr table
-    expect(screen.getByRole('columnheader', { name: 'Bronze Aktiv' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Bronze Jugend' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bronze Aktiv · Gruppe 1', level: 4 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bronze Jugend · Gruppe 2', level: 4 })).toBeInTheDocument();
     
     const row = screen.getAllByRole('row')[1]; // First is header
     expect(row).toHaveTextContent('FF Oberndorf');
@@ -331,6 +332,84 @@ describe('PublicScoreboard Component', () => {
     });
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('finds ranked, upcoming, and DNF groups without changing their ranks', async () => {
+    render(<PublicScoreboard />);
+    await screen.findByRole('table');
+    const search = screen.getByRole('searchbox');
+    fireEvent.change(search, { target: { value: 'unterndorf' } });
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(2);
+    expect(within(table).getByRole('cell', { name: '2' })).toBeInTheDocument();
+    expect(within(table).getByText('50,00 s')).toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: 'west' } });
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(screen.getByText('FF West')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'nord' } });
+    expect(screen.getByText('FF Nord')).toBeInTheDocument();
+    fireEvent.change(search, { target: { value: 'unknown team' } });
+    expect(screen.getByText('Keine passende Gruppe gefunden')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Suche löschen' }));
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(5);
+  });
+
+  it('saves a brigade across categories and restores it after remounting', async () => {
+    const { unmount } = render(<PublicScoreboard />);
+    await screen.findByRole('table');
+    fireEvent.click(screen.getByRole('button', { name: 'FF Oberndorf merken' }));
+    expect(JSON.parse(localStorage.getItem('bewerbsboard:favorite-brigades') || '[]')).toEqual(['fb1']);
+    fireEvent.click(screen.getByRole('button', { name: 'Meine Feuerwehr' }));
+    expect(screen.getAllByRole('table')).toHaveLength(3);
+    expect(screen.queryByText('FF Unterndorf')).not.toBeInTheDocument();
+    expect(screen.getByText('83,38 s')).toBeInTheDocument();
+    unmount();
+
+    render(<PublicScoreboard />);
+    await screen.findByRole('table');
+    expect(screen.getByRole('button', { name: 'FF Oberndorf nicht mehr merken' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'FF Oberndorf nicht mehr merken' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Meine Feuerwehr' }));
+    expect(screen.getByRole('button', { name: 'Feuerwehr finden' })).toBeInTheDocument();
+  });
+
+  it('retains results with an offline notice after a failed poll and recovers on the next poll', async () => {
+    render(<PublicScoreboard />);
+    await screen.findByRole('table');
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Connection lost'));
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(screen.getByRole('alert')).toHaveTextContent('Du siehst den letzten Stand');
+    expect(screen.getByRole('cell', { name: 'FF Oberndorf Gruppe 1' })).toBeInTheDocument();
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('Live', { exact: true })).toBeInTheDocument();
+  });
+
+  it('retries an initial loading failure', async () => {
+    vi.mocked(fetch).mockRejectedValueOnce(new Error('Connection lost'));
+    render(<PublicScoreboard />);
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
+    await screen.findByRole('table');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('falls back to a published category when the selected category becomes private', async () => {
+    render(<PublicScoreboard />);
+    await screen.findByRole('table');
+    fireEvent.click(screen.getByTestId('category-tab-gesamt-aktiv'));
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ ...mockApiResponse, categories: {
+        ...mockApiResponse.categories,
+        'gesamt-aktiv': { ...mockApiResponse.categories['gesamt-aktiv'], publicEnabled: false },
+      } }),
+    } as Response);
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(screen.queryByTestId('category-tab-gesamt-aktiv')).not.toBeInTheDocument();
+    expect(screen.getByTestId('category-tab-bronze-aktiv')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('table', { name: 'Bronze Aktiv Wertungsliste' })).toBeInTheDocument();
   });
 
   it('filters out categories where publicEnabled is false', async () => {
@@ -416,7 +495,7 @@ describe('PublicScoreboard Component', () => {
     expect(screen.getByText('97,48 s')).toBeInTheDocument();
   });
 
-  it('renders 4x2 combined relay category with all four discipline columns', async () => {
+  it('renders a combined relay category with all four discipline contributions', async () => {
     const combinedRelayApiResponse: PublicResultsApiResponse = {
       eventTitle: 'TEST LEISTUNGSBEWERB',
       publicUrl: 'https://scoreboard.test.at',
@@ -473,12 +552,10 @@ describe('PublicScoreboard Component', () => {
     render(<PublicScoreboard />);
 
     await waitFor(() => {
-      expect(screen.getByRole('columnheader', { name: 'Bronze ANG' })).toBeInTheDocument();
+      expect(screen.getByRole('columnheader', { name: /Bronze ANG.*Bronze SL.*Silber ANG.*Silber SL/ })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('columnheader', { name: 'Bronze SL' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Silber ANG' })).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Silber SL' })).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: /Bronze ANG.*Bronze SL.*Silber ANG.*Silber SL/ })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 4, name: 'Bronze' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 4, name: 'Silber' })).toBeInTheDocument();
     expect(screen.getAllByText('ANG')).toHaveLength(2);
@@ -556,10 +633,10 @@ describe('PublicScoreboard Component', () => {
     render(<PublicScoreboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('FF Einzel Gruppe 2')).toBeInTheDocument();
+      expect(screen.getByRole('cell', { name: 'FF Einzel Gruppe 2' })).toBeInTheDocument();
     });
 
-    const einzelRow = screen.getByText('FF Einzel Gruppe 2').closest('[role="row"]');
+    const einzelRow = screen.getByRole('cell', { name: 'FF Einzel Gruppe 2' }).closest('[role="row"]');
     expect(within(einzelRow as HTMLElement).getByText('38,00 s')).toBeInTheDocument();
     expect(within(einzelRow as HTMLElement).getAllByText('—')).toHaveLength(2);
   });
@@ -633,10 +710,10 @@ describe('PublicScoreboard Component', () => {
     render(<PublicScoreboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('FF Ausfall Gruppe DNF')).toBeInTheDocument();
+      expect(screen.getByRole('cell', { name: 'FF Ausfall Gruppe DNF' })).toBeInTheDocument();
     });
 
-    const ausfallRow = screen.getByText('FF Ausfall Gruppe DNF').closest('[role="row"]');
+    const ausfallRow = screen.getByRole('cell', { name: 'FF Ausfall Gruppe DNF' }).closest('[role="row"]');
     expect(ausfallRow?.firstElementChild).toHaveTextContent('—');
   });
 
