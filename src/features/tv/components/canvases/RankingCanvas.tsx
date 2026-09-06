@@ -17,6 +17,8 @@ export interface RankingCanvasProps {
   activeCategory: CategoryResultData | undefined;
   visibleRankingRows: RankingPresentationRow[];
   rankingPresentationRowsCount: number;
+  rankingPageIndex?: number;
+  rankingPageCount?: number;
   rankingDensity?: keyof typeof RANKING_DENSITY_PRESENTATION;
   theme: TvTheme;
 }
@@ -25,6 +27,8 @@ export function RankingCanvas({
   activeCategory,
   visibleRankingRows,
   rankingPresentationRowsCount,
+  rankingPageIndex = 0,
+  rankingPageCount = 1,
   rankingDensity = 'balanced',
   theme,
 }: RankingCanvasProps) {
@@ -40,13 +44,33 @@ export function RankingCanvas({
         </div>
       ) : (
         <div className="mx-auto flex min-h-0 w-full max-w-none flex-1 flex-col">
-          <div className={`mb-2 border-b pb-1.5 ${themeStyles.sectionBorder}`}>
-            <h2 className={`font-oswald text-3xl sm:text-4xl font-black uppercase tracking-wider ${themeStyles.categoryTitle}`}>
-              {activeCategory.displayName}
-            </h2>
+          <div className={`mb-2.5 flex items-center justify-between border-b pb-2 ${themeStyles.sectionBorder}`}>
+            <div className="flex items-center gap-3">
+              <span
+                className={`inline-block h-6 w-1.5 rounded-sm ${
+                  theme === 'outdoor' ? 'bg-amber-600' : 'bg-red-600'
+                }`}
+                aria-hidden="true"
+              />
+              <h2 className={`font-oswald text-3xl sm:text-4xl font-black uppercase tracking-wider ${themeStyles.categoryTitle}`}>
+                {activeCategory.displayName}
+              </h2>
+            </div>
+            {rankingPageCount > 1 && (
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded text-xs font-mono font-black uppercase tracking-widest ${
+                  theme === 'outdoor'
+                    ? 'bg-slate-200 border border-slate-300 text-slate-900'
+                    : 'bg-slate-900/90 border border-slate-700/60 text-slate-200'
+                }`}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                <span>SEITE {rankingPageIndex + 1} / {rankingPageCount}</span>
+              </div>
+            )}
           </div>
 
-          <div className={`flex-1 overflow-hidden rounded-2xl border ${themeStyles.tableContainer}`}>
+          <div className={`flex-1 overflow-hidden rounded-lg border ${themeStyles.tableContainer}`}>
             <table
               aria-label={uiText.tv.ranking(activeCategory.displayName)}
               className={`grid h-full w-full text-left ${shape.kind === 'combined-relay'
@@ -97,7 +121,10 @@ export function RankingCanvas({
                   </tr>
                 )}
               </thead>
-              <tbody className={`grid min-h-0 grid-rows-8 divide-y ${themeStyles.tableDivider}`}>
+              <tbody
+                key={visibleRankingRows.map((r, i) => r.kind === 'ranked' ? `${r.entry.groupId}-${i}` : `${r.entry.fireBrigadeName}-${i}`).join(':')}
+                className={`animate-tv-page-flip grid min-h-0 grid-rows-8 divide-y ${themeStyles.tableDivider}`}
+              >
                 {visibleRankingRows.map((presentationRow, index) => {
                   const startsUpcomingSection = index > 0
                     && visibleRankingRows[index - 1].kind === 'ranked';

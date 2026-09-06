@@ -31,22 +31,22 @@ export function AdminAccessSplashCanvas({
       data-testid="tv-mode-canvas"
     >
       <div
-        className={`w-full max-w-5xl rounded-3xl border p-6 sm:p-10 shadow-2xl backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 transition-all ${
+        className={`w-full max-w-5xl rounded-lg border-2 p-6 sm:p-10 shadow-lg backdrop-blur-md flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12 transition-all ${
           theme === 'outdoor'
-            ? 'bg-white/95 border-amber-300 text-neutral-900 shadow-amber-950/20'
+            ? 'bg-white/95 border-amber-400 text-neutral-900 shadow-amber-950/10'
             : theme === 'ceremony'
-            ? 'bg-neutral-900/90 border-amber-500/40 text-amber-50 shadow-amber-950/40'
-            : 'bg-neutral-950/85 border-neutral-800 text-white shadow-black/80'
+            ? 'bg-neutral-900/90 border-amber-500/40 text-amber-50 shadow-amber-950/20'
+            : 'bg-neutral-950/90 border-neutral-800 text-white shadow-black/60'
         }`}
         data-testid="tv-admin-splash-canvas"
       >
         {/* Left column: Text instructions & connection info */}
         <div className="flex-1 space-y-6 text-left w-full">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider bg-red-600/20 border border-red-500/50 text-red-400">
-            <span className="relative flex h-2.5 w-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm text-xs font-black uppercase tracking-wider bg-red-600/20 border border-red-500/50 text-red-400">
+            <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
             </span>
             <span>{uiText.tv.adminSplash.badge}</span>
           </div>
@@ -71,7 +71,7 @@ export function AdminAccessSplashCanvas({
 
           {/* Action Box: Access Admin Dashboard on URL */}
           <div
-            className={`rounded-2xl border p-4 sm:p-6 shadow-inner ${
+            className={`rounded-md border p-4 sm:p-6 shadow-sm ${
               theme === 'outdoor'
                 ? 'bg-neutral-100 border-neutral-300'
                 : 'bg-neutral-900/90 border-neutral-700/80'
@@ -98,7 +98,7 @@ export function AdminAccessSplashCanvas({
                 {availableIps.map((item) => (
                   <span
                     key={`${item.interfaceName}-${item.ip}`}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono bg-black/30 border border-white/10"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono bg-black/30 border border-white/10"
                   >
                     <span className="opacity-60">{item.interfaceName}:</span>
                     <strong className="text-red-400">{item.ip}</strong>
@@ -118,12 +118,12 @@ export function AdminAccessSplashCanvas({
         {/* Right column: Large Scannable QR Code */}
         <div className="flex flex-col items-center justify-center shrink-0">
           <div
-            className="p-4 sm:p-6 bg-white rounded-3xl shadow-2xl border-4 border-white flex flex-col items-center justify-center transition-transform hover:scale-105"
+            className="p-4 sm:p-6 bg-white rounded-lg shadow-xl border-2 border-white flex flex-col items-center justify-center"
             data-testid="admin-access-qr"
           >
             <QrSvg
               value={finalAdminUrl}
-              size={220}
+              size={200}
               level="M"
               includeMargin={false}
               aria-label={uiText.tv.adminSplash.title}

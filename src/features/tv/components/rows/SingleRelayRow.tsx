@@ -94,10 +94,10 @@ export function SingleRelayRow({
           <span className={themeStyles.score.time}>
             {hasAttack ? formatHundredthsToDisplayTime(attackTimeHundredths) : '—'}
           </span>
-          <span className="w-[4ch] text-left">
+          <span className="w-[5ch] text-left">
             {attackPenalty > 0 && (
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-                +{attackTimeErrors}F
+              <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+                +{attackTimeErrors},00
               </span>
             )}
           </span>
@@ -110,10 +110,10 @@ export function SingleRelayRow({
           <span className={themeStyles.score.time}>
             {hasRelay ? formatHundredthsToDisplayTime(relayRaceHundredths) : '—'}
           </span>
-          <span className="w-[4ch] text-left">
+          <span className="w-[5ch] text-left">
             {relayPenalty > 0 && (
-              <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-                +{relayRaceErrors}F
+              <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+                +{relayRaceErrors},00
               </span>
             )}
           </span>

@@ -1,5 +1,33 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Public Barlow';
+  src: url('/fonts/Barlow-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Public Barlow';
+  src: url('/fonts/Barlow-SemiBold.ttf') format('truetype');
+  font-weight: 600 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Public Barlow Condensed';
+  src: url('/fonts/BarlowCondensed-Bold.ttf') format('truetype');
+  font-weight: 700 900;
+  font-display: swap;
+}
+
+@theme {
+  --font-oswald: 'Public Barlow Condensed', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-display: 'Public Barlow Condensed', 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --font-sans: 'Public Barlow', 'Barlow', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
 html,
 body,
 #root {
@@ -24,6 +52,21 @@ body,
 
 .tv-leading-bar-3 {
   border-left: 6px solid #b45309;
+}
+
+@keyframes tv-page-flip {
+  0% {
+    opacity: 0.15;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-tv-page-flip {
+  animation: 350ms cubic-bezier(0.16, 1, 0.3, 1) both tv-page-flip;
 }
 
 /* Hide scrollbar for category tabs */

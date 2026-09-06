@@ -49,10 +49,10 @@ function CompactTimePenalty({
       <span className={themeStyles.score.time}>
         {isDnf ? uiText.tv.dnf : hasTime ? formatHundredthsToDisplayTime(timeHundredths) : '—'}
       </span>
-      <span className="w-[3.5ch] text-left">
+      <span className="w-[5ch] text-left">
         {!isDnf && penalty > 0 && (
-          <span className={`inline-block rounded-md px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
-            +{errors}F
+          <span className={`inline-block rounded-sm px-2 py-0.5 text-[0.85em] font-black leading-none ${themeStyles.score.penalty}`}>
+            +{errors},00
           </span>
         )}
       </span>
