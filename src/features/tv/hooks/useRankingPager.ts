@@ -5,7 +5,7 @@ import { RANKING_PAGE_SIZE } from '../utils/presentation-constants';
 import type { TvCategoryConfig, TvStateApiResponse } from './useTvDataFeed';
 
 const MAX_UPCOMING_ENTRIES = 8;
-const DEFAULT_RANKING_PAGE_DURATION_MS = 8000;
+const DEFAULT_RANKING_PAGE_DURATION_MS = 7000;
 
 export interface TvCategoryRotationEntry {
   categoryKey: string;

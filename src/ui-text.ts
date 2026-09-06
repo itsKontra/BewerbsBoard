@@ -180,7 +180,7 @@ export const tvText = {
   themes: {
     broadcast: { label: 'Broadcast', summary: 'Dunkel, formal und auf die Wertung fokussiert.' },
     ceremony: { label: 'Ceremony', summary: 'Warm, festlich und auf den Veranstaltungscharakter ausgerichtet.' },
-    outdoor: { label: 'Outdoor Light', summary: 'Hell und kontrastreich — optimiert für Außendisplays bei Sonnenlicht.' },
+    outdoor: { label: 'Outdoor Light', summary: 'Hell und kontrastreich - optimiert für Außendisplays bei Sonnenlicht.' },
   },
 } as const;
 

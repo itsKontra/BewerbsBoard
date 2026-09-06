@@ -19,6 +19,8 @@ export function TvScoreboard() {
     activeRankedResults,
     visibleRankingRows,
     rankingPresentationRowsCount,
+    rankingPageIndex,
+    rankingPageCount,
   } = useRankingPager(tvState, resultsData);
 
   if (!tvState || !resultsData) {
@@ -88,6 +90,8 @@ export function TvScoreboard() {
       activeCategory={activeCategory}
       visibleRankingRows={visibleRankingRows}
       rankingPresentationRowsCount={rankingPresentationRowsCount}
+      rankingPageIndex={rankingPageIndex}
+      rankingPageCount={rankingPageCount}
       rankingDensity="full"
       theme={tvPresentation.theme}
     />
