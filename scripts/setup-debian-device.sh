@@ -12,8 +12,9 @@ sudo apt update && sudo apt upgrade -y
 
 # Install display server (X11), window manager (Openbox), and display manager (LightDM)
 # x11-xserver-utils provides 'xset' for screen blanking control
+# x11-utils provides 'xprop' for window manager readiness check
 # unclutter hides the mouse cursor
-sudo apt install -y xserver-xorg x11-xserver-utils openbox lightdm unclutter 
+sudo apt install -y xserver-xorg x11-xserver-utils x11-utils openbox lightdm unclutter 
 
 # Install required graphical foundations (D-Bus) and system fonts for the browser
 sudo apt install -y dbus-x11 fonts-liberation fonts-noto-color-emoji
@@ -84,7 +85,9 @@ echo "Creating Openbox autostart sequence..."
 sudo mkdir -p /home/app/.config/openbox
 
 sudo tee /home/app/.config/openbox/autostart > /dev/null << 'EOF'
-# Redirect standard output and errors to a log file for debugging
+#!/bin/sh
+
+# Redirect standard output and errors to a log file
 exec > /home/app/kiosk.log 2>&1
 
 # Disable DPMS (Energy Star) features and screen blanking
@@ -95,12 +98,53 @@ xset s noblank
 # Hide the mouse cursor after 0.5 seconds of inactivity
 unclutter -idle 0.5 -root &
 
-# Start Firefox with kiosk flags, pointing directly to the dashboard
-firefox --kiosk "https://bewerb.example.dev/tv" &
+TARGET_URL="http://localhost/tv"
+
+# Wait for the web server (max 60 seconds)
+MAX_WAIT=60
+while ! curl -k -s --head --request GET "$TARGET_URL" --max-time 2 > /dev/null; do
+  sleep 1
+  MAX_WAIT=$((MAX_WAIT - 1))
+  if [ "$MAX_WAIT" -le 0 ]; then
+    echo "Warning: Target URL did not respond in time, proceeding anyway..."
+    break
+  fi
+done
+
+# Wait for Openbox to be ready (max 10 seconds)
+MAX_XPROP=50
+while ! xprop -root _NET_SUPPORTING_WM_CHECK >/dev/null 2>&1; do
+  sleep 0.2
+  MAX_XPROP=$((MAX_XPROP - 1))
+  if [ "$MAX_XPROP" -le 0 ]; then
+    break
+  fi
+done
+
+# Start Firefox with kiosk and software rendering
+#rm -rf /home/app/.config/mozilla/firefox
+PROFILE=$(ls -d /home/app/.config/mozilla/firefox/*.default* 2>/dev/null | head -n 1)
+
+if [ -n "$PROFILE" ]; then
+  # Remove corrupt session restore files
+  rm -rf "$PROFILE/sessionstore"* "$PROFILE/sessionstore-backups"
+  
+  # Remove lock files and old crashdumps
+  rm -rf "$PROFILE/lock" "$PROFILE/.parentlock" "$PROFILE/minidumps"
+  
+  # Remove interrupted database transaction logs
+  rm -f "$PROFILE/"*-wal "$PROFILE/"*-shm
+  
+  # Remove disk and startup caches
+  rm -rf "$PROFILE/startupCache" /home/app/.cache/mozilla
+fi
+
+LIBGL_ALWAYS_SOFTWARE=1 MOZ_ACCELERATED=0 firefox --kiosk --private-window "$TARGET_URL" &
 EOF
 
-# Ensure the 'app' user owns its configuration files
+# Ensure the 'app' user owns its configuration files and autostart is executable
 sudo chown -R app:app /home/app
+sudo chmod +x /home/app/.config/openbox/autostart
 
 # ---------------------------------------------------------
 # 6. Apply Firefox Enterprise Lockdown Policies
@@ -113,6 +157,8 @@ sudo mkdir -p /etc/firefox/policies/
 sudo tee /usr/lib/firefox/distribution/policies.json > /dev/null << 'EOF'
 {
   "policies": {
+    "SkipTermsOfUse": true,
+    "DontCheckDefaultBrowser": true,
     "DisableTelemetry": true,
     "DisableFirefoxStudies": true,
     "DisablePocket": true,
@@ -122,12 +168,30 @@ sudo tee /usr/lib/firefox/distribution/policies.json > /dev/null << 'EOF'
     "OverridePostUpdatePage": "",
     "DisableAppUpdate": true,
     "DisableDefaultBrowserAgent": true,
-    "DontCheckDefaultBrowser": true,
-    "UserMessaging": {
-      "SkipOnboarding": true,
-      "ExtensionRecommendations": false,
-      "FeatureRecommendations": false,
-      "MoreFromMozilla": false
+    "CaptivePortal": false,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": false,
+    "Preferences": {
+      "datareporting.policy.dataSubmissionPolicyBypassNotification": {
+        "Value": true,
+        "Status": "locked"
+      },
+      "browser.aboutwelcome.enabled": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "trailhead.firstrun.didSeeAboutWelcome": {
+        "Value": true,
+        "Status": "locked"
+      },
+      "browser.cache.disk.enable": {
+        "Value": false,
+        "Status": "locked"
+      },
+      "browser.sessionstore.resume_from_crash": {
+        "Value": false,
+        "Status": "locked"
+      }
     }
   }
 }
@@ -137,7 +201,7 @@ EOF
 sudo ln -sf /usr/lib/firefox/distribution/policies.json /etc/firefox/policies/policies.json
 
 # Wipe any existing profile data to force Firefox to read the new policies on next boot
-sudo rm -rf /home/app/.mozilla
+sudo rm -rf /home/app/.mozilla /home/app/.config/mozilla /home/app/.cache/mozilla
 
 # ---------------------------------------------------------
 # 7. Install and Configure Docker
